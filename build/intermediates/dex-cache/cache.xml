@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\com.fasterxml.jackson.core\jackson-core\2.6.1\892d15011456ea3563319b27bdd612dbc89bb776\jackson-core-2.6.1.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="892d15011456ea3563319b27bdd612dbc89bb776">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\jackson-core-2.6.1_ffd354c55b59f203f2999a48dbb2659de8f170a4.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\recyclerview-v7\23.4.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="ec75036c3c52e451d0cde50a5aedaf5fd32354a0">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.android.support-recyclerview-v7-23.4.0_6e6cf77afe5440c2dcffb7c215c292fb30444481.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\23.4.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="548f06de403a9409f00554b3ee12a9fdea0e236c">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.android.support-appcompat-v7-23.4.0_7c7106355f3db888409960454652839ef3f07473.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\design\23.4.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="5326d9a850d491714fef8cbfaa9ea3416f0bf0d2">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.android.support-design-23.4.0_65e6350f508e4a4aa24f04d062f2d516d738260c.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\animated-vector-drawable\23.4.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="de4db3785756bfb0915a9f59a9b3f2fea7407be4">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.android.support-animated-vector-drawable-23.4.0_8cbfb5789c11d69845123f2c7ed284294b0e0ae9.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\org.jbundle.util.osgi.wrapped\org.jbundle.util.osgi.wrapped.org.apache.http.client\4.1.2\98c86e42679fe7ac066f6c242e0d14f0bce0bb7c\org.jbundle.util.osgi.wrapped.org.apache.http.client-4.1.2.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="98c86e42679fe7ac066f6c242e0d14f0bce0bb7c">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\org.jbundle.util.osgi.wrapped.org.apache.http.client-4.1.2_dfe00ce9fa11825963c638909c95e5f68cfd08f3.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\support-vector-drawable\23.4.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="c2c594cace5d83a3227b2b6e658ecbfd586d3ed9">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.android.support-support-vector-drawable-23.4.0_d1faebd8173214920b11fbf6e3f80d3dcd03be72.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.4.0\jars\libs\internal_impl-23.4.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="ea3c07504d2c8f4b13aa17c45c1b68ed9c1c3674">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\internal_impl-23.4.0_76d9f1fd4dad03be6d68a055324e07926f8fde53.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.4.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="67bd36ee9340ec7c254108936ad16b24bed160cc">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.android.support-support-v4-23.4.0_36a9f98631eabd30decc17ab4aed2782599db5f4.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\com.googlecode.ez-vcard\ez-vcard\0.10.0\f833343fd0f39c28db9ede759714f38c222c2d2c\ez-vcard-0.10.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="f833343fd0f39c28db9ede759714f38c222c2d2c">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\ez-vcard-0.10.0_5581e110d4bc0f4aa8e9d222080f357ceaa0c5c3.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.android.support\cardview-v7\23.0.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="1ccbc26be2c465c622a48310e8092241b01abe80">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.android.support-cardview-v7-23.0.0_fc421e60eeab9d9eb435d38fdc7acac8ff4d0c13.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\org.freemarker\freemarker\2.3.23\cd143cd8c02a9f838e3cb75a6dfe133750437f6d\freemarker-2.3.23.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="cd143cd8c02a9f838e3cb75a6dfe133750437f6d">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\freemarker-2.3.23_c521a593bb01da69309b984e5c3492a23417e893.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\exploded-aar\com.wdullaer\materialdatetimepicker\2.5.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="06e747980282ac9a96c036c43d07908d0f3347f6">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\com.wdullaer-materialdatetimepicker-2.5.0_9cc9b448dacb231717064d97aeaea5dc6157ebd3.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\com.github.mangstadt\vinnie\1.0.1\79962abf602549ff9e1734e2db87a01380a116da\vinnie-1.0.1.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="79962abf602549ff9e1734e2db87a01380a116da">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\vinnie-1.0.1_4bf0eb1a9996764ae37b89fb12195d0d20c4da8b.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\23.4.0\support-annotations-23.4.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="ffbe55fdb2bb456b1485831706a9eac3300bb6b8">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\support-annotations-23.4.0_7e2dc11ec145b3b96bc50d0e312f2b0b2e520fef.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\src\main\java\platform_sdk_v2.2.0_rt920.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="198fb6e3856d957a23120e162256ac283c9a9465">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\platform_sdk_v2.2.0_rt920_8debab600bab1269ae397df32c516fc6a9a6ff1a.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\org.jsoup\jsoup\1.8.3\65fd012581ded67bc20945d85c32b4598c3a9cf1\jsoup-1.8.3.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="65fd012581ded67bc20945d85c32b4598c3a9cf1">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraMobile\app\build\intermediates\pre-dexed\debug\jsoup-1.8.3_e80c955ed58ad68178490a32384db5aa35290ebb.jar" />
+    </item>
+
+</items>
