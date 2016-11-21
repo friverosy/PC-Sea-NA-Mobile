@@ -3,6 +3,7 @@ package com.axxezo.MobileReader;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
@@ -21,6 +22,7 @@ import java.util.List;
 /**
  * Created by axxezo on 14/11/2016.
  */
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     //Table names
@@ -57,12 +59,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //records
     private static final String RECORD_ID = "id";
-    private static final String RECORD_DATETIME = "records_datetime";
-    private static final String RECORD_PERSON_DOC = "records_peopleDoc";
-    private static final String RECORD_SAILING_ID = "records_sailingID";
-    private static final String RECORD_VEHICLE_ID = "records_vehicleID";
-    private static final String RECORD_SHIP_ID = "records_shipID";
-    private static final String RECORD_SYNC = "records_isSynchronized";
+    private static final String RECORD_DATETIME = "datetime";
+    private static final String RECORD_PERSON_DOC = "person_document";
+    private static final String RECORD_PERSON_NAME = "person_name";
+    private static final String RECORD_ROUTE_ID = "route_id";
+    private static final String RECORD_PORT_ID = "port_id";
+    private static final String RECORD_SHIP_ID = "ship_id";
+    private static final String RECORD_SAILING_HOUR = "sailing_hour";
+    private static final String RECORD_IS_INPUT = "input";
+    private static final String RECORD_SYNC = "sync";
+    private static final String RECORD_IS_PERMITTED = "permitted";
 
     //hours
     private static final String HOUR_ID = "id";
@@ -72,16 +78,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String CONFIG_ROUTE_ID = "route_id";
     private static final String CONFIG_PORT_ID = "port_id";
     private static final String CONFIG_SHIP_ID = "ship_id";
-    private static final String CONFIG_HOUR_ID = "hour_id";
+    private static final String CONFIG_HOUR = "hour";
 
     //set table colums
-    private static final String[] PEOPLE_COLUMS = {PERSON_ID,PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_SAILING_ID, RECORD_VEHICLE_ID, RECORD_SHIP_ID, RECORD_SYNC};
+    private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ROUTE_ID, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
     private static final String[] TRANSPORTS_COLUMNS = {SHIP_ID, SHIP_NAME};
     private static final String[] HOURS_COLUMNS = {HOUR_ID, HOUR_NAME};
-    private static final String[] CONFIG_COLUMNS = {CONFIG_ROUTE_ID, CONFIG_PORT_ID, CONFIG_SHIP_ID, CONFIG_HOUR_ID};
+    private static final String[] CONFIG_COLUMNS = {CONFIG_ROUTE_ID, CONFIG_PORT_ID, CONFIG_SHIP_ID, CONFIG_HOUR};
 
     // Database Version
     private static final int DATABASE_VERSION = 1;
@@ -89,14 +95,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "NavieraAustral";
 
     // SQL statement to create the differents tables
-
-    /*
- /hours
-    private static final String HOURS_ID = "hours_id";
-    private static final String HOURS_NAME = "hours_name";
-
-
-     */
     String CREATE_PEOPLE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PEOPLE + " ( " +
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PERSON_DOCUMENT + " TEXT, " +
@@ -105,13 +103,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             PERSON_ORIGIN+" TEXT, "+
             PERSON_DESTINATION+" TEXT);";
 
-
     String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
             ROUTE_NAME + " TEXT);";
 
     String CREATE_PORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PORTS + " ( " +
-            PORT_ID + " INTEGER PRIMARY KEY, " +
+            PORT_ID +" INTEGER PRIMARY KEY, " +
             PORT_NAME + " TEXT);";
 
     String CREATE_TRANSPORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_SHIPS + " ( " +
@@ -121,10 +118,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     String CREATE_RECORDS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_RECORDS + " ( " +
             RECORD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             RECORD_DATETIME + " TEXT, " +
-            RECORD_SAILING_ID + " INTEGER, " +
-            RECORD_VEHICLE_ID + " INTEGER, " +
+            RECORD_PERSON_DOC + " INTEGER, " +
+            RECORD_PERSON_NAME + " TEXT, " +
+            RECORD_ROUTE_ID + " INTEGER, " +
+            RECORD_PORT_ID + " INTEGER, " +
             RECORD_SHIP_ID + " INTEGER, " +
-            RECORD_SYNC + " INTEGER);";
+            RECORD_SAILING_HOUR + " TEXT, " +
+            RECORD_IS_INPUT + " INTEGER, " +
+            RECORD_SYNC + " INTEGER, " +
+            RECORD_IS_PERMITTED + " INTEGER);";
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
             HOUR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -135,8 +137,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             CONFIG_ROUTE_ID + " INTEGER, " +
             CONFIG_PORT_ID + " INTEGER, " +
             CONFIG_SHIP_ID + " INTEGER, " +
-            CONFIG_HOUR_ID + " INTEGER);";
-
+            CONFIG_HOUR + " TEXT);";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -326,7 +327,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     ContentValues values = new ContentValues();
                     People people = new People(jsonRoutes.getJSONObject(i).getString("codigo_pasajero"),jsonRoutes.getJSONObject(i).getString("nombre_pasajero"),jsonRoutes.getJSONObject(i).getString("nacionalidad"),0
                             ,jsonRoutes.getJSONObject(i).getString("origen"),jsonRoutes.getJSONObject(i).getString("destino"));
-                    values.put(PERSON_DOCUMENT, people.getDocument());
+                    String doc;
+                    doc = people.getDocument();
+                    if(people.getDocument().contains("-"))
+                        doc = doc.substring(0, doc.length()-2);
+                    values.put(PERSON_DOCUMENT, doc);
                     values.put(PERSON_NAME, people.getName());
                     values.put(PERSON_NATIONALITY, people.getNationality());
                     values.put(PERSON_AGE, people.getAge());
@@ -354,8 +359,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public ArrayList<String> getListFromDB(String table) {
         SQLiteDatabase db = this.getReadableDatabase();
         ArrayList<String> list = new ArrayList<String>();
-        Cursor cursor = db.rawQuery("SELECT * from " + table, null);
-        Log.i("Tmp", "SELECT * from " + table);
+        Cursor cursor = db.rawQuery("SELECT * from " + table + ";", null);
+        Log.i("Tmp", "SELECT * from " + table + ";");
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
             if (cursor.isFirst()) {
                 list.add("");
@@ -393,7 +398,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     values.put(CONFIG_SHIP_ID, i);
                     break;
                 case "hours":
-                    values.put(CONFIG_HOUR_ID, i);
+                    values.put(CONFIG_HOUR, i);
                     break;
             }
             Log.d("ID route content :", i + "");
@@ -417,7 +422,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put(CONFIG_ROUTE_ID, route);
             values.put(CONFIG_PORT_ID, port);
             values.put(CONFIG_SHIP_ID, transport);
-            values.put(CONFIG_HOUR_ID,hour);
+            values.put(CONFIG_HOUR,hour);
             db1.insert(TABLE_CONFIG, // table
                     null, //nullColumnHack
                     values); // key/value -> keys = column names/ values = column values
@@ -427,5 +432,279 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db1.endTransaction();
 
         }
+    }
+
+    //cris
+    public String validatePerson(String rut) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String out = "";
+        try{
+            Cursor cursor =
+                    db.query(TABLE_PEOPLE, // a. table
+                            PEOPLE_COLUMS, // b. column names
+                            PERSON_DOCUMENT + " = ?", // c. selections
+                            new String[] { String.valueOf(rut)}, // d. selections args
+                            null, // e. group by
+                            null, // f. having
+                            null, // g. order by
+                            null); // h. limit
+            if (cursor != null) {
+                if (!(cursor.moveToFirst()) || cursor.getCount() == 0) {
+                    //cursor is empty
+                } else {
+                    // 3. if we got results get the first one
+                    cursor.moveToFirst();
+
+                    Log.d("<<<",cursor.getString(1));
+
+                    // 4. build String
+                    out = cursor.getString(1) + "," +
+                            cursor.getString(2) + "," +
+                            cursor.getString(3) + "," +
+                            cursor.getInt(4);
+                }
+            }
+            cursor.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        db.close();
+        return out;
+    }
+
+    public void add_record(Record record){
+
+        // 1. get reference to writable DB
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // 2. create ContentValues to add key "column"/value
+        ContentValues values = new ContentValues();
+
+        //values.put(RECORD_ID, record.getId());
+        values.put(RECORD_PERSON_DOC, record.getPerson_document());
+        values.put(RECORD_PERSON_NAME, record.getPerson_name());
+        values.put(RECORD_ROUTE_ID, record.getRoute_id());
+        values.put(RECORD_PORT_ID, record.getPort_id());
+        values.put(RECORD_SHIP_ID, record.getShip_id());
+        values.put(RECORD_SAILING_HOUR, record.getSailing_hour());
+        values.put(RECORD_IS_INPUT, record.getInput());
+        values.put(RECORD_SYNC, record.getSync());
+        values.put(RECORD_DATETIME, record.getDatetime());
+        values.put(RECORD_IS_PERMITTED, record.getPermitted());
+
+        // 3. insert
+        try{
+            db.insert(TABLE_RECORDS, null, values);
+        }catch (SQLException e) {
+            Log.e("DataBase Error", "Error to insert record: "+values);
+            e.printStackTrace();
+        }
+
+        // 4. close
+        db.close();
+    }
+
+    public List get_desynchronized_records(){
+
+        // 1. get reference to readable DB
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // 2. build query
+        Cursor cursor =
+                db.query(TABLE_RECORDS, // a. table
+                        RECORDS_COLUMNS, // b. column names
+                        RECORD_SYNC+"=0", // c. selections
+                        null, // d. selections args
+                        null, // e. group by
+                        null, // f. having
+                        null, // g. order by
+                        null); // h. limit
+
+        // 3. get all
+        cursor.moveToFirst();
+        List<String> records = new ArrayList<>();
+
+        while (cursor.isAfterLast() == false) {
+            records.add(
+                    cursor.getInt(0)+";"+ //ID
+                            cursor.getString(1)+";"+ //DATETIME
+                            cursor.getString(2)+";"+ //PERSON_DOCUMENT
+                            cursor.getString(3)+";"+ //PERSON_NAME
+                            cursor.getInt(4)+";"+ //ROUTE_ID
+                            cursor.getInt(5)+";"+ //PORT_ID
+                            cursor.getInt(6)+";"+ //SHIP_ID
+                            cursor.getString(7)+";"+ //SAILING_HOUR
+                            cursor.getInt(8)+";"+ //INPUT
+                            cursor.getInt(9)+";"+ //SYNC
+                            cursor.getInt(10) //PERMITTED
+            );
+            cursor.moveToNext();
+        }
+
+        cursor.close();
+        db.close();
+
+        // 5. return
+        return records;
+    }
+
+    public int record_desync_count(){
+        try {
+            SQLiteDatabase db = this.getWritableDatabase();
+            Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " +
+                    TABLE_RECORDS + " WHERE " + RECORD_SYNC + "=0;", null);
+            return cursor.getCount();
+        } catch (SQLException e){
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    public void update_record(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        int i = 0;
+        try {
+            values.put(RECORD_SYNC, 1);
+
+            // 3. updating row
+            i = db.update(TABLE_RECORDS, //table
+                    values, // column/value
+                    RECORD_ID + "=" + id, // where
+                    null);
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        // 4. close
+        db.close();
+        if(i>0) Log.d("Local Record updated", String.valueOf(id));
+        else Log.e("Error updating record", String.valueOf(id));
+    }
+
+    public String getHourSelected(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String hora = "";
+        String selectQuery = "SELECT " + TABLE_HOURS + "." + HOUR_NAME + " FROM " + TABLE_HOURS +
+                " INNER JOIN " + TABLE_CONFIG + " ON " +
+                TABLE_HOURS + "." + HOUR_NAME + " = " + TABLE_CONFIG + "." + CONFIG_HOUR + ";";
+        try {
+            Cursor c = db.rawQuery(selectQuery, new String[] {  });
+            if (c.moveToFirst()) {
+                hora = c.getString(c.getColumnIndex(ROUTE_NAME));
+            }
+            c.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return hora;
+    }
+
+    public String getShipSelected() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String ship = "";
+        String selectQuery = "SELECT " + TABLE_SHIPS + "." + SHIP_ID + " FROM " + TABLE_SHIPS +
+                " INNER JOIN " + TABLE_CONFIG + " ON " +
+                TABLE_SHIPS + "." + SHIP_ID + " = " + TABLE_CONFIG + "." + CONFIG_SHIP_ID + ";";
+        try {
+            Cursor c = db.rawQuery(selectQuery, new String[]{});
+            if (c.moveToFirst()) {
+                ship = c.getString(c.getColumnIndex(SHIP_ID));
+            }
+            c.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ship;
+    }
+
+    public String getNameShipSelected() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String ship = "";
+        String selectQuery = "SELECT " + TABLE_SHIPS + "." + SHIP_NAME + " FROM " + TABLE_SHIPS +
+                " INNER JOIN " + TABLE_CONFIG + " ON " +
+                TABLE_SHIPS + "." + SHIP_ID + " = " + TABLE_CONFIG + "." + CONFIG_SHIP_ID + ";";
+        try {
+            Cursor c = db.rawQuery(selectQuery, new String[]{});
+            if (c.moveToFirst()) {
+                ship = c.getString(c.getColumnIndex(SHIP_NAME));
+            }
+            c.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ship;
+    }
+
+    public String getRouteSelected() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String route = "";
+        String selectQuery = "SELECT " + TABLE_ROUTES + "." + ROUTE_ID + " FROM " + TABLE_ROUTES +
+                " INNER JOIN " + TABLE_CONFIG + " ON " +
+                TABLE_ROUTES + "." + ROUTE_ID + " = " + TABLE_CONFIG + "." + CONFIG_ROUTE_ID + ";";
+        try {
+            Cursor c = db.rawQuery(selectQuery, new String[]{});
+            if (c.moveToFirst()) {
+                route = c.getString(c.getColumnIndex(ROUTE_ID));
+            }
+            c.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return route;
+    }
+
+    public String getNameRouteSelected() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String route = "";
+        String selectQuery = "SELECT " + TABLE_ROUTES + "." + ROUTE_NAME + " FROM " + TABLE_ROUTES +
+                " INNER JOIN " + TABLE_CONFIG + " ON " +
+                TABLE_ROUTES + "." + ROUTE_ID + " = " + TABLE_CONFIG + "." + CONFIG_ROUTE_ID + ";";
+        try {
+            Cursor c = db.rawQuery(selectQuery, new String[]{});
+            if (c.moveToFirst()) {
+                route = c.getString(c.getColumnIndex(ROUTE_NAME));
+            }
+            c.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return route;
+    }
+
+    public String getPortSelected() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String port = "";
+        String selectQuery = "SELECT " + TABLE_PORTS + "." + PORT_ID + " FROM " + TABLE_PORTS +
+                " INNER JOIN " + TABLE_CONFIG + " ON "+
+                TABLE_PORTS + "." + PORT_ID + " = " + TABLE_CONFIG + "." + CONFIG_PORT_ID + ";";
+        try {
+            Cursor c = db.rawQuery(selectQuery, new String[]{});
+            if (c.moveToFirst()) {
+                port = c.getString(c.getColumnIndex(PORT_ID));
+            }
+            c.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return port;
+    }
+
+    public String getNamePortSelected() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String port = "";
+        String selectQuery = "SELECT " + TABLE_PORTS + "." + PORT_NAME + " FROM " + TABLE_PORTS +
+                " INNER JOIN " + TABLE_CONFIG + " ON "+
+                TABLE_PORTS + "." + PORT_ID + " = " + TABLE_CONFIG + "." + CONFIG_PORT_ID + ";";
+        try {
+            Cursor c = db.rawQuery(selectQuery, new String[]{});
+            if (c.moveToFirst()) {
+                port = c.getString(c.getColumnIndex(PORT_NAME));
+            }
+            c.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return port;
     }
 }

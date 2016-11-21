@@ -41,7 +41,9 @@ public class lastRecordsList extends ListActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                String text = "Total Manifiesto: " + "\n" +
+                        "Embarcados: " + "Desembarcados: ";
+                Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });

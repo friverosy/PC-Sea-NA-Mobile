@@ -22,12 +22,29 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true">
 
+        <Switch
+            android:id="@+id/mySwitch"
+            android:layout_width="242dp"
+            android:layout_height="wrap_content"
+            android:textOn="Embarque"
+            android:textOff="Desembarque"
+            android:checked="true"
+            android:textSize="28sp"
+            android:textColor="@android:color/background_light"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="normal|bold"
+            android:textAlignment="center"
+            android:gravity="center_vertical|center_horizontal|start" />
+
         <ImageView
-            android:layout_marginTop="75dp"
-            android:layout_width="200dp"
-            android:id="@+id/imageView"
-            android:layout_gravity="center_horizontal"
-            android:layout_height="200dp" />
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            app:srcCompat="@drawable/logo"
+            android:id="@+id/imageViewLogo" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="10dp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -36,7 +53,7 @@
             android:text="Nombre"
             android:ems="10"
             android:id="@+id/fullname"
-            android:textSize="24sp"
+            android:textSize="26sp"
             android:textColor="@android:color/white"
             android:textStyle="bold"
             android:textAlignment="center" />
@@ -48,7 +65,7 @@
             android:text="Nº Documento"
             android:ems="10"
             android:id="@+id/rut"
-            android:textSize="24sp"
+            android:textSize="18sp"
             android:textColor="@android:color/white"
             android:textStyle="bold"
             android:textAlignment="center" />
@@ -56,18 +73,21 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPersonName"
-            android:text="Placa Patente"
             android:ems="10"
-            android:id="@+id/plate"
-            android:textSize="24sp"
-            android:textColor="@android:color/white"
+            android:id="@+id/status"
+            android:textSize="20sp"
+            android:textColor="@android:color/holo_red_dark"
             android:textStyle="bold"
             android:textAlignment="center" />
 
+        <ImageView
+            android:layout_marginTop="25dp"
+            android:layout_width="182dp"
+            android:id="@+id/imageView"
+            android:layout_gravity="center_horizontal"
+            android:layout_height="200dp"
+            android:layout_weight="0.11" />
+
     </LinearLayout>
-
-
-
 
 </RelativeLayout>

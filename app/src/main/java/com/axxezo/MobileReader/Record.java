@@ -5,167 +5,122 @@ package com.axxezo.MobileReader;
  */
 public class Record {
 
-    int record_id;
-    String person_fullname;
-    String person_run;
-    String person_profile;
-    int record_is_input;
-    int record_bus;
-    int person_is_permitted;
-    int person_card;
-    String person_company;
-    String person_place;
-    String person_company_code;
-    String record_input_datetime;
-    String record_output_datetime;
-
-    int record_sync;
+    int id;
+    String datetime;
+    String person_document;
+    String person_name;
+    int route_id;
+    int port_id;
+    int ship_id;
+    String sailing_hour;
+    int input;
+    int sync;
+    int permitted;
 
     //Constructors
     public Record(){
 
     }
 
-    public Record(Integer record_id, String person_fullname, String person_run, String person_profile, Integer record_is_input, Integer record_bus, Integer person_is_permitted, String person_company, String person_place, String person_company_code, String record_input_datetime, String record_output_datetime, Integer record_sync, Integer person_card){
+    public Record(Integer id, String person_document, String person_name,  Integer route_id, Integer port_id, Integer ship_id, String sailing_hour, Integer input, Integer sync, Integer permitted){
 
-        this.record_id = record_id;
-        this.person_fullname = person_fullname;
-        this.person_run = person_run;
-        this.person_profile = person_profile;
-        this.record_is_input = record_is_input;
-        this.record_bus = record_bus;
-        this.person_is_permitted = person_is_permitted;
-        this.person_company = person_company;
-        this.person_place = person_place;
-        this.person_company_code = person_company_code;
-        this.record_input_datetime = record_input_datetime;
-        this.record_output_datetime = record_output_datetime;
-        this.record_sync = record_sync;
-        this.person_card = person_card;
+        this.id = id;
+        this.person_document = person_document;
+        this.person_name = person_name;
+        this.route_id = route_id;
+        this.port_id = port_id;
+        this.ship_id = ship_id;
+        this.sailing_hour = sailing_hour;
+        this.input = input;
+        this.sync = sync;
+        this.permitted = permitted;
     }
 
-    public int getPerson_card() { return person_card; }
-
-    public void setPerson_card(int person_card) { this.person_card = person_card; }
-
-    public String getPerson_profile() {
-        return person_profile;
+    public int getId() {
+        return id;
     }
 
-    public void setPerson_profile(String person_profile) {
-        this.person_profile = person_profile;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public int getRecord_id() {
-        return record_id;
+    public String getDatetime() {
+        return datetime;
     }
 
-    public void setRecord_id(int record_id) { this.record_id = record_id; }
-
-    public String getPerson_fullname() {
-        return person_fullname;
+    public void setDatetime(String datetime) {
+        this.datetime = datetime;
     }
 
-    public void setPerson_fullname(String person_fullname) {
-        this.person_fullname = person_fullname;
+    public String getPerson_document() {
+        return person_document;
     }
 
-    public String getPerson_run() {
-        return person_run;
+    public void setPerson_document(String person_document) {
+        this.person_document = person_document;
     }
 
-    public void setPerson_run(String person_run) {
-        this.person_run = person_run;
+    public String getPerson_name() {
+        return person_name;
     }
 
-    public int getRecord_is_input() {
-        return record_is_input;
+    public void setPerson_name(String person_name) {
+        this.person_name = person_name;
     }
 
-    public void setRecord_is_input(int record_is_input) {
-        this.record_is_input = record_is_input;
+    public int getRoute_id() {
+        return route_id;
     }
 
-    public int getRecord_bus() {
-        return record_bus;
+    public void setRoute_id(int route_id) {
+        this.route_id = route_id;
     }
 
-    public void setRecord_bus(int record_bus) {
-        this.record_bus = record_bus;
+    public int getPort_id() {
+        return port_id;
     }
 
-    public int getPerson_is_permitted() {
-        return person_is_permitted;
+    public void setPort_id(int port_id) {
+        this.port_id = port_id;
     }
 
-    public void setPerson_is_permitted(int person_is_permitted) {
-        this.person_is_permitted = person_is_permitted;
+    public int getShip_id() {
+        return ship_id;
     }
 
-    public String getPerson_company() {
-        return person_company;
+    public void setShip_id(int ship_id) {
+        this.ship_id = ship_id;
     }
 
-    public void setPerson_company(String person_company) {
-        this.person_company = person_company;
+    public String getSailing_hour() {
+        return sailing_hour;
     }
 
-    public String getPerson_place() {
-        return person_place;
+    public void setSailing_hour(String sailing_hour) {
+        this.sailing_hour = sailing_hour;
     }
 
-    public void setPerson_place(String person_place) {
-        this.person_place = person_place;
+    public int getInput() {
+        return input;
     }
 
-    public String getPerson_company_code() {
-        return person_company_code;
+    public void setInput(int input) {
+        this.input = input;
     }
 
-    public void setPerson_company_code(String person_company_code) {
-        this.person_company_code = person_company_code;
+    public int getSync() {
+        return sync;
     }
 
-    public String getRecord_input_datetime() {
-        return record_input_datetime;
+    public void setSync(int sync) {
+        this.sync = sync;
     }
 
-    public void setRecord_input_datetime(String record_input_datetime) {
-        this.record_input_datetime = record_input_datetime;
+    public int getPermitted() {
+        return permitted;
     }
 
-    public String getRecord_output_datetime() {
-        return record_output_datetime;
-    }
-
-    public void setRecord_output_datetime(String record_output_datetime) {
-        this.record_output_datetime = record_output_datetime;
-    }
-
-    public int getRecord_sync() {
-        return record_sync;
-    }
-
-    public void setRecord_sync(int record_sync) {
-        this.record_sync = record_sync;
-    }
-
-    @Override
-    public String toString() {
-        return "Record [record_id=" + record_id +
-                ", person_fullname=" + person_fullname +
-                ", person_run=" + person_run +
-                ", record_is_input=" + record_is_input +
-                ", record_bus=" + record_bus +
-                ", person_is_permitted=" + person_is_permitted +
-                ", person_company=" + person_company +
-                ", person_place=" + person_place +
-                ", person_company_code="+ person_company_code +
-                ", record_input_datetime=" + record_input_datetime +
-                ", record_output_datetime=" + record_output_datetime +
-                ", record_sync=" + record_sync +
-                ", person_profile=" + person_profile +
-                ", person_card=" + person_card +
-                "]";
+    public void setPermitted(int permitted) {
+        this.permitted = permitted;
     }
 }
