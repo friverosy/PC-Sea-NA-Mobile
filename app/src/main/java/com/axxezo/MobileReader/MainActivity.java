@@ -444,9 +444,7 @@ public class MainActivity extends AppCompatActivity
         record.setPerson_name(TextViewFullname.getText().toString());
         if (is_input) record.setInput(1);
         else record.setInput(0);
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date dateNow = new Date();
-        record.setDatetime(dateFormat.format(dateNow));
+        record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         record.setPort_id(Integer.parseInt(port));
         record.setShip_id(Integer.parseInt(ship));
@@ -484,10 +482,7 @@ public class MainActivity extends AppCompatActivity
 
         if (is_input) record.setInput(1);
         else record.setInput(0);
-
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date date = new Date();
-        record.setDatetime(dateFormat.format(date));
+        record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         db.add_record(record);
 
