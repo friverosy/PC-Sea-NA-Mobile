@@ -9,18 +9,12 @@ public class People {
     private String name;
     private String nationality;
     private int age;
-    private String origin;
-    private String destination;
 
-
-    public People(String document, String name, String nationality, int age, String origin, String destination) {
-
+    public People(String document, String name, String nationality, int age) {
         this.document = document;
         this.name = name;
         this.nationality = nationality;
         this.age = age;
-        this.origin = origin;
-        this.destination = destination;
     }
     //use this constructor in cards list
 
@@ -29,22 +23,6 @@ public class People {
         this.document = document;
         this.name = name;
         this.nationality = nationality;
-    }
-
-    public String getOrigin() {
-        return origin;
-    }
-
-    public void setOrigin(String origin) {
-        this.origin = origin;
-    }
-
-    public String getDestination() {
-        return destination;
-    }
-
-    public void setDestination(String destination) {
-        this.destination = destination;
     }
 
     public String getDocument() {
@@ -86,8 +64,6 @@ public class People {
                 ", name='" + name + '\'' +
                 ", nationality='" + nationality + '\'' +
                 ", age=" + age +
-                ", origin='" + origin + '\'' +
-                ", destination='" + destination + '\'' +
                 '}';
     }
 }

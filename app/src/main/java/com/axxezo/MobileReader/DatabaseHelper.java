@@ -12,11 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -33,8 +29,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_SHIPS = "SHIPS";
     private static final String TABLE_HOURS = "HOURS";
     private static final String TABLE_CONFIG = "CONFIG";
+    private static final String TABLE_MANIFEST = "MANIFEST";
 
     //table columns
+    private static final String MANIFEST_ID = "id";
+    private static final String MANIFEST_PEOPLE_ID = "id_people";
+    private static final String MANIFEST_ORIGIN = "origin";
+    private static final String MANIFEST_DESTINATION = "destination";
+    private static final String MANIFEST_ISINSIDE = "is_inside";
+
 
     //people
     private static final String PERSON_ID = "id";
@@ -42,9 +45,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String PERSON_NAME = "name";
     private static final String PERSON_NATIONALITY = "nationality";
     private static final String PERSON_AGE = "age";
-    private static final String PERSON_ORIGIN = "origin";
-    private static final String PERSON_DESTINATION = "destination";
-
     //routes
     private static final String ROUTE_ID = "id";
     private static final String ROUTE_NAME = "name";
@@ -99,16 +99,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PERSON_DOCUMENT + " TEXT, " +
             PERSON_NAME + " TEXT, " + PERSON_NATIONALITY + " TEXT, " +
-            PERSON_AGE + " INTEGER, "+
-            PERSON_ORIGIN+" TEXT, "+
-            PERSON_DESTINATION+" TEXT);";
+            PERSON_AGE + " INTEGER); ";
+
+    String CREATE_MANIFEST_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MANIFEST + " ( " +
+            MANIFEST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            MANIFEST_PEOPLE_ID + " TEXT, " +
+            MANIFEST_ORIGIN + " TEXT, " +
+            MANIFEST_DESTINATION + " TEXT," +
+            MANIFEST_ISINSIDE + " INTEGER); ";
 
     String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
             ROUTE_NAME + " TEXT);";
 
     String CREATE_PORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PORTS + " ( " +
-            PORT_ID +" INTEGER PRIMARY KEY, " +
+            PORT_ID + " INTEGER PRIMARY KEY, " +
             PORT_NAME + " TEXT);";
 
     String CREATE_TRANSPORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_SHIPS + " ( " +
@@ -153,6 +158,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_RECORDS_TABLE);
         db.execSQL(CREATE_HOURS_TABLE);
         db.execSQL(CREATE_CONFIG_TABLE);
+        db.execSQL(CREATE_MANIFEST_TABLE);
 
         //db.execSQL("PRAGMA foreign_keys=ON;");
         // first i must look the structure form of the get in api, and after create the table settings
@@ -308,8 +314,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             Log.i("error", "Json empty!");
 
     }
+
     public int insertManifestDB(String json) throws JSONException {
-        int cantPeople=0;
+        int cantPeople = 0;
         SQLiteDatabase db1 = this.getWritableDatabase();
         JSONObject objectJson;
         JSONArray jsonRoutes;
@@ -319,29 +326,39 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             try {
                 db1.beginTransaction();
                 Log.d("--add Manifest", String.valueOf(db1.isOpen()));
-                db1.execSQL("DROP TABLE IF EXISTS people");
-                db1.execSQL(CREATE_PEOPLE_TABLE);
+                //
+                //db1.execSQL("DROP TABLE IF EXISTS people");
+                //db1.execSQL(CREATE_PEOPLE_TABLE);
+                db1.execSQL("DROP TABLE IF EXISTS manifest");
+                db1.execSQL(CREATE_MANIFEST_TABLE);
+
                 for (int i = 0; i < jsonRoutes.length(); i++) {
-                    Log.d("People content :", "= "+jsonRoutes.length());
+                    Log.d("People content :", "= " + jsonRoutes.length());
                     cantPeople++;
                     ContentValues values = new ContentValues();
-                    People people = new People(jsonRoutes.getJSONObject(i).getString("codigo_pasajero"),jsonRoutes.getJSONObject(i).getString("nombre_pasajero"),jsonRoutes.getJSONObject(i).getString("nacionalidad"),0
-                            ,jsonRoutes.getJSONObject(i).getString("origen"),jsonRoutes.getJSONObject(i).getString("destino"));
+                    ContentValues valuesManifest = new ContentValues();
+                    People people = new People(jsonRoutes.getJSONObject(i).getString("codigo_pasajero"), jsonRoutes.getJSONObject(i).getString("nombre_pasajero"), jsonRoutes.getJSONObject(i).getString("nacionalidad"), 0);
+                    navieraManifest manifest = new navieraManifest(jsonRoutes.getJSONObject(i).getString("codigo_pasajero"), jsonRoutes.getJSONObject(i).getString("origen"), jsonRoutes.getJSONObject(i).getString("destino"), 0);
                     String doc;
                     doc = people.getDocument();
-                    if(people.getDocument().contains("-"))
-                        doc = doc.substring(0, doc.length()-2);
+                    if (people.getDocument().contains("-"))
+                        doc = doc.substring(0, doc.length() - 2);
                     values.put(PERSON_DOCUMENT, doc);
                     values.put(PERSON_NAME, people.getName());
                     values.put(PERSON_NATIONALITY, people.getNationality());
                     values.put(PERSON_AGE, people.getAge());
-                    values.put(PERSON_ORIGIN, people.getOrigin());
-                    values.put(PERSON_DESTINATION, people.getDestination());
+                    valuesManifest.put(MANIFEST_PEOPLE_ID, doc);
+                    valuesManifest.put(MANIFEST_ORIGIN, manifest.getOrigin());
+                    valuesManifest.put(MANIFEST_DESTINATION, manifest.getDestination());
+                    valuesManifest.put(MANIFEST_ISINSIDE, manifest.getIsInside());
                     Log.d("People content :", people.toString());
                     db1.insert(TABLE_PEOPLE, // table
                             null, //nullColumnHack
                             values); // key/value -> keys = column names/ values = column values
-                    cantPeople=i;
+                    db1.insert(TABLE_MANIFEST, // table
+                            null, //nullColumnHack
+                            valuesManifest); // key/value -> keys = column names/ values = column values
+                    cantPeople = i;
                 }
 
                 db1.setTransactionSuccessful();
@@ -422,11 +439,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             values.put(CONFIG_ROUTE_ID, route);
             values.put(CONFIG_PORT_ID, port);
             values.put(CONFIG_SHIP_ID, transport);
-            values.put(CONFIG_HOUR,hour);
+            values.put(CONFIG_HOUR, hour);
             db1.insert(TABLE_CONFIG, // table
                     null, //nullColumnHack
                     values); // key/value -> keys = column names/ values = column values
-            Log.i("VALUE SETTINGS",route+","+port+","+transport+","+hour);
+            Log.i("VALUE SETTINGS", route + "," + port + "," + transport + "," + hour);
         } finally {
             db1.setTransactionSuccessful();
             db1.endTransaction();
@@ -438,12 +455,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public String validatePerson(String rut) {
         SQLiteDatabase db = this.getReadableDatabase();
         String out = "";
-        try{
+        try {
             Cursor cursor =
                     db.query(TABLE_PEOPLE, // a. table
                             PEOPLE_COLUMS, // b. column names
                             PERSON_DOCUMENT + " = ?", // c. selections
-                            new String[] { String.valueOf(rut)}, // d. selections args
+                            new String[]{String.valueOf(rut)}, // d. selections args
                             null, // e. group by
                             null, // f. having
                             null, // g. order by
@@ -455,7 +472,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     // 3. if we got results get the first one
                     cursor.moveToFirst();
 
-                    Log.d("<<<",cursor.getString(1));
+                    Log.d("<<<", cursor.getString(1));
 
                     // 4. build String
                     out = cursor.getString(1) + "," +
@@ -465,7 +482,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
             cursor.close();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -473,7 +490,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return out;
     }
 
-    public void add_record(Record record){
+    public void add_record(Record record) {
 
         // 1. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
@@ -494,10 +511,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_IS_PERMITTED, record.getPermitted());
 
         // 3. insert
-        try{
+        try {
             db.insert(TABLE_RECORDS, null, values);
-        }catch (SQLException e) {
-            Log.e("DataBase Error", "Error to insert record: "+values);
+        } catch (SQLException e) {
+            Log.e("DataBase Error", "Error to insert record: " + values);
             e.printStackTrace();
         }
 
@@ -505,7 +522,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public List get_desynchronized_records(){
+    public List get_desynchronized_records() {
 
         // 1. get reference to readable DB
         SQLiteDatabase db = this.getReadableDatabase();
@@ -514,7 +531,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor =
                 db.query(TABLE_RECORDS, // a. table
                         RECORDS_COLUMNS, // b. column names
-                        RECORD_SYNC+"=0", // c. selections
+                        RECORD_SYNC + "=0", // c. selections
                         null, // d. selections args
                         null, // e. group by
                         null, // f. having
@@ -527,16 +544,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         while (cursor.isAfterLast() == false) {
             records.add(
-                    cursor.getInt(0)+";"+ //ID
-                            cursor.getString(1)+";"+ //DATETIME
-                            cursor.getString(2)+";"+ //PERSON_DOCUMENT
-                            cursor.getString(3)+";"+ //PERSON_NAME
-                            cursor.getInt(4)+";"+ //ROUTE_ID
-                            cursor.getInt(5)+";"+ //PORT_ID
-                            cursor.getInt(6)+";"+ //SHIP_ID
-                            cursor.getString(7)+";"+ //SAILING_HOUR
-                            cursor.getInt(8)+";"+ //INPUT
-                            cursor.getInt(9)+";"+ //SYNC
+                    cursor.getInt(0) + ";" + //ID
+                            cursor.getString(1) + ";" + //DATETIME
+                            cursor.getString(2) + ";" + //PERSON_DOCUMENT
+                            cursor.getString(3) + ";" + //PERSON_NAME
+                            cursor.getInt(4) + ";" + //ROUTE_ID
+                            cursor.getInt(5) + ";" + //PORT_ID
+                            cursor.getInt(6) + ";" + //SHIP_ID
+                            cursor.getString(7) + ";" + //SAILING_HOUR
+                            cursor.getInt(8) + ";" + //INPUT
+                            cursor.getInt(9) + ";" + //SYNC
                             cursor.getInt(10) //PERMITTED
             );
             cursor.moveToNext();
@@ -549,13 +566,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return records;
     }
 
-    public int record_desync_count(){
+    public int record_desync_count() {
         try {
             SQLiteDatabase db = this.getWritableDatabase();
             Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " +
                     TABLE_RECORDS + " WHERE " + RECORD_SYNC + "=0;", null);
             return cursor.getCount();
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
             return 0;
         }
@@ -573,23 +590,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     values, // column/value
                     RECORD_ID + "=" + id, // where
                     null);
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         // 4. close
         db.close();
-        if(i>0) Log.d("Local Record updated", String.valueOf(id));
+        if (i > 0) Log.d("Local Record updated", String.valueOf(id));
         else Log.e("Error updating record", String.valueOf(id));
     }
 
-    public String getHourSelected(){
+    public String getHourSelected() {
         SQLiteDatabase db = this.getWritableDatabase();
         String hora = "";
         String selectQuery = "SELECT " + TABLE_HOURS + "." + HOUR_NAME + " FROM " + TABLE_HOURS +
                 " INNER JOIN " + TABLE_CONFIG + " ON " +
                 TABLE_HOURS + "." + HOUR_NAME + " = " + TABLE_CONFIG + "." + CONFIG_HOUR + ";";
         try {
-            Cursor c = db.rawQuery(selectQuery, new String[] {  });
+            Cursor c = db.rawQuery(selectQuery, new String[]{});
             if (c.moveToFirst()) {
                 hora = c.getString(c.getColumnIndex(ROUTE_NAME));
             }
@@ -676,7 +693,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         String port = "";
         String selectQuery = "SELECT " + TABLE_PORTS + "." + PORT_ID + " FROM " + TABLE_PORTS +
-                " INNER JOIN " + TABLE_CONFIG + " ON "+
+                " INNER JOIN " + TABLE_CONFIG + " ON " +
                 TABLE_PORTS + "." + PORT_ID + " = " + TABLE_CONFIG + "." + CONFIG_PORT_ID + ";";
         try {
             Cursor c = db.rawQuery(selectQuery, new String[]{});
@@ -694,7 +711,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         String port = "";
         String selectQuery = "SELECT " + TABLE_PORTS + "." + PORT_NAME + " FROM " + TABLE_PORTS +
-                " INNER JOIN " + TABLE_CONFIG + " ON "+
+                " INNER JOIN " + TABLE_CONFIG + " ON " +
                 TABLE_PORTS + "." + PORT_ID + " = " + TABLE_CONFIG + "." + CONFIG_PORT_ID + ";";
         try {
             Cursor c = db.rawQuery(selectQuery, new String[]{});
@@ -706,5 +723,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             e.printStackTrace();
         }
         return port;
+    }
+
+    public void updatePeopleManifest(String rut, int input) {
+        SQLiteDatabase db1 = this.getWritableDatabase();
+            try {
+                db1.beginTransaction();
+                db1.execSQL("update manifest set is_inside='"+input+"'where id_people='"+rut+"'");
+                db1.setTransactionSuccessful();
+            } finally {
+                db1.endTransaction();
+            }
     }
 }

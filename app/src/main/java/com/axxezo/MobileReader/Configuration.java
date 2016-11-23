@@ -220,7 +220,7 @@ public class Configuration extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 if (combobox_hours.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_hours.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from Hours where name=" + "'" + nameElement + "'"));
+                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from Hours  where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerHour = idElementSelected;
                         Log.i("id Log Hours", "----" + selectionSpinnerHour);

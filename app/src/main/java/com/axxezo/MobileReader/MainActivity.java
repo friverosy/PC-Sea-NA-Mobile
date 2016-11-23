@@ -62,28 +62,23 @@ import android.device.ScanManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.util.Log;
-import android.view.View;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -109,7 +104,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener{
@@ -181,6 +175,20 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        // set by default
+        is_input = true;
+        mySwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    is_input = true;
+                } else {
+                    is_input = false;
+                }
+            }
+        });
+
 
         //example API functionality
         //Log.i("getApiRoutes", new getAPIroutes().execute().toString());
@@ -451,7 +459,7 @@ public class MainActivity extends AppCompatActivity
         record.setRoute_id(Integer.parseInt(route));
         record.setSailing_hour(hour);
         db.add_record(record);
-
+        db.updatePeopleManifest(rut,record.getInput());
         new RegisterTask(record).execute();
     }
 
@@ -485,6 +493,7 @@ public class MainActivity extends AppCompatActivity
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         db.add_record(record);
+		db.updatePeopleManifest(rut,record.getInput());
 
         new RegisterTask(record).execute();
     }
