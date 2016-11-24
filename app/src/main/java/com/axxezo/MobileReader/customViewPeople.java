@@ -1,7 +1,9 @@
 package com.axxezo.MobileReader;
 
+import android.graphics.Color;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,8 +31,12 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         holder.people_Name.setText(mDataSet.get(position).getName());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
         holder.people_Nationality.setText(mDataSet.get(position).getNationality());
+        Log.d("custom", mDataSet.get(position).getName());
+        Log.d("custom", String.valueOf(mDataSet.get(position).getIsInside()));
         if (mDataSet.get(position).getIsInside() == 1)
             holder.icon_entry.setBackgroundResource(R.drawable.green_check);
+        else
+            holder.icon_entry.setBackgroundColor(Color.argb(0,255,255,255));
         //call db and ask per people if is in the records
 
 

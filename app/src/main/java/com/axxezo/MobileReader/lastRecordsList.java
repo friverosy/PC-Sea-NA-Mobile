@@ -57,24 +57,21 @@ public class lastRecordsList extends ListActivity {
 
     private void addPersonCards() {
         try {
-            peopleInManifest = 0;
+            peopleInManifest = -1;
             DatabaseHelper dbHelper = new DatabaseHelper(this.getApplicationContext());
             newDB = dbHelper.getReadableDatabase();
-            Cursor c = newDB.rawQuery("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest m left join people p on m.id_people=p.document", null);
+            Cursor c = newDB.rawQuery("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document", null);
             if (c != null) {
                 if (c.moveToFirst()) {
                     do {
-                        String DNI = c.getString(c.getColumnIndex("m.id_people"));
-                        String Name = c.getString(c.getColumnIndex("p.name"));
-                        String nationality = c.getString(c.getColumnIndex("p.nationality"));
-                        int isInput = c.getInt(c.getColumnIndex("p.is_inside"));
+                        String DNI = c.getString(c.getColumnIndex("id_people"));
+                        String Name = c.getString(c.getColumnIndex("name"));
+                        String nationality = c.getString(c.getColumnIndex("nationality"));
+                        int isInput = c.getInt(c.getColumnIndex("is_inside"));
                         // String origin = c.getString(c.getColumnIndex("origin"));
                         // String destination = c.getString(c.getColumnIndex("destination"));
-
                         users.add(new Cards(DNI, Name, isInput, nationality));
                         peopleInManifest++;
-
-
                     } while (c.moveToNext());
                 }
             }

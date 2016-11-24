@@ -99,7 +99,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PERSON_DOCUMENT + " TEXT, " +
             PERSON_NAME + " TEXT, " + PERSON_NATIONALITY + " TEXT, " +
-            PERSON_AGE + " INTEGER); ";
+            PERSON_AGE + " INTEGER," +
+            "CONSTRAINT "+PERSON_DOCUMENT+" UNIQUE ("+PERSON_DOCUMENT+")); ";
 
     String CREATE_MANIFEST_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MANIFEST + " ( " +
             MANIFEST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -190,14 +191,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             try {
                 db1.beginTransaction();
                 Log.d("--add route", String.valueOf(db1.isOpen()));
-                db1.execSQL("DROP TABLE IF EXISTS routes");
-                db1.execSQL(CREATE_ROUTES_TABLE);
+
+                db1.delete(TABLE_ROUTES,null,null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
                     Routes routes = new Routes(jsonRoutes.getJSONObject(i).getInt("id_ruta"), jsonRoutes.getJSONObject(i).getString("nombre_ruta"));
                     values.put(ROUTE_ID, routes.getID());
-                    values.put(ROUTE_NAME, routes.getName());
+                    values.put(ROUTE_NAME, routes.getName().trim());
                     Log.d("Routes content :", routes.toString());
                     db1.insert(TABLE_ROUTES, // table
                             null, //nullColumnHack
@@ -211,7 +212,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-
+        db1.close();
     }
 
     public void insertPortsDB(String json) throws JSONException {
@@ -224,14 +225,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             try {
                 db1.beginTransaction();
                 Log.d("--add ports", String.valueOf(db1.isOpen()));
-                db1.execSQL("DROP TABLE IF EXISTS ports");
-                db1.execSQL(CREATE_PORTS_TABLE);
+
+                db1.delete(TABLE_PORTS,null,null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
                     Ports port = new Ports(jsonRoutes.getJSONObject(i).getInt("id_ubicacion"), jsonRoutes.getJSONObject(i).getString("nombre_ubicacion"));
                     values.put(PORT_ID, port.getId());
-                    values.put(PORT_NAME, port.getName());
+                    values.put(PORT_NAME, port.getName().trim());
                     Log.d("Ports content :", port.toString());
                     db1.insert(TABLE_PORTS, // table
                             null, //nullColumnHack
@@ -245,7 +246,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-
+        db1.close();
     }
 
     public void insertShipsDB(String json) throws JSONException {
@@ -258,14 +259,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             try {
                 db1.beginTransaction();
                 Log.d("--add transports", String.valueOf(db1.isOpen()));
-                db1.execSQL("DROP TABLE IF EXISTS ships");
-                db1.execSQL(CREATE_TRANSPORTS_TABLE);
+
+                db1.delete(TABLE_SHIPS,null,null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
                     Ships port = new Ships(jsonRoutes.getJSONObject(i).getInt("id_transporte"), jsonRoutes.getJSONObject(i).getString("nombre_transporte"));
                     values.put(SHIP_ID, port.getID());
-                    values.put(SHIP_NAME, port.getName());
+                    values.put(SHIP_NAME, port.getName().trim());
                     Log.d("Ships content :", port.toString());
                     db1.insert(TABLE_SHIPS, // table
                             null, //nullColumnHack
@@ -279,7 +280,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-
+        db1.close();
     }
 
     public void insertHoursDB(String json) throws JSONException {
@@ -292,13 +293,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             try {
                 db1.beginTransaction();
                 Log.d("--add Hours", String.valueOf(db1.isOpen()));
-                db1.execSQL("DROP TABLE IF EXISTS hours");
-                db1.execSQL(CREATE_HOURS_TABLE);
+
+                db1.delete(TABLE_HOURS,null,null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
                     Hours hours = new Hours(jsonRoutes.getJSONObject(i).getString("horas"));
-                    values.put(HOUR_NAME, hours.getName());
+                    values.put(HOUR_NAME, hours.getName().trim());
                     Log.d("Hours content :", hours.toString());
                     db1.insert(TABLE_HOURS, // table
                             null, //nullColumnHack
@@ -312,49 +313,48 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-
+        db1.close();
     }
 
     public int insertManifestDB(String json) throws JSONException {
         int cantPeople = 0;
         SQLiteDatabase db1 = this.getWritableDatabase();
         JSONObject objectJson;
-        JSONArray jsonRoutes;
+        JSONArray jsonManifest;
         if (!json.isEmpty()) {
             objectJson = new JSONObject(json);
-            jsonRoutes = objectJson.getJSONArray("manifiesto_pasajero");
+            jsonManifest = objectJson.getJSONArray("manifiesto_pasajero");
             try {
+                db1.delete(TABLE_MANIFEST,null,null);
                 db1.beginTransaction();
-                Log.d("--add Manifest", String.valueOf(db1.isOpen()));
-                //
-                //db1.execSQL("DROP TABLE IF EXISTS people");
-                //db1.execSQL(CREATE_PEOPLE_TABLE);
-                db1.execSQL("DROP TABLE IF EXISTS manifest");
-                db1.execSQL(CREATE_MANIFEST_TABLE);
-
-                for (int i = 0; i < jsonRoutes.length(); i++) {
-                    Log.d("People content :", "= " + jsonRoutes.length());
+                for (int i = 0; i < jsonManifest.length(); i++) {
+                    Log.d("for", String.valueOf(i));
                     cantPeople++;
-                    ContentValues values = new ContentValues();
+                    ContentValues valuesPerson = new ContentValues();
                     ContentValues valuesManifest = new ContentValues();
-                    People people = new People(jsonRoutes.getJSONObject(i).getString("codigo_pasajero"), jsonRoutes.getJSONObject(i).getString("nombre_pasajero"), jsonRoutes.getJSONObject(i).getString("nacionalidad"), 0);
-                    navieraManifest manifest = new navieraManifest(jsonRoutes.getJSONObject(i).getString("codigo_pasajero"), jsonRoutes.getJSONObject(i).getString("origen"), jsonRoutes.getJSONObject(i).getString("destino"), 0);
+
+                    People people = new People(jsonManifest.getJSONObject(i).getString("codigo_pasajero"), jsonManifest.getJSONObject(i).getString("nombre_pasajero"), jsonManifest.getJSONObject(i).getString("nacionalidad"), 0);
+                    navieraManifest manifest = new navieraManifest(jsonManifest.getJSONObject(i).getString("codigo_pasajero"), jsonManifest.getJSONObject(i).getString("origen"), jsonManifest.getJSONObject(i).getString("destino"), 0);
+
                     String doc;
                     doc = people.getDocument();
                     if (people.getDocument().contains("-"))
                         doc = doc.substring(0, doc.length() - 2);
-                    values.put(PERSON_DOCUMENT, doc);
-                    values.put(PERSON_NAME, people.getName());
-                    values.put(PERSON_NATIONALITY, people.getNationality());
-                    values.put(PERSON_AGE, people.getAge());
+
+                    valuesPerson.put(PERSON_DOCUMENT, doc);
+                    valuesPerson.put(PERSON_NAME, people.getName().trim());
+                    valuesPerson.put(PERSON_NATIONALITY, people.getNationality());
+                    valuesPerson.put(PERSON_AGE, people.getAge());
+
                     valuesManifest.put(MANIFEST_PEOPLE_ID, doc);
                     valuesManifest.put(MANIFEST_ORIGIN, manifest.getOrigin());
                     valuesManifest.put(MANIFEST_DESTINATION, manifest.getDestination());
                     valuesManifest.put(MANIFEST_ISINSIDE, manifest.getIsInside());
-                    Log.d("People content :", people.toString());
+
                     db1.insert(TABLE_PEOPLE, // table
                             null, //nullColumnHack
-                            values); // key/value -> keys = column names/ values = column values
+                            valuesPerson); // key/value -> keys = column names/ values = column values
+                    //db1.update(TABLE_MANIFEST,valuesManifest, "id_people="+people.getDocument().trim(),null);
                     db1.insert(TABLE_MANIFEST, // table
                             null, //nullColumnHack
                             valuesManifest); // key/value -> keys = column names/ values = column values
@@ -362,15 +362,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
 
                 db1.setTransactionSuccessful();
+                Log.d("total manifiesto", String.valueOf(manifest_count()));
             } catch (JSONException e) {
                 e.printStackTrace();
+            } catch (SQLException sqle){
+                sqle.printStackTrace();
             } finally {
                 db1.endTransaction();
             }
         } else
             Log.i("error", "Json empty!");
+        db1.close();
         return cantPeople;
 
+    }
+
+    public int manifest_count(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + MANIFEST_ID + " FROM "+TABLE_MANIFEST+";", null);
+        db.close();
+        return cursor.getCount();
     }
 
     public ArrayList<String> getListFromDB(String table) {
@@ -396,6 +407,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.moveToFirst();
         firstElement = cursor.getString(0);
         Log.i("first element", "-----" + firstElement);
+        db.close();
         return firstElement;
     }
 
@@ -425,8 +437,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } finally {
             db1.setTransactionSuccessful();
             db1.endTransaction();
-
         }
+        db1.close();
     }
 
     public void insertSettingsValues(int route, int port, int transport, String hour) {
@@ -447,8 +459,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } finally {
             db1.setTransactionSuccessful();
             db1.endTransaction();
-
         }
+        db1.close();
     }
 
     //cris
@@ -567,10 +579,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public int record_desync_count() {
+        SQLiteDatabase db = this.getWritableDatabase();
         try {
-            SQLiteDatabase db = this.getWritableDatabase();
             Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " +
                     TABLE_RECORDS + " WHERE " + RECORD_SYNC + "=0;", null);
+            db.close();
             return cursor.getCount();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -614,6 +627,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        db.close();
         return hora;
     }
 
@@ -632,6 +646,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        db.close();
         return ship;
     }
 
@@ -650,6 +665,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        db.close();
         return ship;
     }
 
@@ -668,6 +684,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        db.close();
         return route;
     }
 
@@ -686,6 +703,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        db.close();
         return route;
     }
 
@@ -704,6 +722,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        db.close();
         return port;
     }
 
@@ -722,17 +741,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        db.close();
         return port;
     }
 
     public void updatePeopleManifest(String rut, int input) {
-        SQLiteDatabase db1 = this.getWritableDatabase();
-            try {
-                db1.beginTransaction();
-                db1.execSQL("update manifest set is_inside='"+input+"'where id_people='"+rut+"'");
-                db1.setTransactionSuccessful();
-            } finally {
-                db1.endTransaction();
-            }
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues valores = new ContentValues();
+            valores.put("is_inside", input);
+            db.update(TABLE_MANIFEST, valores, "id_people="+rut, null);
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        db.close();
     }
 }

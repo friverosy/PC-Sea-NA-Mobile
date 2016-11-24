@@ -301,9 +301,6 @@ public class Configuration extends AppCompatActivity {
             return getInformation;
         }
 
-        protected void onPostExecute(String result) {
-        }
-
         @Override
         public String toString() {
             return getInformation + "";
@@ -387,8 +384,6 @@ public class Configuration extends AppCompatActivity {
             transports = id_transpot;
             Date = date;
             Hour = hour;
-
-
         }
 
         @Override
@@ -414,6 +409,7 @@ public class Configuration extends AppCompatActivity {
     */
     public String getRoutes(String Url, String Token) throws IOException {
         URL url = new URL(Url + "/routes");
+        Log.d("get routes", url.toString());
         String content = null;
         HttpURLConnection conn = null;
         try {
@@ -446,6 +442,7 @@ public class Configuration extends AppCompatActivity {
 
     public String getPorts(String Url, String Token, int ID_route) throws IOException {
         URL url = new URL(Url + "/ports?route=" + ID_route);
+        Log.d("get ports", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -479,13 +476,14 @@ public class Configuration extends AppCompatActivity {
     public String getTransports(String Url, String Token, int ID_route, int ID_port, String date) throws IOException {
         //String date must be in format yyyy-MM-dd
         URL url = new URL(Url + "/transports?route=" + ID_route + "&date=" + date + "&port=" + ID_port);
+        Log.d("get ships", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("TOKEN", Token);
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
+            conn.setConnectTimeout(4000);
             conn.connect();
 
             int connStatus = conn.getResponseCode();
@@ -512,13 +510,14 @@ public class Configuration extends AppCompatActivity {
     public String getHours(String Url, String Token, int ID_route, int ID_port, String date, int ID_transport) throws IOException {
         //String date must be in format yyyy-MM-dd
         URL url = new URL(Url + "/hours?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport);
+        Log.d("get hours", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("TOKEN", Token);
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
+            conn.setConnectTimeout(4000);
             conn.connect();
 
             int connStatus = conn.getResponseCode();
@@ -528,9 +527,9 @@ public class Configuration extends AppCompatActivity {
             } else
                 content = convertInputStreamToString(getData);
         } catch (MalformedURLException me) {
-
+            me.printStackTrace();
         } catch (IOException ioe) {
-
+            ioe.printStackTrace();
         }
         if (conn != null) {
             conn.disconnect();
@@ -546,6 +545,7 @@ public class Configuration extends AppCompatActivity {
         //String date must be in format yyyy-MM-dd
         //String hour must be in format HH-dd
         URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
+        Log.d("get manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {

@@ -275,6 +275,7 @@ public class MainActivity extends AppCompatActivity
                 if (barcodeStr.contains("client_code")){
                     // Its a ticket
                     try {
+                        Log.d("barcode", barcodeStr);
                         JSONObject json = new JSONObject(barcodeStr);
                         String doc = json.getString("client_code");
                         doc = doc.substring(0, doc.length() - 2);
