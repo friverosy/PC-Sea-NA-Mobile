@@ -495,6 +495,7 @@ public class MainActivity extends AppCompatActivity
         record.setSync(0);
         db.add_record(record);
 		db.updatePeopleManifest(rut,record.getInput());
+        db.close();
 
         new RegisterTask(record).execute();
     }
@@ -518,6 +519,7 @@ public class MainActivity extends AppCompatActivity
 
     public void OfflineRecordsSynchronizer() {
         List records = db.get_desynchronized_records();
+        db.close();
 
         String[] arr;
         for (int i = 0; i <= records.size() - 1; i++) {
@@ -593,6 +595,7 @@ public class MainActivity extends AppCompatActivity
                             if (record.getSync() == 0) {
                                 Log.d("---", "going into update record");
                                 db.update_record(record.getId());
+                                db.close();
                             }
                         }
                     } else {
