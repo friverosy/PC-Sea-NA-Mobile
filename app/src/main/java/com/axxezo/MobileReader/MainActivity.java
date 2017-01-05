@@ -452,7 +452,7 @@ public class MainActivity extends AppCompatActivity
         record.setPerson_document(rut);
         record.setPerson_name(TextViewFullname.getText().toString());
         if (is_input) record.setInput(1);
-        else record.setInput(0);
+        else record.setInput(2);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         record.setPort_id(Integer.parseInt(port));
@@ -490,7 +490,7 @@ public class MainActivity extends AppCompatActivity
         else record.setPerson_name(TextViewFullname.getText().toString());
 
         if (is_input) record.setInput(1);
-        else record.setInput(0);
+        else record.setInput(2);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         db.add_record(record);

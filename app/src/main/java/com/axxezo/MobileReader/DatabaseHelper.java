@@ -107,7 +107,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             MANIFEST_PEOPLE_ID + " TEXT, " +
             MANIFEST_ORIGIN + " TEXT, " +
             MANIFEST_DESTINATION + " TEXT," +
-            MANIFEST_ISINSIDE + " INTEGER); ";
+            MANIFEST_ISINSIDE + " INTEGER DEFAULT 0); ";
 
     String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
@@ -755,4 +755,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         db.close();
     }
+    public ArrayList<String> selectFromDB(String select, String split) {
+        ArrayList<String> list = new ArrayList<String>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(select, null);
+        cursor.moveToFirst();
+        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+            int i = 0;
+            String row = "";
+            while (i < cursor.getColumnCount()) {
+                row = row + cursor.getString(i) + split;
+                i++;
+            }
+            list.add(row);
+        }
+        db.close();
+        return list;
+
+    }
+
 }

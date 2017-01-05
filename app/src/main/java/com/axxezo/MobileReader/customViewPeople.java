@@ -31,12 +31,24 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         holder.people_Name.setText(mDataSet.get(position).getName());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
         holder.people_Nationality.setText(mDataSet.get(position).getNationality());
-        Log.d("custom", mDataSet.get(position).getName());
-        Log.d("custom", String.valueOf(mDataSet.get(position).getIsInside()));
-        if (mDataSet.get(position).getIsInside() == 1)
-            holder.icon_entry.setBackgroundResource(R.drawable.green_check);
-        else
-            holder.icon_entry.setBackgroundColor(Color.argb(0,255,255,255));
+//        Log.d("custom", mDataSet.get(position).getName());
+  //      Log.d("custom", String.valueOf(mDataSet.get(position).getIsInside()));
+        switch (mDataSet.get(position).getIsInside()){
+            case 0:
+                holder.icon_entry.setBackgroundColor(Color.argb(0, 255, 255, 255));
+                break;
+            case 1:
+                holder.icon_entry.setBackgroundResource(R.drawable.inside_icon);
+                break;
+            case 2:
+                holder.icon_entry.setBackgroundResource(R.drawable.outside_icon);
+
+        }
+        /*if (mDataSet.get(position).getIsInside() == 1)
+            holder.icon_entry.setBackgroundResource(R.drawable.img_true);
+        else if (mDataSet.get(position).getIsInside() == 2)
+            holder.icon_entry.setBackgroundResource(R.drawable.);
+            holder.icon_entry.setBackgroundColor(Color.argb(0, 255, 255, 255));*/
         //call db and ask per people if is in the records
 
 

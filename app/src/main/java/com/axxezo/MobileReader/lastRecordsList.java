@@ -18,11 +18,15 @@ import java.util.ArrayList;
 
 public class lastRecordsList extends ListActivity {
     private SQLiteDatabase newDB;
+    private DatabaseHelper db;
     private RecyclerView recyclerView;
     private LinearLayoutManager layoutManager;
     private ArrayList<Cards> users;
     private customViewPeople adapter;
-    private int peopleInManifest;
+    private int manifestCount;
+    private int PendingCount;
+    private int EmbarkedCount;
+    private int LandedCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,13 +40,17 @@ public class lastRecordsList extends ListActivity {
         adapter = new customViewPeople(users);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
+        db=new DatabaseHelper(this);
         addPersonCards();
+        getStatusFromManifest();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String text = "Total Manifiesto: " + peopleInManifest + "\n" +
-                        "Embarcados: " + "Desembarcados: ";
+                String text = "Total Manifiesto: " + manifestCount +
+                        " Embarcados: "+EmbarkedCount +
+                        " Desembarcados: "+LandedCount+
+                        " Pendientes : "+PendingCount;
                 Snackbar snack = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null);
                 View view1 = snack.getView();
@@ -57,7 +65,7 @@ public class lastRecordsList extends ListActivity {
 
     private void addPersonCards() {
         try {
-            peopleInManifest = -1;
+            manifestCount = -1;
             DatabaseHelper dbHelper = new DatabaseHelper(this.getApplicationContext());
             newDB = dbHelper.getReadableDatabase();
             Cursor c = newDB.rawQuery("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document", null);
@@ -71,7 +79,7 @@ public class lastRecordsList extends ListActivity {
                         // String origin = c.getString(c.getColumnIndex("origin"));
                         // String destination = c.getString(c.getColumnIndex("destination"));
                         users.add(new Cards(DNI, Name, isInput, nationality));
-                        peopleInManifest++;
+                        manifestCount++;
                     } while (c.moveToNext());
                 }
             }
@@ -103,13 +111,24 @@ public class lastRecordsList extends ListActivity {
             }
         }
         return isInput;
-    }
-    public String getCurrentDate() {
-        Calendar cal = Calendar.getInstance();
-        Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("yyyy-MM-dd");
-        String localTime = date.format(currentLocalTime);
-        return localTime;
     }*/
+    public void getStatusFromManifest(){
+        ArrayList<String> select_counts= db.selectFromDB("select (select count(*) from manifest),(select count(*) from people)," +
+                "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
+                "(select count(*) from manifest where is_inside=2)","|");
+        if(select_counts.size()>0){
+            String[] binnacle_param_id = select_counts.get(0).split("\\|");
+            manifestCount=Integer.parseInt(binnacle_param_id[0]);
+            PendingCount=Integer.parseInt(binnacle_param_id[2]);
+            EmbarkedCount=Integer.parseInt(binnacle_param_id[3]);
+            LandedCount=Integer.parseInt(binnacle_param_id[4]);
+            /*if(binnacle_param_id[0].equals(binnacle_param_id[1])){
+                Toast.makeText(this,"La tabla Manifest y la tabla People poseen el mismo tamaño",Toast.LENGTH_LONG).show();
+            }else
+                Toast.makeText(this,"La tabla Manifest y la tabla People NO poseen el mismo tamaño",Toast.LENGTH_LONG).show();
+                */
+        }
+
+    }
 
 }
