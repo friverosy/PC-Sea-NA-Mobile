@@ -106,7 +106,7 @@ import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener{
+        implements NavigationView.OnNavigationItemSelectedListener {
 
 
     private String URL = "http://ticket.bsale.cl/control_api";
@@ -227,16 +227,16 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        int id=item.getItemId();
-        if(id==R.id.nav_settings){
+        int id = item.getItemId();
+        if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, Configuration.class);
             startActivity(intent);
         }
-        if(id==R.id.nav_records){
+        if (id == R.id.nav_records) {
             Intent intent = new Intent(this, lastRecordsList.class);
             startActivity(intent);
         }
-        if(id==R.id.nav_find){
+        if (id == R.id.nav_find) {
             Intent intent = new Intent(this, find_people_in_manifest.class);
             startActivity(intent);
         }
@@ -247,6 +247,7 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
     private BroadcastReceiver mScanReceiver = new BroadcastReceiver() {
 
         @Override
@@ -269,14 +270,14 @@ public class MainActivity extends AppCompatActivity
             Log.i("codetype", String.valueOf(barcodeType));
             barcodeStr = new String(barcode, 0, barocodelen);
             String rawCode = barcodeStr;
-            writeLog("Raw Code:",rawCode);
+            writeLog("Raw Code:", rawCode);
             Log.d("---", rawCode);
 
             int flag = 0; // 0 for end without k, 1 with k
             Person person = new Person();
 
             if (barcodeType == 28) { // QR code
-                if (barcodeStr.contains("client_code")){
+                if (barcodeStr.contains("client_code")) {
                     // Its a ticket
                     try {
                         Log.d("barcode", barcodeStr);
@@ -285,7 +286,7 @@ public class MainActivity extends AppCompatActivity
                         doc = doc.substring(0, doc.length() - 2);
                         person.setDocument(doc);
                         barcodeStr = doc;
-                        ticketValidator(doc,json.getString("route"),json.getString("port"),json.getString("date"),json.getString("hour"),json.getString("transport"));
+                        ticketValidator(doc, json.getString("route"), json.getString("port"), json.getString("date"), json.getString("hour"), json.getString("transport"));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -429,7 +430,7 @@ public class MainActivity extends AppCompatActivity
                     if (port.equals(db.getPortSelected()))
                         if (ship.equals(db.getShipSelected())) {
                             person = db.validatePerson(rut);
-                            if(!person.isEmpty())
+                            if (!person.isEmpty())
                                 valid = true;
                             else TextViewStatus.setText("PERSONA NO ENCONTRADA EN EL MANIFIESTO");
                         } else TextViewStatus.setText("NAVE NO CORRESPONDE");
@@ -464,7 +465,7 @@ public class MainActivity extends AppCompatActivity
         record.setRoute_id(Integer.parseInt(route));
         record.setSailing_hour(hour);
         db.add_record(record);
-        db.updatePeopleManifest(rut,record.getInput());
+        db.updatePeopleManifest(rut, record.getInput());
         new RegisterTask(record).execute();
     }
 
@@ -489,8 +490,9 @@ public class MainActivity extends AppCompatActivity
         }
 
         record.setPerson_document(rut);
-
-        if (TextViewFullname.getText().equals("NO ESTA EN EL MANIFIESTO")) record.setPerson_name("");
+        Log.i("manifest", TextViewFullname.getText().toString());
+        if (TextViewFullname.getText().equals("NO ESTA EN EL MANIFIESTO"))
+            record.setPerson_name("");
         else record.setPerson_name(TextViewFullname.getText().toString());
 
         if (is_input) record.setInput(1);
@@ -498,8 +500,8 @@ public class MainActivity extends AppCompatActivity
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         db.add_record(record);
-		db.updatePeopleManifest(rut,record.getInput());
-        db.close();
+        db.updatePeopleManifest(rut, record.getInput());
+        //db.close();
 
         new RegisterTask(record).execute();
     }
@@ -523,7 +525,7 @@ public class MainActivity extends AppCompatActivity
 
     public void OfflineRecordsSynchronizer() {
         List records = db.get_desynchronized_records();
-        db.close();
+        //db.close();
 
         String[] arr;
         for (int i = 0; i <= records.size() - 1; i++) {
@@ -599,7 +601,7 @@ public class MainActivity extends AppCompatActivity
                             if (record.getSync() == 0) {
                                 Log.d("---", "going into update record");
                                 db.update_record(record.getId());
-                                db.close();
+                               // db.close();
                             }
                         }
                     } else {
@@ -620,7 +622,7 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         } catch (Exception e) {
-            Log.d("---","offline");
+            Log.d("---", "offline");
         }
         // 11. return result
         return result;

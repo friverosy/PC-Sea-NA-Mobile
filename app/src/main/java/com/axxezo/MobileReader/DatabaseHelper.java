@@ -212,7 +212,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-        db.close();
+        //db.close();
     }
 
     public void insertPortsDB(String json) throws JSONException {
@@ -280,7 +280,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-        db.close();
+        //db.close();
     }
 
     public void insertHoursDB(String json) throws JSONException {
@@ -313,7 +313,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-        db.close();
+       // db.close();
     }
 
     public int insertManifestDB(String json) throws JSONException {
@@ -372,7 +372,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-        db.close();
+        //db.close();
         return cantPeople;
 
     }
@@ -395,7 +395,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             list.add(cursor.getString(1));
         }
         Log.i("list String", "List: " + list.toString());
-        db.close();
+        //db.close();
         return list;
     }
 
@@ -406,7 +406,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.moveToFirst();
         firstElement = cursor.getString(0);
         Log.i("first element", "-----" + firstElement);
-        db.close();
+        //db.close();
         return firstElement;
     }
 
@@ -437,7 +437,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.setTransactionSuccessful();
             db.endTransaction();
         }
-        db.close();
+        //db.close();
     }
 
     public void insertSettingsValues(int route, int port, int transport, String hour) {
@@ -459,7 +459,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.setTransactionSuccessful();
             db.endTransaction();
         }
-        db.close();
+        //db.close();
     }
 
     //cris
@@ -497,7 +497,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             e.printStackTrace();
         }
 
-        db.close();
+        //db.close();
         return out;
     }
 
@@ -530,7 +530,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         // 4. close
-        db.close();
+       // db.close();
     }
 
     public List get_desynchronized_records() {
@@ -571,7 +571,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         cursor.close();
-        db.close();
+        //db.close();
 
         // 5. return
         return records;
@@ -582,7 +582,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " +
                     TABLE_RECORDS + " WHERE " + RECORD_SYNC + "=0;", null);
-            db.close();
+            //db.close();
             return cursor.getCount();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -606,7 +606,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             e.printStackTrace();
         }
         // 4. close
-        db.close();
+        //db.close();
         if (i > 0) Log.d("Local Record updated", String.valueOf(id));
         else Log.e("Error updating record", String.valueOf(id));
     }
@@ -626,7 +626,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        db.close();
+        //db.close();
         return hora;
     }
 
@@ -645,7 +645,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        db.close();
+        //db.close();
         return ship;
     }
 
@@ -664,7 +664,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        db.close();
+        //db.close();
         return ship;
     }
 
@@ -683,7 +683,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        db.close();
+       // db.close();
         return route;
     }
 
@@ -702,7 +702,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        db.close();
+        //db.close();
         return route;
     }
 
@@ -721,7 +721,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        db.close();
+       // db.close();
         return port;
     }
 
@@ -740,7 +740,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        db.close();
+       // db.close();
         return port;
     }
 
@@ -753,7 +753,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e){
             e.printStackTrace();
         }
-        db.close();
+        //db.close();
     }
     public ArrayList<String> selectFromDB(String select, String split) {
         ArrayList<String> list = new ArrayList<String>();
@@ -769,7 +769,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             list.add(row);
         }
-        db.close();
+        //db.close();
         return list;
 
     }
