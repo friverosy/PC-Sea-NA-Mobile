@@ -32,7 +32,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
         holder.people_Nationality.setText(mDataSet.get(position).getNationality());
 //        Log.d("custom", mDataSet.get(position).getName());
-  //      Log.d("custom", String.valueOf(mDataSet.get(position).getIsInside()));
+// Log.d("custom", String.valueOf(mDataSet.get(position).getIsInside()));
         switch (mDataSet.get(position).getIsInside()){
             case 0:
                 holder.icon_entry.setBackgroundColor(Color.argb(0, 255, 255, 255));
@@ -42,6 +42,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
                 break;
             case 2:
                 holder.icon_entry.setBackgroundResource(R.drawable.outside_icon);
+                break;
 
         }
         /*if (mDataSet.get(position).getIsInside() == 1)

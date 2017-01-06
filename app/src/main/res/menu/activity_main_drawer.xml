@@ -18,6 +18,10 @@
             android:icon="@drawable/ic_menu_gallery"
             android:title="@string/action_aboutUs" />
         <item
+            android:id="@+id/nav_find"
+            android:icon="@drawable/find_section"
+            android:title="@string/action_find" />
+        <item
             android:id="@+id/nav_exit"
             android:icon="@drawable/exit_icon"
             android:title="@string/action_exit" />

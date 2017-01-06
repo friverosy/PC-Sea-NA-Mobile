@@ -16,4 +16,7 @@
     <string name="title_activity_setting">Configuración</string>
     <string name="title_activity_last_records_list">Ultimos Registros</string>
     <string name="title_activity_configuration">Configuración</string>
+    <string name="title_activity_find_people_in_manifest">find_people_in_manifest</string>
+    <string name="action_find">Buscar</string>
+    <string name="title_find">Buscar en Manifiesto</string>
 </resources>

@@ -236,6 +236,10 @@ public class MainActivity extends AppCompatActivity
             Intent intent = new Intent(this, lastRecordsList.class);
             startActivity(intent);
         }
+        if(id==R.id.nav_find){
+            Intent intent = new Intent(this, find_people_in_manifest.class);
+            startActivity(intent);
+        }
 
 
         // then close the drawer Layout
