@@ -956,4 +956,5 @@ public class MainActivity extends AppCompatActivity
         inputStream.close();
         return result;
     }
+
 }

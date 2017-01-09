@@ -1,10 +1,14 @@
 package com.axxezo.MobileReader;
 
+import android.app.Application;
+import android.content.Context;
+import android.speech.tts.TextToSpeech;
+
 /**
  * Created by jmora on 21/11/2016.
  */
 
-public class navieraManifest {
+public class navieraManifest{
 
     private String people_id;
     private String origin;

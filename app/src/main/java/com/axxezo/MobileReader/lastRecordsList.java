@@ -113,15 +113,15 @@ public class lastRecordsList extends ListActivity {
         return isInput;
     }*/
     public void getStatusFromManifest(){
-        ArrayList<String> select_counts= db.selectFromDB("select (select count(*) from manifest),(select count(*) from people)," +
+        ArrayList<String> select_counts= db.selectFromDB("select (select count(*) from manifest)," +
                 "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
                 "(select count(*) from manifest where is_inside=2)","|");
         if(select_counts.size()>0){
             String[] binnacle_param_id = select_counts.get(0).split("\\|");
             manifestCount=Integer.parseInt(binnacle_param_id[0]);
-            PendingCount=Integer.parseInt(binnacle_param_id[2]);
-            EmbarkedCount=Integer.parseInt(binnacle_param_id[3]);
-            LandedCount=Integer.parseInt(binnacle_param_id[4]);
+            PendingCount=Integer.parseInt(binnacle_param_id[1]);
+            EmbarkedCount=Integer.parseInt(binnacle_param_id[2]);
+            LandedCount=Integer.parseInt(binnacle_param_id[3]);
             /*if(binnacle_param_id[0].equals(binnacle_param_id[1])){
                 Toast.makeText(this,"La tabla Manifest y la tabla People poseen el mismo tamaño",Toast.LENGTH_LONG).show();
             }else
