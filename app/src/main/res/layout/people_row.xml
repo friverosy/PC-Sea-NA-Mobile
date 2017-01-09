@@ -37,7 +37,7 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_margin="5dp"
-                android:background="@drawable/circular_textview"
+                android:background="@drawable/circular_textview_embarked"
                 android:fontFamily="sans-serif-thin"
                 android:gravity="center"
                 android:textAllCaps="true"

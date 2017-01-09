@@ -83,6 +83,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
     private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ROUTE_ID, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED};
+    private static final String[] MANIFEST_COLUMNS={MANIFEST_ID,MANIFEST_PEOPLE_ID,MANIFEST_ORIGIN,MANIFEST_DESTINATION,MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
     private static final String[] TRANSPORTS_COLUMNS = {SHIP_ID, SHIP_NAME};
@@ -326,6 +327,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             jsonManifest = objectJson.getJSONArray("manifiesto_pasajero");
             try {
                 db.delete(TABLE_MANIFEST,null,null);
+                db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                 //db.beginTransaction();
                 for (int i = 0; i < jsonManifest.length(); i++) {
                     Log.d("for", String.valueOf(i));
@@ -464,41 +466,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //cris
     public String validatePerson(String rut) {
+        //return the person data if this person is in manifest table
+        ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
-        String out = "";
-        try {
-            Cursor cursor =
-                    db.query(TABLE_PEOPLE, // a. table
-                            PEOPLE_COLUMS, // b. column names
-                            PERSON_DOCUMENT + " = ?", // c. selections
-                            new String[]{String.valueOf(rut)}, // d. selections args
-                            null, // e. group by
-                            null, // f. having
-                            null, // g. order by
-                            null); // h. limit
-            if (cursor != null) {
-                if (!(cursor.moveToFirst()) || cursor.getCount() == 0) {
-                    //cursor is empty
-                } else {
-                    // 3. if we got results get the first one
-                    cursor.moveToFirst();
-
-                    Log.d("<<<", cursor.getString(1));
-
-                    // 4. build String
-                    out = cursor.getString(1) + "," +
-                            cursor.getString(2) + "," +
-                            cursor.getString(3) + "," +
-                            cursor.getInt(4);
-                }
+        Cursor cursor = db.rawQuery("select m.id_people,p.name from manifest as m left join people as p on m.id_people=p.document where m.id_people='"+rut+"'", null);
+        cursor.moveToFirst();
+        String row = "";
+        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+            int i = 0;
+            while (i < cursor.getColumnCount()) {
+                row = row + cursor.getString(i) + ",";
+                i++;
             }
-            cursor.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+            list.add(row);
         }
-
         //db.close();
-        return out;
+        return row;
     }
 
     public void add_record(Record record) {

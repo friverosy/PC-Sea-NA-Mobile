@@ -1,20 +1,15 @@
 package com.axxezo.MobileReader;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 
@@ -56,18 +51,21 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         switch (mDataSet.get(position).getIsInside()) {
             case 0:
                 holder.icon_entry.setText("");
-                holder.icon_entry.setBackgroundColor(Color.WHITE);
-                /*Drawable mDrawable = this.getResources().getDrawable(R.drawable.circular_textview);
-                mDrawable.setColorFilter(new
-                        PorterDuffColorFilter(Color.BLUE, PorterDuff.Mode.MULTIPLY));*/
+                //holder.icon_entry.setBackgroundColor(Color.WHITE);
+                /*Drawable mDrawable = holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_embarked);
+                mDrawable.mutate().setColorFilter(new
+                        PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.MULTIPLY));
+                        */
+                holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_blank));
                 break;
             case 1:
                 holder.icon_entry.setText("E");
-                holder.icon_entry.setBackgroundColor(Color.GREEN);
+                //holder.icon_entry.setBackground(R.drawable.circular_textview_embarked);
+                holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_embarked));
                 break;
             case 2:
-                holder.icon_entry.setText("S");
-                holder.icon_entry.setBackgroundColor(Color.BLACK);
+                holder.icon_entry.setText("D");
+                holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_landed));
                 break;
 
             //  holder.icon_entry.setText("");

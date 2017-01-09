@@ -19,4 +19,6 @@
     <string name="title_activity_find_people_in_manifest">find_people_in_manifest</string>
     <string name="action_find">Buscar</string>
     <string name="title_find">Buscar en Manifiesto</string>
+    <string name="manifiest">Manifiesto</string>
+    <string name="find">Buscar</string>
 </resources>

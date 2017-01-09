@@ -217,9 +217,26 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_MainWindow) {
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+        }
+        if (id == R.id.action_records) {
+            Intent intent = new Intent(this, lastRecordsList.class);
+            startActivity(intent);
+        }
+        if (id == R.id.action_find) {
+            Intent intent = new Intent(this, find_people_in_manifest.class);
+            startActivity(intent);
+        }
+        if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, Configuration.class);
+            startActivity(intent);
+        }
+        if (id == R.id.action_exit) {
+            exitApp();
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -228,6 +245,11 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
+
+        if (id == R.id.nav_mainWindow) {
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+        }
         if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, Configuration.class);
             startActivity(intent);
@@ -239,6 +261,9 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_find) {
             Intent intent = new Intent(this, find_people_in_manifest.class);
             startActivity(intent);
+        }
+        if (id == R.id.nav_exit) {
+            exitApp();
         }
 
 
@@ -471,6 +496,7 @@ public class MainActivity extends AppCompatActivity
 
     public void documentValidator(String rut) {
         String person;
+        //schema validate person string=m.id_people,p.name where m is manifest and p is people
         person = db.validatePerson(rut);
         String[] array;
         Record record = new Record(); // Object to be sended to API Axxezo.
@@ -601,7 +627,7 @@ public class MainActivity extends AppCompatActivity
                             if (record.getSync() == 0) {
                                 Log.d("---", "going into update record");
                                 db.update_record(record.getId());
-                               // db.close();
+                                // db.close();
                             }
                         }
                     } else {
@@ -955,6 +981,10 @@ public class MainActivity extends AppCompatActivity
             result += line;
         inputStream.close();
         return result;
+    }
+
+    private void exitApp() {
+        this.finishAffinity();
     }
 
 }

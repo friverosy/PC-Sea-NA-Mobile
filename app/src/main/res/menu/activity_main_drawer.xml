@@ -14,10 +14,6 @@
             android:icon="@drawable/record_icon"
             android:title="@string/action_Records" />
         <item
-            android:id="@+id/nav_aboutUs"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="@string/action_aboutUs" />
-        <item
             android:id="@+id/nav_find"
             android:icon="@drawable/find_section"
             android:title="@string/action_find" />
