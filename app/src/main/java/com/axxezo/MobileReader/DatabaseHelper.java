@@ -7,6 +7,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -52,6 +53,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //ports
     private static final String PORT_ID = "id";
     private static final String PORT_NAME = "name";
+    private static final String PORT_IS_IN_MANIFEST = "is_in_manifest";
 
     //transports
     private static final String SHIP_ID = "id";
@@ -83,7 +85,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
     private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ROUTE_ID, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED};
-    private static final String[] MANIFEST_COLUMNS={MANIFEST_ID,MANIFEST_PEOPLE_ID,MANIFEST_ORIGIN,MANIFEST_DESTINATION,MANIFEST_ISINSIDE};
+    private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
     private static final String[] TRANSPORTS_COLUMNS = {SHIP_ID, SHIP_NAME};
@@ -98,14 +100,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // SQL statement to create the differents tables
     String CREATE_PEOPLE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PEOPLE + " ( " +
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            PERSON_DOCUMENT + " TEXT, " +
+            PERSON_DOCUMENT + " TEXT NOT NULL UNIQUE, " +
             PERSON_NAME + " TEXT, " + PERSON_NATIONALITY + " TEXT, " +
-            PERSON_AGE + " INTEGER," +
-            "CONSTRAINT "+PERSON_DOCUMENT+" UNIQUE ("+PERSON_DOCUMENT+")); ";
+            PERSON_AGE + " INTEGER);";
+
+    // "CONSTRAINT "+PERSON_DOCUMENT+" UNIQUE ("+PERSON_DOCUMENT+")); ";
 
     String CREATE_MANIFEST_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MANIFEST + " ( " +
             MANIFEST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            MANIFEST_PEOPLE_ID + " TEXT, " +
+            MANIFEST_PEOPLE_ID + " TEXT NOT NULL UNIQUE, " +
             MANIFEST_ORIGIN + " TEXT, " +
             MANIFEST_DESTINATION + " TEXT," +
             MANIFEST_ISINSIDE + " INTEGER DEFAULT 0); ";
@@ -116,7 +119,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     String CREATE_PORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PORTS + " ( " +
             PORT_ID + " INTEGER PRIMARY KEY, " +
-            PORT_NAME + " TEXT);";
+            PORT_NAME + " TEXT, " +
+            PORT_IS_IN_MANIFEST + " TEXT DEFAULT 'FALSE');";
 
     String CREATE_TRANSPORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_SHIPS + " ( " +
             SHIP_ID + " INTEGER PRIMARY KEY, " +
@@ -186,14 +190,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         JSONObject objectJson;
         JSONArray jsonRoutes;
-        if (!json.isEmpty()) {
+        db.execSQL("DELETE FROM ROUTES");
+        if (!json.isEmpty() && json.length() > 3) {
             objectJson = new JSONObject(json);
             jsonRoutes = objectJson.getJSONArray("list_routes");
             try {
                 db.beginTransaction();
                 Log.d("--add route", String.valueOf(db.isOpen()));
 
-                db.delete(TABLE_ROUTES,null,null);
+                db.delete(TABLE_ROUTES, null, null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
@@ -211,8 +216,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             } finally {
                 db.endTransaction();
             }
+
         } else
-            Log.i("error", "Json empty!");
+            Log.i("json content", json.toString());
+
         //db.close();
     }
 
@@ -227,7 +234,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 db1.beginTransaction();
                 Log.d("--add ports", String.valueOf(db1.isOpen()));
 
-                db1.delete(TABLE_PORTS,null,null);
+                db1.delete(TABLE_PORTS, null, null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
@@ -261,7 +268,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 db.beginTransaction();
                 Log.d("--add transports", String.valueOf(db.isOpen()));
 
-                db.delete(TABLE_SHIPS,null,null);
+                db.delete(TABLE_SHIPS, null, null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
@@ -295,7 +302,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 db.beginTransaction();
                 Log.d("--add Hours", String.valueOf(db.isOpen()));
 
-                db.delete(TABLE_HOURS,null,null);
+                db.delete(TABLE_HOURS, null, null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
@@ -314,7 +321,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } else
             Log.i("error", "Json empty!");
-       // db.close();
+        // db.close();
     }
 
     public int insertManifestDB(String json) throws JSONException {
@@ -326,7 +333,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             objectJson = new JSONObject(json);
             jsonManifest = objectJson.getJSONArray("manifiesto_pasajero");
             try {
-                db.delete(TABLE_MANIFEST,null,null);
+                db.delete(TABLE_MANIFEST, null, null);
                 db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                 //db.beginTransaction();
                 for (int i = 0; i < jsonManifest.length(); i++) {
@@ -353,13 +360,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     valuesManifest.put(MANIFEST_DESTINATION, manifest.getDestination());
                     valuesManifest.put(MANIFEST_ISINSIDE, manifest.getIsInside());
 
-                    db.insert(TABLE_PEOPLE, // table
+                   /* db.insertOrThrow(TABLE_PEOPLE, // table
                             null, //nullColumnHack
                             valuesPerson); // key/value -> keys = column names/ values = column values
                     //db1.update(TABLE_MANIFEST,valuesManifest, "id_people="+people.getDocument().trim(),null);
-                    db.insert(TABLE_MANIFEST, // table
+                    db.insertOrThrow(TABLE_MANIFEST, // table
                             null, //nullColumnHack
                             valuesManifest); // key/value -> keys = column names/ values = column values
+                            */
+                    db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
+                            doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
+                    db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
+                            doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+
                     cantPeople = i;
                 }
 
@@ -367,10 +380,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 Log.d("total manifiesto", String.valueOf(manifest_count()));
             } catch (JSONException e) {
                 e.printStackTrace();
-            } catch (SQLException sqle){
+            } catch (SQLException sqle) {
                 sqle.printStackTrace();
             } finally {
-               // db.endTransaction();
+                // db.endTransaction();
             }
         } else
             Log.i("error", "Json empty!");
@@ -379,9 +392,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-    public int manifest_count(){
+    public int manifest_count() {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + MANIFEST_ID + " FROM "+TABLE_MANIFEST+";", null);
+        Cursor cursor = db.rawQuery("SELECT " + MANIFEST_ID + " FROM " + TABLE_MANIFEST + ";", null);
         return cursor.getCount();
     }
 
@@ -469,7 +482,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //return the person data if this person is in manifest table
         ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select m.id_people,p.name from manifest as m left join people as p on m.id_people=p.document where m.id_people='"+rut+"'", null);
+        Cursor cursor = db.rawQuery("select m.id_people,p.name from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
         cursor.moveToFirst();
         String row = "";
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
@@ -513,7 +526,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         // 4. close
-       // db.close();
+        // db.close();
     }
 
     public List get_desynchronized_records() {
@@ -666,7 +679,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-       // db.close();
+        // db.close();
         return route;
     }
 
@@ -704,7 +717,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-       // db.close();
+        // db.close();
         return port;
     }
 
@@ -723,7 +736,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-       // db.close();
+        // db.close();
         return port;
     }
 
@@ -732,12 +745,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             ContentValues valores = new ContentValues();
             valores.put("is_inside", input);
-            db.update(TABLE_MANIFEST, valores, "id_people="+rut, null);
-        } catch (SQLException e){
+            db.update(TABLE_MANIFEST, valores, "id_people=" + rut, null);
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         //db.close();
     }
+
     public ArrayList<String> selectFromDB(String select, String split) {
         ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -756,5 +770,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
 
     }
+
+    public boolean insertInDB(String insert) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            db.beginTransaction();
+            db.execSQL(insert);
+            db.setTransactionSuccessful();
+            return true;
+        } catch (android.database.SQLException s) {
+            return false;
+        } finally {
+            db.endTransaction();
+        }
+    }
+
 
 }

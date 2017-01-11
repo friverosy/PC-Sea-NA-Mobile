@@ -32,20 +32,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         holder.people_Name.setText(mDataSet.get(position).getName());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
         holder.people_Nationality.setText(mDataSet.get(position).getNationality());
-//        Log.d("custom", mDataSet.get(position).getName());
-// Log.d("custom", String.valueOf(mDataSet.get(position).getIsInside()));
-        /*switch (mDataSet.get(position).getIsInside()){
-            case 0:
-                holder.icon_entry.setBackgroundColor(Color.argb(0, 255, 255, 255));
-                break;
-            case 1:
-                holder.icon_entry.setBackgroundResource(R.drawable.inside_icon);
-                break;
-            case 2:
-                holder.icon_entry.setBackgroundResource(R.drawable.outside_icon);
-                break;
 
-        }*/
         //call db and ask per people if is in the records
 
         switch (mDataSet.get(position).getIsInside()) {
@@ -60,7 +47,6 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
                 break;
             case 1:
                 holder.icon_entry.setText("E");
-                //holder.icon_entry.setBackground(R.drawable.circular_textview_embarked);
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_embarked));
                 break;
             case 2:

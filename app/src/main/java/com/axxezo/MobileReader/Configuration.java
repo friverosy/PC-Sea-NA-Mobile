@@ -1,13 +1,19 @@
 package com.axxezo.MobileReader;
 
+import android.animation.ValueAnimator;
+import android.content.ContentValues;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -15,7 +21,11 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 
+import com.dd.CircularProgressButton;
+
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +36,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
@@ -37,15 +48,18 @@ public class Configuration extends AppCompatActivity {
     private Spinner combobox_ports;
     private Spinner combobox_transports;
     private Spinner combobox_hours;
-    int selectionSpinnerRoute;
-    int selectionSpinnerPorts;
-    int selectionSpinnerTransports;
-    int selectionSpinnerHour;
+    private Integer selectionSpinnerRoute;
+    private Integer selectionSpinnerPorts;
+    private Integer selectionSpinnerTransports;
+    private Integer selectionSpinnerHour;
     String hour;
+    private Vibrator mVibrator;
     private String URL = "http://ticket.bsale.cl/control_api";
     private String token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
     private String token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-    private Button loadButton;
+    private CircularProgressButton loadButton;
+    private int manifest_load_ports;
+    Thread thread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,20 +69,25 @@ public class Configuration extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         combobox = (Spinner) findViewById(R.id.spinner);
-        combobox_ports = (Spinner) findViewById(R.id.spinner_ports);
+        // combobox_ports = (Spinner) findViewById(R.id.spinner_ports);
         combobox_transports = (Spinner) findViewById(R.id.spinner_ship);
+        combobox_transports.setClickable(false);
         combobox_hours = (Spinner) findViewById(R.id.spinner_hours);
-        loadButton = (Button) findViewById(R.id.button_loadManifest);
+        combobox_hours.setClickable(false);
+        combobox.setClickable(false);
+        loadButton = (CircularProgressButton) findViewById(R.id.button_loadManifest);
+        manifest_load_ports = -1;
+        mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+       /* fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
-        });
+        });*/
         //inserts in db
         try {
             db.insertRoutesDB(new getAPIroutes().execute().get().toString());
@@ -83,19 +102,31 @@ public class Configuration extends AppCompatActivity {
         loadComboboxRoutes();
 
         //button
-
+        loadButton.setIndeterminateProgressMode(false);
         loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                db.insertSettingsValues(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, hour);
-                Toast.makeText(Configuration.this, "Settings Guardados Correctamente", Toast.LENGTH_SHORT).show();
-                loadManifest();
+                //simulateSuccessProgress(loadButton);
+                if ((combobox_transports != null && combobox_transports.getSelectedItem() != null && !combobox_transports.getSelectedItem().equals("")) && (combobox_hours != null &&
+                        combobox_hours.getSelectedItem() != null && !combobox_hours.getSelectedItem().equals("")) &&
+                        (combobox != null && combobox.getSelectedItem() != null) && !combobox.getSelectedItem().equals("")) {
+                    loadButton.setProgress(10);
+                    mVibrator.vibrate(100);
+                    db.insertSettingsValues(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, hour);
+                    loadManifest();
+                    loadButton.setProgress(100);
+                    loadButton.setClickable(false);
+                } else {
+                    Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
+                    loadButton.setProgress(-1);
+                }
             }
         });
     }
 
     public void loadComboboxRoutes() {
         //create adapter from combobox
+        combobox.setClickable(true);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, db.getListFromDB("routes"));
         //set adapter to spinner
@@ -104,6 +135,8 @@ public class Configuration extends AppCompatActivity {
         combobox.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                loadButton.setClickable(true);
+                loadButton.setProgress(0);
                 if (combobox.getSelectedItemPosition() != 0) {
                     String nameElement = combobox.getSelectedItem().toString();
                     int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ROUTES where name=" + "'" + nameElement + "'"));
@@ -133,45 +166,34 @@ public class Configuration extends AppCompatActivity {
     }
 
     public void loadComboboxPorts() {
-        //create adapter from combobox
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getListFromDB("ports"));
-        //set adapter to spinner
-        combobox_ports.setAdapter(adapter);
-        //set listener from spinner
-        combobox_ports.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                if (combobox_ports.getSelectedItemPosition() != 0) {
-                    String nameElement = combobox_ports.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ports where name=" + "'" + nameElement + "'"));
-                    if (idElementSelected != 0) {
-                        selectionSpinnerPorts = idElementSelected;
-                        Log.i("id Log Routes", "----" + selectionSpinnerPorts);
-                        try {
-                            db.insertShipsDB(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate()).execute().get().toString());
-                            loadComboboxShips();
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
+        //int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ports where name=" + "'" + nameElement + "'"));
+        ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id from ports limit 1", "|");
+        String[] manifest_is_inside = null;
+        if (select_from_manifest.size() > 0) {
+            manifest_is_inside = select_from_manifest.get(0).split("\\|");
+            selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
+            try {
+                db.insertShipsDB(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate()).execute().get().toString());
+                db.insertInDB("update ports set is_in_manifest='TRUE' where id='" + selectionSpinnerPorts + "'");
+                loadComboboxShips();
 
-                    }
-                }
-
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-            }
-        });
+
+        } else
+            Toast.makeText(this, "No se encuentra una conexion a internet disponible, verifique", Toast.LENGTH_LONG).show();
     }
 
+
     public void loadComboboxShips() {
-        //create adapter from combobox
+        //create adapter from comboboX
+        combobox_transports.setClickable(true);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, db.getListFromDB("ships"));
         //set adapter to spinner
@@ -180,6 +202,7 @@ public class Configuration extends AppCompatActivity {
         combobox_transports.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                loadButton.setProgress(0);
                 if (combobox_transports.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_transports.getSelectedItem().toString();
                     int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ships where name=" + "'" + nameElement + "'"));
@@ -214,10 +237,12 @@ public class Configuration extends AppCompatActivity {
                 android.R.layout.simple_spinner_item, db.getListFromDB("hours"));
         //set adapter to spinner
         combobox_hours.setAdapter(adapter);
+        combobox_hours.setClickable(true);
         //set listener from spinner
         combobox_hours.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                loadButton.setProgress(0);
                 if (combobox_hours.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_hours.getSelectedItem().toString();
                     int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from Hours  where name=" + "'" + nameElement + "'"));
@@ -248,15 +273,61 @@ public class Configuration extends AppCompatActivity {
 
     public void loadManifest() {
         //finally charge the manifest in people table
+        loadButton.setProgress(40);
         try {
-            int load=db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports,getCurrentDate(),hour).execute().get().toString());
-            Toast.makeText(Configuration.this,"se han cargado "+ load+ " personas a la base de datos",Toast.LENGTH_LONG).show();
+            int load = db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(), hour).execute().get().toString());
+            //Toast.makeText(Configuration.this, "se han cargado " + load + " personas a la base de datos", Toast.LENGTH_LONG).show();
+            //fill manifest each port
+            loadButton.setProgress(50);
+            ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id from ports where is_in_manifest='FALSE'", "|");
+            String[] manifest_is_inside = null;
+            String hours = "";
+            if (select_from_manifest.size() > 0) {
+                for (int i = 0; i < select_from_manifest.size(); i++) {
+                    manifest_is_inside = select_from_manifest.get(i).split("\\|");
+                    selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
+                    loadButton.setProgress(60);
+                    hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate()).execute().get().toString();
+                    loadButton.setProgress(70);
+                    //obtain the json hour information
+                    JSONObject objectJson;
+                    JSONArray jsonManifest;
+
+                    if (!hour.isEmpty()) {
+                        objectJson = new JSONObject(hour);
+                        jsonManifest = objectJson.getJSONArray("list_hours");
+                        try {
+                            loadButton.setProgress(80);
+                            for (int j = 0; j < jsonManifest.length(); j++) {
+                                Log.d("for", String.valueOf(j));
+                                hours = (jsonManifest.getJSONObject(i).getString("horas"));
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    loadButton.setProgress(90);
+                    db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(), hours).execute().get().toString());
+                    //db.insertSettingsValues(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, hour);
+
+
+                }
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
+        }
+
+        //load size of manifest
+
+        ArrayList<String> select_counts = db.selectFromDB("select count(*) from manifest", "|");
+        if (select_counts.size() > 0) {
+            String[] binnacle_param_id = select_counts.get(0).split("\\|");
+            Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(binnacle_param_id[0]) + " personas a la base de datos", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -428,13 +499,20 @@ public class Configuration extends AppCompatActivity {
         } catch (MalformedURLException me) {
 
         } catch (IOException ioe) {
-
+            Log.e("class config, line 443", ioe.getMessage().toString());
         }
         if (conn != null) {
             conn.disconnect();
         }
-        if (content.length() <= 2) { //[]
+        if (content == null || content.length() <= 2) { //[]
             content = "204"; // No content
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "Existe un problema con la conexion de internet, verifique e intente nuevamente", Toast.LENGTH_LONG).show();
+                }
+            });
         }
         Log.d("Routes Server response", content);
         return content;
@@ -545,6 +623,7 @@ public class Configuration extends AppCompatActivity {
         //String date must be in format yyyy-MM-dd
         //String hour must be in format HH-dd
         URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
+        Log.d("Manifest Link", url.toString());
         Log.d("get manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
