@@ -11,11 +11,25 @@ public class Cards {
     private String destination;
     private int isInside;
 
-    public Cards(String document, String name, int isInside, String destination) {
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    private String origin;
+
+    public Cards(String document, String name, int isInside, String origin,String destination) {
         this.document = document;
         this.name = name;
         this.isInside = isInside;
         this.destination = destination;
+        this.origin=origin;
+    }
+    public Cards(){
+
     }
 
     public String getDocument() {

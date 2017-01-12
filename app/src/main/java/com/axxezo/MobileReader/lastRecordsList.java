@@ -15,12 +15,13 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Filter;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
-public class lastRecordsList extends ListActivity {
+public class lastRecordsList extends ListActivity implements AdapterView.OnItemSelectedListener {
     private SQLiteDatabase newDB;
     private DatabaseHelper db;
     private RecyclerView recyclerView;
@@ -32,6 +33,7 @@ public class lastRecordsList extends ListActivity {
     private int EmbarkedCount;
     private int LandedCount;
     private Spinner combo_destination;
+    private cardsSpinnerAdapter spinner_adapter;
 
 
     @Override
@@ -44,11 +46,23 @@ public class lastRecordsList extends ListActivity {
         recyclerView.setLayoutManager(layoutManager);
         users = new ArrayList<>();
         adapter = new customViewPeople(users);
-        recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
+        recyclerView.setAdapter(adapter);
+        //adapter.getFilter().filter();
         combo_destination = (Spinner) findViewById(R.id.spinner_destination);
-
+        //combo_destination.setOnItemSelectedListener(this);
         db = new DatabaseHelper(this);
+
+        ArrayList<String> select_from_manifest = db.selectFromDB("select distinct origin from manifest", "");
+        String[] manifest_is_inside = null;
+        ArrayList<String> listDestination = new ArrayList();
+        listDestination.addAll(select_from_manifest);
+        spinner_adapter = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listDestination);
+        spinner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        combo_destination.setAdapter(spinner_adapter);
+        combo_destination.setOnItemSelectedListener(this);
+
+
         addPersonCards();
         getStatusFromManifest();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
@@ -81,11 +95,11 @@ public class lastRecordsList extends ListActivity {
                     do {
                         String DNI = c.getString(c.getColumnIndex("id_people"));
                         String Name = c.getString(c.getColumnIndex("name"));
-                       // String nationality = c.getString(c.getColumnIndex("nationality"));
+                        // String nationality = c.getString(c.getColumnIndex("nationality"));
                         int isInput = c.getInt(c.getColumnIndex("is_inside"));
-                        // String origin = c.getString(c.getColumnIndex("origin"));
+                        String origin = c.getString(c.getColumnIndex("origin"));
                         String destination = c.getString(c.getColumnIndex("destination"));
-                        users.add(new Cards(DNI, Name, isInput, destination));
+                        users.add(new Cards(DNI, Name, isInput,origin, destination));
                     } while (c.moveToNext());
                 }
             }
@@ -95,30 +109,6 @@ public class lastRecordsList extends ListActivity {
         }
     }
 
-    /*
-        private int validateImput(String person_document) {
-            int isInput = 0;
-            if (!person_document.isEmpty()) {
-                try {
-                    DatabaseHelper dbHelper = new DatabaseHelper(this.getApplicationContext());
-                    newDB = dbHelper.getReadableDatabase();
-                    Cursor c = newDB.rawQuery("select input from records where person_document='" + person_document + "'" +
-                            "and datetime between '"+getCurrentDate()+" 00:00"+"' and '"+getCurrentDate()+" 23:59"+"'order by datetime desc limit 1", null);
-                    Cursor c = newDB.rawQuery("select input from records where person_document='" + person_document + "'" +"'order by datetime desc limit 1", null);
-                    if (c != null) {
-                        if (c.moveToFirst()) {
-                            if (c.getCount() == 0)
-                                isInput = 0;
-                            isInput = c.getInt(c.getColumnIndex("input"));
-                        }
-                        c.close();
-                    }
-                } catch (SQLiteException se) {
-                    Log.e(getClass().getSimpleName(), "Could not create or Open the database");
-                }
-            }
-            return isInput;
-        }*/
     public void getStatusFromManifest() {
         ArrayList<String> select_counts = db.selectFromDB("select (select count(*) from manifest)," +
                 "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
@@ -130,6 +120,27 @@ public class lastRecordsList extends ListActivity {
             EmbarkedCount = Integer.parseInt(binnacle_param_id[2]);
             LandedCount = Integer.parseInt(binnacle_param_id[3]);
         }
+
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Cards cards = new Cards();
+        //Here we use the Filtering Feature which we implemented in our Adapter class.
+        adapter.getFilter().filter((CharSequence) parent.getItemAtPosition(position), new Filter.FilterListener() {
+            @Override
+            public void onFilterComplete(int count) {
+                adapter.notifyDataSetChanged();
+                recyclerView.setAdapter(adapter);
+                Toast.makeText(getApplicationContext(), "count " + adapter.getItemCount(), Toast.LENGTH_LONG).show();
+            }
+        });
+
+    }
+
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
 
     }
 }
