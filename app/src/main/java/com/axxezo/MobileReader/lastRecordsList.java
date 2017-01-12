@@ -12,6 +12,10 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Filter;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -27,6 +31,8 @@ public class lastRecordsList extends ListActivity {
     private int PendingCount;
     private int EmbarkedCount;
     private int LandedCount;
+    private Spinner combo_destination;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +46,9 @@ public class lastRecordsList extends ListActivity {
         adapter = new customViewPeople(users);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
-        db=new DatabaseHelper(this);
+        combo_destination = (Spinner) findViewById(R.id.spinner_destination);
+
+        db = new DatabaseHelper(this);
         addPersonCards();
         getStatusFromManifest();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
@@ -48,9 +56,9 @@ public class lastRecordsList extends ListActivity {
             @Override
             public void onClick(View view) {
                 String text = "Total Manifiesto: " + manifestCount +
-                        " Embarcados: "+EmbarkedCount +
-                        " Desembarcados: "+LandedCount+
-                        " Pendientes : "+PendingCount;
+                        " Embarcados: " + EmbarkedCount +
+                        " Desembarcados: " + LandedCount +
+                        " Pendientes : " + PendingCount;
                 Snackbar snack = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null);
                 View view1 = snack.getView();
@@ -65,7 +73,6 @@ public class lastRecordsList extends ListActivity {
 
     private void addPersonCards() {
         try {
-            manifestCount = -1;
             DatabaseHelper dbHelper = new DatabaseHelper(this.getApplicationContext());
             newDB = dbHelper.getReadableDatabase();
             Cursor c = newDB.rawQuery("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document", null);
@@ -74,12 +81,11 @@ public class lastRecordsList extends ListActivity {
                     do {
                         String DNI = c.getString(c.getColumnIndex("id_people"));
                         String Name = c.getString(c.getColumnIndex("name"));
-                        String nationality = c.getString(c.getColumnIndex("nationality"));
+                       // String nationality = c.getString(c.getColumnIndex("nationality"));
                         int isInput = c.getInt(c.getColumnIndex("is_inside"));
                         // String origin = c.getString(c.getColumnIndex("origin"));
-                        // String destination = c.getString(c.getColumnIndex("destination"));
-                        users.add(new Cards(DNI, Name, isInput, nationality));
-                        manifestCount++;
+                        String destination = c.getString(c.getColumnIndex("destination"));
+                        users.add(new Cards(DNI, Name, isInput, destination));
                     } while (c.moveToNext());
                 }
             }
@@ -88,47 +94,42 @@ public class lastRecordsList extends ListActivity {
             Log.e(getClass().getSimpleName(), "Could not create or Open the database");
         }
     }
-/*
-    private int validateImput(String person_document) {
-        int isInput = 0;
-        if (!person_document.isEmpty()) {
-            try {
-                DatabaseHelper dbHelper = new DatabaseHelper(this.getApplicationContext());
-                newDB = dbHelper.getReadableDatabase();
-                Cursor c = newDB.rawQuery("select input from records where person_document='" + person_document + "'" +
-                        "and datetime between '"+getCurrentDate()+" 00:00"+"' and '"+getCurrentDate()+" 23:59"+"'order by datetime desc limit 1", null);
-                Cursor c = newDB.rawQuery("select input from records where person_document='" + person_document + "'" +"'order by datetime desc limit 1", null);
-                if (c != null) {
-                    if (c.moveToFirst()) {
-                        if (c.getCount() == 0)
-                            isInput = 0;
-                        isInput = c.getInt(c.getColumnIndex("input"));
+
+    /*
+        private int validateImput(String person_document) {
+            int isInput = 0;
+            if (!person_document.isEmpty()) {
+                try {
+                    DatabaseHelper dbHelper = new DatabaseHelper(this.getApplicationContext());
+                    newDB = dbHelper.getReadableDatabase();
+                    Cursor c = newDB.rawQuery("select input from records where person_document='" + person_document + "'" +
+                            "and datetime between '"+getCurrentDate()+" 00:00"+"' and '"+getCurrentDate()+" 23:59"+"'order by datetime desc limit 1", null);
+                    Cursor c = newDB.rawQuery("select input from records where person_document='" + person_document + "'" +"'order by datetime desc limit 1", null);
+                    if (c != null) {
+                        if (c.moveToFirst()) {
+                            if (c.getCount() == 0)
+                                isInput = 0;
+                            isInput = c.getInt(c.getColumnIndex("input"));
+                        }
+                        c.close();
                     }
-                    c.close();
+                } catch (SQLiteException se) {
+                    Log.e(getClass().getSimpleName(), "Could not create or Open the database");
                 }
-            } catch (SQLiteException se) {
-                Log.e(getClass().getSimpleName(), "Could not create or Open the database");
             }
-        }
-        return isInput;
-    }*/
-    public void getStatusFromManifest(){
-        ArrayList<String> select_counts= db.selectFromDB("select (select count(*) from manifest)," +
+            return isInput;
+        }*/
+    public void getStatusFromManifest() {
+        ArrayList<String> select_counts = db.selectFromDB("select (select count(*) from manifest)," +
                 "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
-                "(select count(*) from manifest where is_inside=2)","|");
-        if(select_counts.size()>0){
+                "(select count(*) from manifest where is_inside=2)", "|");
+        if (select_counts.size() > 0) {
             String[] binnacle_param_id = select_counts.get(0).split("\\|");
-            manifestCount=Integer.parseInt(binnacle_param_id[0]);
-            PendingCount=Integer.parseInt(binnacle_param_id[1]);
-            EmbarkedCount=Integer.parseInt(binnacle_param_id[2]);
-            LandedCount=Integer.parseInt(binnacle_param_id[3]);
-            /*if(binnacle_param_id[0].equals(binnacle_param_id[1])){
-                Toast.makeText(this,"La tabla Manifest y la tabla People poseen el mismo tamaño",Toast.LENGTH_LONG).show();
-            }else
-                Toast.makeText(this,"La tabla Manifest y la tabla People NO poseen el mismo tamaño",Toast.LENGTH_LONG).show();
-                */
+            manifestCount = Integer.parseInt(binnacle_param_id[0]);
+            PendingCount = Integer.parseInt(binnacle_param_id[1]);
+            EmbarkedCount = Integer.parseInt(binnacle_param_id[2]);
+            LandedCount = Integer.parseInt(binnacle_param_id[3]);
         }
 
     }
-
 }

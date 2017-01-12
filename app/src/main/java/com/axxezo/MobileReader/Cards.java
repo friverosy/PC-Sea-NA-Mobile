@@ -8,13 +8,14 @@ public class Cards {
     private String document;
     private String name;
     private String nationality;
+    private String destination;
     private int isInside;
 
-    public Cards(String document, String name, int isInside, String nationality) {
+    public Cards(String document, String name, int isInside, String destination) {
         this.document = document;
         this.name = name;
         this.isInside = isInside;
-        this.nationality = nationality;
+        this.destination = destination;
     }
 
     public String getDocument() {
@@ -47,6 +48,13 @@ public class Cards {
 
     public void setIsInside(int isInside) {
         this.isInside = isInside;
+    }
+    public String getDestination() {
+        return destination;
+    }
+
+    public void setDestination(String destination) {
+        this.destination = destination;
     }
 
     @Override

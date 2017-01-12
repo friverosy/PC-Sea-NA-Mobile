@@ -1,9 +1,5 @@
 package com.axxezo.MobileReader;
 
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.Drawable;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -31,7 +27,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     public void onBindViewHolder(UserViewHolder holder, int position) {
         holder.people_Name.setText(mDataSet.get(position).getName());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
-        holder.people_Nationality.setText(mDataSet.get(position).getNationality());
+        holder.people_destination.setText(mDataSet.get(position).getDestination());
 
         //call db and ask per people if is in the records
 
@@ -66,7 +62,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
     public static class UserViewHolder extends RecyclerView.ViewHolder {
         CardView cardView;
-        TextView people_DNI, people_Name, people_Nationality;
+        TextView people_DNI, people_Name, people_destination;
         TextView icon_entry;
 
         UserViewHolder(View itemView) {
@@ -74,7 +70,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             cardView = (CardView) itemView.findViewById(R.id.user_layout);
             people_DNI = (TextView) itemView.findViewById(R.id.people_DNI);
             people_Name = (TextView) itemView.findViewById(R.id.people_name);
-            people_Nationality = (TextView) itemView.findViewById(R.id.people_nationality);
+            people_destination = (TextView) itemView.findViewById(R.id.people_destination);
             icon_entry = (TextView) itemView.findViewById(R.id.icon_entry);
         }
     }
