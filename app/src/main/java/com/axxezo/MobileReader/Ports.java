@@ -5,7 +5,6 @@ package com.axxezo.MobileReader;
  */
 
 public class Ports {
-
     private int id;
     private String name;
 
@@ -28,5 +27,13 @@ public class Ports {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "Ports{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

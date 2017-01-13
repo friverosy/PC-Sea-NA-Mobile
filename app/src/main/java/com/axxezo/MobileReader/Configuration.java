@@ -39,6 +39,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 public class Configuration extends AppCompatActivity {
@@ -167,14 +168,13 @@ public class Configuration extends AppCompatActivity {
 
     public void loadComboboxPorts() {
         //int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ports where name=" + "'" + nameElement + "'"));
-        ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id from ports limit 1", "|");
+        ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id_api from ports limit 1", "|");
         String[] manifest_is_inside = null;
         if (select_from_manifest.size() > 0) {
             manifest_is_inside = select_from_manifest.get(0).split("\\|");
             selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
             try {
-                db.insertShipsDB(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate()).execute().get().toString());
-                db.insertInDB("update ports set is_in_manifest='TRUE' where id='" + selectionSpinnerPorts + "'");
+                db.insertShipsDB(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get().toString());
                 loadComboboxShips();
 
             } catch (JSONException e) {
@@ -210,7 +210,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerTransports = idElementSelected;
                         Log.i("id Log Ships", "----" + selectionSpinnerTransports);
                         try {
-                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate()).execute().get().toString());
+                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
                             loadComboboxHours();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -251,7 +251,7 @@ public class Configuration extends AppCompatActivity {
                         Log.i("id Log Hours", "----" + selectionSpinnerHour);
                         try {
                             hour = nameElement;
-                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate()).execute().get().toString());
+                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
                         } catch (JSONException e) {
                             e.printStackTrace();
                         } catch (InterruptedException e) {
@@ -272,46 +272,49 @@ public class Configuration extends AppCompatActivity {
     }
 
     public void loadManifest() {
-        //finally charge the manifest in people table
-        loadButton.setProgress(40);
+        //first delete the manifest table
+        db.insertInDB("delete from manifest");
+        db.insertInDB("delete from sqlite_sequence where name='MANIFEST'");
+
+        //charge the manifest per each port in people table
         try {
-            int load = db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(), hour).execute().get().toString());
-            //Toast.makeText(Configuration.this, "se han cargado " + load + " personas a la base de datos", Toast.LENGTH_LONG).show();
-            //fill manifest each port
-            loadButton.setProgress(50);
-            ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id from ports where is_in_manifest='FALSE'", "|");
+            ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id_api from ports where is_in_manifest='FALSE'", "");
+            ArrayList<String> select_hour_config = db.selectFromDB("SELECT hour from config", "");
             String[] manifest_is_inside = null;
+            String[] hour_setting = select_hour_config.get(0).split(":");
             String hours = "";
             if (select_from_manifest.size() > 0) {
-                for (int i = 0; i < select_from_manifest.size(); i++) {
-                    manifest_is_inside = select_from_manifest.get(i).split("\\|");
+                int i = 0;
+                while (!select_from_manifest.isEmpty()) {
+                    String currentDatetime=getCurrentDate(0);
+                    manifest_is_inside = select_from_manifest.get(0).split("\\|");
                     selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
-                    loadButton.setProgress(60);
-                    hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate()).execute().get().toString();
-                    loadButton.setProgress(70);
+                    hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
+
+                    if (i > 0 && Integer.parseInt(hour_setting[0]) > 20) {
+                        currentDatetime=getCurrentDate(1);
+                        hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
+                    }
                     //obtain the json hour information
                     JSONObject objectJson;
                     JSONArray jsonManifest;
-
                     if (!hour.isEmpty()) {
                         objectJson = new JSONObject(hour);
                         jsonManifest = objectJson.getJSONArray("list_hours");
                         try {
-                            loadButton.setProgress(80);
                             for (int j = 0; j < jsonManifest.length(); j++) {
-                                Log.d("for", String.valueOf(j));
-                                hours = (jsonManifest.getJSONObject(i).getString("horas"));
+                                hours = (jsonManifest.getJSONObject(0).getString("horas"));
                             }
                         } catch (JSONException e) {
-                            e.printStackTrace();
+                            Log.e("error loadManifest hour", e.getMessage().toString());
                         }
                     }
-
-                    loadButton.setProgress(90);
-                    db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(), hours).execute().get().toString());
-                    //db.insertSettingsValues(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, hour);
-
-
+                    db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get().toString());
+                    //finally, delete from arraylist, the port
+                    select_from_manifest.remove(selectionSpinnerPorts.toString());
+                    Log.d("select_from_manifest", select_from_manifest.size() + "");
+                    db.insertInDB("update ports set is_in_manifest='TRUE' where id='" + selectionSpinnerPorts + "'");
+                    i++;
                 }
             }
         } catch (JSONException e) {
@@ -623,7 +626,6 @@ public class Configuration extends AppCompatActivity {
         //String date must be in format yyyy-MM-dd
         //String hour must be in format HH-dd
         URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
-        Log.d("Manifest Link", url.toString());
         Log.d("get manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
@@ -668,12 +670,21 @@ public class Configuration extends AppCompatActivity {
 
     }
 
-    public String getCurrentDate() {
+    public String getCurrentDate(int days) {
         Calendar cal = Calendar.getInstance();
-        Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("yyyy-MM-dd");
-        String localTime = date.format(currentLocalTime);
-        return localTime;
+        Date currentLocalTime;
+        DateFormat date=new SimpleDateFormat("yyyy-MM-dd");
+        String returntime="";
+        if (days == 0) {
+            currentLocalTime = cal.getTime();
+            returntime = date.format(currentLocalTime);
+        }
+        else if(days>0){
+            cal.add(Calendar.DAY_OF_MONTH, days); //Adds a day
+            returntime = date.format(cal.getTime());
+        }
+
+        return returntime;
     }
 
     public String getCurrentTime() {

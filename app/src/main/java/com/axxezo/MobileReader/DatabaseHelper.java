@@ -52,6 +52,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //ports
     private static final String PORT_ID = "id";
+    private static final String PORT_ID_API = "id_api";
     private static final String PORT_NAME = "name";
     private static final String PORT_IS_IN_MANIFEST = "is_in_manifest";
 
@@ -118,7 +119,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             ROUTE_NAME + " TEXT);";
 
     String CREATE_PORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PORTS + " ( " +
-            PORT_ID + " INTEGER PRIMARY KEY, " +
+            PORT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            PORT_ID_API + " INTEGER, " +
             PORT_NAME + " TEXT, " +
             PORT_IS_IN_MANIFEST + " TEXT DEFAULT 'FALSE');";
 
@@ -224,37 +226,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void insertPortsDB(String json) throws JSONException {
-        SQLiteDatabase db1 = this.getWritableDatabase();
+        SQLiteDatabase db = this.getWritableDatabase();
         JSONObject objectJson;
         JSONArray jsonRoutes;
         if (!json.isEmpty()) {
             objectJson = new JSONObject(json);
             jsonRoutes = objectJson.getJSONArray("list_sections_route");
             try {
-                db1.beginTransaction();
-                Log.d("--add ports", String.valueOf(db1.isOpen()));
+                db.beginTransaction();
 
-                db1.delete(TABLE_PORTS, null, null);
+                db.delete(TABLE_PORTS, null, null);
 
                 for (int i = 0; i < jsonRoutes.length(); i++) {
                     ContentValues values = new ContentValues();
                     Ports port = new Ports(jsonRoutes.getJSONObject(i).getInt("id_ubicacion"), jsonRoutes.getJSONObject(i).getString("nombre_ubicacion"));
-                    values.put(PORT_ID, port.getId());
+                    values.put(PORT_ID_API, port.getId());
                     values.put(PORT_NAME, port.getName().trim());
                     Log.d("Ports content :", port.toString());
-                    db1.insert(TABLE_PORTS, // table
+                    db.insert(TABLE_PORTS, // table
                             null, //nullColumnHack
                             values); // key/value -> keys = column names/ values = column values
                 }
-                db1.setTransactionSuccessful();
+                db.setTransactionSuccessful();
             } catch (JSONException e) {
                 e.printStackTrace();
             } finally {
-                db1.endTransaction();
+                db.endTransaction();
             }
         } else
             Log.i("error", "Json empty!");
-        db1.close();
+        //db.close();
     }
 
     public void insertShipsDB(String json) throws JSONException {
@@ -324,8 +325,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // db.close();
     }
 
-    public int insertManifestDB(String json) throws JSONException {
-        int cantPeople = 0;
+    public void insertManifestDB(String json) throws JSONException {
         SQLiteDatabase db = this.getWritableDatabase();
         JSONObject objectJson;
         JSONArray jsonManifest;
@@ -333,12 +333,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             objectJson = new JSONObject(json);
             jsonManifest = objectJson.getJSONArray("manifiesto_pasajero");
             try {
-                db.delete(TABLE_MANIFEST, null, null);
-                db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
+                //db.delete(TABLE_MANIFEST, null, null);
+                //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                 //db.beginTransaction();
                 for (int i = 0; i < jsonManifest.length(); i++) {
                     Log.d("for", String.valueOf(i));
-                    cantPeople++;
                     ContentValues valuesPerson = new ContentValues();
                     ContentValues valuesManifest = new ContentValues();
 
@@ -360,20 +359,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     valuesManifest.put(MANIFEST_DESTINATION, manifest.getDestination());
                     valuesManifest.put(MANIFEST_ISINSIDE, manifest.getIsInside());
 
-                   /* db.insertOrThrow(TABLE_PEOPLE, // table
-                            null, //nullColumnHack
-                            valuesPerson); // key/value -> keys = column names/ values = column values
-                    //db1.update(TABLE_MANIFEST,valuesManifest, "id_people="+people.getDocument().trim(),null);
-                    db.insertOrThrow(TABLE_MANIFEST, // table
-                            null, //nullColumnHack
-                            valuesManifest); // key/value -> keys = column names/ values = column values
-                            */
                     db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
                             doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
                     db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
                             doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                   // Log.i("insert people","insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
+                   //         doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
+                   // Log.i("insert manifest","insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
+                   //         doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
 
-                    cantPeople = i;
                 }
 
 //                db.setTransactionSuccessful();
@@ -388,8 +382,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } else
             Log.i("error", "Json empty!");
         //db.close();
-        return cantPeople;
-
     }
 
     public int manifest_count() {
