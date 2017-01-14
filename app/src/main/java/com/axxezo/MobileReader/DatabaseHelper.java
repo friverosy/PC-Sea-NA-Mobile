@@ -65,7 +65,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_DATETIME = "datetime";
     private static final String RECORD_PERSON_DOC = "person_document";
     private static final String RECORD_PERSON_NAME = "person_name";
-    private static final String RECORD_ROUTE_ID = "route_id";
+    private static final String RECORD_ORIGIN = "origin";
+    private static final String RECORD_DESTINATION = "destination";
     private static final String RECORD_PORT_ID = "port_id";
     private static final String RECORD_SHIP_ID = "ship_id";
     private static final String RECORD_SAILING_HOUR = "sailing_hour";
@@ -85,7 +86,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ROUTE_ID, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN,RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -133,7 +134,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_DATETIME + " TEXT, " +
             RECORD_PERSON_DOC + " INTEGER, " +
             RECORD_PERSON_NAME + " TEXT, " +
-            RECORD_ROUTE_ID + " INTEGER, " +
+            RECORD_ORIGIN+ " INTEGER, " +
+            RECORD_DESTINATION+ " INTEGER, " +
             RECORD_PORT_ID + " INTEGER, " +
             RECORD_SHIP_ID + " INTEGER, " +
             RECORD_SAILING_HOUR + " TEXT, " +
@@ -474,7 +476,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //return the person data if this person is in manifest table
         ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select m.id_people,p.name from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+        Cursor cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
         cursor.moveToFirst();
         String row = "";
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
@@ -500,7 +502,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //values.put(RECORD_ID, record.getId());
         values.put(RECORD_PERSON_DOC, record.getPerson_document());
         values.put(RECORD_PERSON_NAME, record.getPerson_name());
-        values.put(RECORD_ROUTE_ID, record.getRoute_id());
+        values.put(RECORD_ORIGIN, record.getOrigin());
+        values.put(RECORD_DESTINATION, record.getDestination());
         values.put(RECORD_PORT_ID, record.getPort_id());
         values.put(RECORD_SHIP_ID, record.getShip_id());
         values.put(RECORD_SAILING_HOUR, record.getSailing_hour());
@@ -547,13 +550,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             cursor.getString(1) + ";" + //DATETIME
                             cursor.getString(2) + ";" + //PERSON_DOCUMENT
                             cursor.getString(3) + ";" + //PERSON_NAME
-                            cursor.getInt(4) + ";" + //ROUTE_ID
-                            cursor.getInt(5) + ";" + //PORT_ID
-                            cursor.getInt(6) + ";" + //SHIP_ID
-                            cursor.getString(7) + ";" + //SAILING_HOUR
-                            cursor.getInt(8) + ";" + //INPUT
-                            cursor.getInt(9) + ";" + //SYNC
-                            cursor.getInt(10) //PERMITTED
+                            cursor.getInt(4) + ";" + //ORIGIN_ID
+                            cursor.getInt(5) + ";" + //DESTINATION_ID
+                            cursor.getInt(6) + ";" + //PORT_ID
+                            cursor.getInt(7) + ";" + //SHIP_ID
+                            cursor.getString(8) + ";" + //SAILING_HOUR
+                            cursor.getInt(9) + ";" + //INPUT
+                            cursor.getInt(10) + ";" + //SYNC
+                            cursor.getInt(11) //PERMITTED
             );
             cursor.moveToNext();
         }

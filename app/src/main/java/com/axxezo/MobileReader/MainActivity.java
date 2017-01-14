@@ -101,6 +101,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -153,7 +154,7 @@ public class MainActivity extends AppCompatActivity
         mySwitch = (Switch) findViewById(R.id.mySwitch);
 
         writeLog("DEBUG", "Application has started Correctly");
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3001";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -188,14 +189,6 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
-
-
-        //example API functionality
-        //Log.i("getApiRoutes", new getAPIroutes().execute().toString());
-        // Log.i("getApiPorts", new getAPIPorts(2).execute().toString());
-        //Log.i("getApiTransports", new getAPITransports(2, 5, "2016-11-12").execute().toString());
-        //Log.i("getApiHours", new getAPIHours(2, 5, 3, "2016-11-12").execute().toString());
-        //Log.i("getApiManifest", new getAPIManifest(2, 5, 3, "2016-11-12", "23:30").execute().toString());
     }
 
     @Override
@@ -426,7 +419,7 @@ public class MainActivity extends AppCompatActivity
                     try {
                         if (db.record_desync_count() >= 1)
                             OfflineRecordsSynchronizer();
-                        Thread.sleep(120000); // 2 Min = 120000
+                        Thread.sleep(300000); // 5 Min = 300000
                     } catch (Exception e) {
                         writeLog("ERROR", e.toString());
                     }
@@ -487,7 +480,6 @@ public class MainActivity extends AppCompatActivity
         record.setSync(0);
         record.setPort_id(Integer.parseInt(port));
         record.setShip_id(Integer.parseInt(ship));
-        record.setRoute_id(Integer.parseInt(route));
         record.setSailing_hour(hour);
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
@@ -498,7 +490,7 @@ public class MainActivity extends AppCompatActivity
         String person;
         //schema validate person string=m.id_people,p.name where m is manifest and p is people
         person = db.validatePerson(rut);
-        String[] array;
+        String[] array=new String[20];
         Record record = new Record(); // Object to be sended to API Axxezo.
         if (!person.isEmpty()) {
             mp3Permitted.start();
@@ -525,6 +517,8 @@ public class MainActivity extends AppCompatActivity
         else record.setInput(2);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
+        record.setOrigin(array[2]);
+        record.setDestination(array[3]);
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
         //db.close();
@@ -562,13 +556,14 @@ public class MainActivity extends AppCompatActivity
             record.setDatetime(arr[1]);
             record.setPerson_document(arr[2]);
             record.setPerson_name(arr[3]);
-            record.setRoute_id(Integer.parseInt(arr[4]));
-            record.setPort_id(Integer.parseInt(arr[5]));
-            record.setShip_id(Integer.parseInt(arr[6]));
-            record.setSailing_hour(arr[7]);
-            record.setInput(Integer.parseInt(arr[8]));
-            record.setSync(Integer.parseInt(arr[9]));
-            record.setPermitted(Integer.parseInt(arr[10]));
+            record.setOrigin(arr[4]);
+            record.setDestination(arr[5]);
+            record.setPort_id(Integer.parseInt(arr[6]));
+            record.setShip_id(Integer.parseInt(arr[7]));
+            record.setSailing_hour(arr[8]);
+            record.setInput(Integer.parseInt(arr[9]));
+            record.setSync(Integer.parseInt(arr[10]));
+            record.setPermitted(Integer.parseInt(arr[11]));
 
             new RegisterTask(record).execute();
         }
@@ -588,10 +583,17 @@ public class MainActivity extends AppCompatActivity
             HttpPost httpPost = new HttpPost(url);
 
             // 3. build jsonObject from jsonList
+            /*ArrayList<String> select_from_manifest = db.selectFromDB("select r.datetime,r.person_document,r id_api from ports limit 1", "|");
+            String[] manifest_is_inside = null;
+            if (select_from_manifest.size() > 0) {
+                manifest_is_inside = select_from_manifest.get(0).split("\\|");
+            }*/
+
             jsonObject.accumulate("datetime", record.getDatetime());
             jsonObject.accumulate("doc", record.getPerson_document());
             jsonObject.accumulate("name", record.getPerson_name());
-            jsonObject.accumulate("route_id", record.getRoute_id());
+            jsonObject.accumulate("origin_id", record.getOrigin());
+            jsonObject.accumulate("destination_id", record.getDestination());
             jsonObject.accumulate("port_id", record.getPort_id());
             jsonObject.accumulate("ship_id", record.getShip_id());
             jsonObject.accumulate("sailing_hour", record.getSailing_hour());
@@ -664,7 +666,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected String doInBackground(Void... params) {
-            return POST(newRecord, AxxezoAPI + "/api/records");
+            return POST(newRecord, AxxezoAPI + "/api/");
         }
     }
 
