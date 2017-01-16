@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:ems="10"
-        android:text="Destino"
+        android:text="Origen"
         android:textAlignment="center"
         android:textSize="24sp"
         android:textStyle="bold" />

@@ -18,6 +18,10 @@
             android:icon="@drawable/find_section"
             android:title="@string/action_find" />
         <item
+            android:id="@+id/nav_manual_registration"
+            android:icon="@drawable/manual_registration"
+            android:title="@string/manual_registration" />
+        <item
             android:id="@+id/nav_exit"
             android:icon="@drawable/exit_icon"
             android:title="@string/action_exit" />

@@ -64,15 +64,15 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
 
 
         addPersonCards();
-        getStatusFromManifest();
+        getStatusFromManifest(0);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String text = "Total Manifiesto: " + manifestCount +
-                        " Embarcados: " + EmbarkedCount +
-                        " Desembarcados: " + LandedCount +
-                        " Pendientes : " + PendingCount;
+                String text = "Total Manifiesto: " + getStatusFromManifest(1) +
+                        " Embarcados: " + getStatusFromManifest(3) +
+                        " Desembarcados: " + getStatusFromManifest(4) +
+                        " Pendientes : " + getStatusFromManifest(2);
                 Snackbar snack = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null);
                 View view1 = snack.getView();
@@ -99,7 +99,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                         int isInput = c.getInt(c.getColumnIndex("is_inside"));
                         String origin = c.getString(c.getColumnIndex("origin"));
                         String destination = c.getString(c.getColumnIndex("destination"));
-                        users.add(new Cards(DNI, Name, isInput,origin, destination));
+                        users.add(new Cards(DNI, Name, isInput, origin, destination));
                     } while (c.moveToNext());
                 }
             }
@@ -109,10 +109,11 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         }
     }
 
-    public void getStatusFromManifest() {
+    public int getStatusFromManifest(int position) {
         ArrayList<String> select_counts = db.selectFromDB("select (select count(*) from manifest)," +
                 "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
                 "(select count(*) from manifest where is_inside=2)", "|");
+        int count = 0;
         if (select_counts.size() > 0) {
             String[] binnacle_param_id = select_counts.get(0).split("\\|");
             manifestCount = Integer.parseInt(binnacle_param_id[0]);
@@ -120,7 +121,22 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
             EmbarkedCount = Integer.parseInt(binnacle_param_id[2]);
             LandedCount = Integer.parseInt(binnacle_param_id[3]);
         }
+        switch (position) {
+            case 1:
+                count = manifestCount;
+                break;
+            case 2:
+                count = PendingCount;
+                break;
+            case 3:
+                count = EmbarkedCount;
+                break;
+            case 4:
+                count = LandedCount;
+                break;
+        }
 
+        return count;
     }
 
     @Override
@@ -132,7 +148,6 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
             public void onFilterComplete(int count) {
                 adapter.notifyDataSetChanged();
                 recyclerView.setAdapter(adapter);
-                Toast.makeText(getApplicationContext(), "count " + adapter.getItemCount(), Toast.LENGTH_LONG).show();
             }
         });
 

@@ -227,6 +227,10 @@ public class MainActivity extends AppCompatActivity
             Intent intent = new Intent(this, Configuration.class);
             startActivity(intent);
         }
+        if (id == R.id.action_manual_registration) {
+            Intent intent = new Intent(this, manual_registration.class);
+            startActivity(intent);
+        }
         if (id == R.id.action_exit) {
             exitApp();
         }
@@ -253,6 +257,9 @@ public class MainActivity extends AppCompatActivity
         }
         if (id == R.id.nav_find) {
             Intent intent = new Intent(this, find_people_in_manifest.class);
+            startActivity(intent);
+        }if (id == R.id.nav_manual_registration) {
+            Intent intent = new Intent(this, manual_registration.class);
             startActivity(intent);
         }
         if (id == R.id.nav_exit) {
@@ -419,7 +426,7 @@ public class MainActivity extends AppCompatActivity
                     try {
                         if (db.record_desync_count() >= 1)
                             OfflineRecordsSynchronizer();
-                        Thread.sleep(300000); // 5 Min = 300000
+                        Thread.sleep(30000); // 5 Min = 300000
                     } catch (Exception e) {
                         writeLog("ERROR", e.toString());
                     }
@@ -526,6 +533,10 @@ public class MainActivity extends AppCompatActivity
         record.setDestination(array[3]);
         record.setPort_id(array[4]);
         record.setShip_id(array[5]);
+        record.setManifest_total(getStatusFromManifest(1));
+        record.setManifest_embarked(getStatusFromManifest(3));
+        record.setManifest_landed(getStatusFromManifest(4));
+        record.setManifest_pending(getStatusFromManifest(2));
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
         //db.close();
@@ -571,6 +582,10 @@ public class MainActivity extends AppCompatActivity
             record.setInput(Integer.parseInt(arr[9]));
             record.setSync(Integer.parseInt(arr[10]));
             record.setPermitted(Integer.parseInt(arr[11]));
+            record.setManifest_total(getStatusFromManifest(1));
+            record.setManifest_embarked(getStatusFromManifest(3));
+            record.setManifest_landed(getStatusFromManifest(4));
+            record.setManifest_pending(getStatusFromManifest(2));
 
             new RegisterTask(record).execute();
         }
@@ -606,9 +621,14 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("sailing_hour", record.getSailing_hour());
             jsonObject.accumulate("input", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
+            jsonObject.accumulate("manifest_total", record.getManifest_total());
+            jsonObject.accumulate("manifest_embarked", record.getManifest_embarked());
+            jsonObject.accumulate("manifest_landed", record.getManifest_landed());
+            jsonObject.accumulate("manifest_pending", record.getManifest_pending());
+            jsonObject.accumulate("manifest_ticket", record.getTicket());
 
             // 4. convert JSONObject to JSON to String
-            if (jsonObject.length() <= 9 && record.getId() != 0) { // 9 element on json
+            if (jsonObject.length() <= 14 && record.getId() != 0) { // 9 element on json
                 json = jsonObject.toString();
 
                 // 5. set json to StringEntity
@@ -657,7 +677,7 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         } catch (Exception e) {
-            Log.d("---", "offline");
+            Log.d("---", "offline"+ e.getMessage().toString());
         }
         // 11. return result
         return result;
@@ -994,6 +1014,39 @@ public class MainActivity extends AppCompatActivity
 
     private void exitApp() {
         this.finishAffinity();
+    }
+    public int getStatusFromManifest(int position) {
+        int manifestCount=-1;
+        int PendingCount = -1;
+        int EmbarkedCount = -1;
+        int LandedCount = -1;
+        ArrayList<String> select_counts = db.selectFromDB("select (select count(*) from manifest)," +
+                "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
+                "(select count(*) from manifest where is_inside=2)", "|");
+        int count = 0;
+        if (select_counts.size() > 0) {
+            String[] binnacle_param_id = select_counts.get(0).split("\\|");
+            manifestCount = Integer.parseInt(binnacle_param_id[0]);
+            PendingCount = Integer.parseInt(binnacle_param_id[1]);
+            EmbarkedCount = Integer.parseInt(binnacle_param_id[2]);
+            LandedCount = Integer.parseInt(binnacle_param_id[3]);
+        }
+        switch (position) {
+            case 1:
+                count = manifestCount;
+                break;
+            case 2:
+                count = PendingCount;
+                break;
+            case 3:
+                count = EmbarkedCount;
+                break;
+            case 4:
+                count = LandedCount;
+                break;
+        }
+
+        return count;
     }
 
 }

@@ -36,7 +36,10 @@
         <activity
             android:name=".find_people_in_manifest"
             android:label="@string/title_find"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.axxezo.MobileReader.manual_registration"
+            android:label="Registro Manual"></activity>
     </application>
 
 </manifest>

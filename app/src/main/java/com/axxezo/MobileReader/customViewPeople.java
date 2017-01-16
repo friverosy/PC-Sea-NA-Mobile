@@ -130,11 +130,6 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
         @Override
         protected void publishResults(CharSequence constraint, FilterResults results) {
-            //adapter.filteredmDataSet.clear();
-            //filteredmDataSet.addAll((ArrayList<Cards>) results.values);
-            //adapter.notifyDataSetChanged();
-            //adapter.getItemCount();
-            //mDataSet=(ArrayList<Cards>) results.values;
             mDataSet=((ArrayList<Cards>) results.values);
             notifyDataSetChanged();
         }

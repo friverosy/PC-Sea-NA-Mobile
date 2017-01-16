@@ -17,6 +17,11 @@
         android:title="@string/manifiest"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_manual_registration"
+        android:orderInCategory="100"
+        android:title="@string/manual_registration"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_find"
         android:orderInCategory="100"
         android:title="@string/find"
@@ -26,4 +31,5 @@
         android:orderInCategory="100"
         android:title="@string/action_exit"
         app:showAsAction="never" />
+
 </menu>

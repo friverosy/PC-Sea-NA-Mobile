@@ -73,6 +73,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_IS_INPUT = "input";
     private static final String RECORD_SYNC = "sync";
     private static final String RECORD_IS_PERMITTED = "permitted";
+    private static final String RECORD_COUNT_TOTAL = "count_total";
+    private static final String RECORD_COUNT_EMBARKED = "count_embarked";
+    private static final String RECORD_COUNT_LANDED = "count_landed";
+    private static final String RECORD_COUNT_PENDING = "count_pending";
+    private static final String RECORD_TICKET = "ticket";
 
     //hours
     private static final String HOUR_ID = "id";
@@ -86,7 +91,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN,RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED,RECORD_COUNT_TOTAL,RECORD_COUNT_EMBARKED,RECORD_COUNT_LANDED,RECORD_COUNT_PENDING,RECORD_TICKET};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -134,14 +139,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_DATETIME + " TEXT, " +
             RECORD_PERSON_DOC + " INTEGER, " +
             RECORD_PERSON_NAME + " TEXT, " +
-            RECORD_ORIGIN+ " INTEGER, " +
-            RECORD_DESTINATION+ " INTEGER, " +
+            RECORD_ORIGIN + " INTEGER, " +
+            RECORD_DESTINATION + " INTEGER, " +
             RECORD_PORT_ID + " INTEGER, " +
             RECORD_SHIP_ID + " INTEGER, " +
             RECORD_SAILING_HOUR + " TEXT, " +
             RECORD_IS_INPUT + " INTEGER, " +
             RECORD_SYNC + " INTEGER, " +
-            RECORD_IS_PERMITTED + " INTEGER);";
+            RECORD_IS_PERMITTED + " INTEGER," +
+            RECORD_COUNT_TOTAL + " INTEGER," +
+            RECORD_COUNT_EMBARKED + " INTEGER," +
+            RECORD_COUNT_LANDED + " INTEGER," +
+            RECORD_COUNT_PENDING + " INTEGER," +
+            RECORD_TICKET + " TEXT);";
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
             HOUR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -365,10 +375,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
                     db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
                             doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
-                   // Log.i("insert people","insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                   //         doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
-                   // Log.i("insert manifest","insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                   //         doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                    // Log.i("insert people","insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
+                    //         doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
+                    // Log.i("insert manifest","insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
+                    //         doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
 
                 }
 
@@ -512,6 +522,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_SYNC, record.getSync());
         values.put(RECORD_DATETIME, record.getDatetime());
         values.put(RECORD_IS_PERMITTED, record.getPermitted());
+        values.put(RECORD_COUNT_TOTAL, record.getManifest_total());
+        values.put(RECORD_COUNT_EMBARKED, record.getManifest_embarked());
+        values.put(RECORD_COUNT_LANDED, record.getManifest_landed());
+        values.put(RECORD_COUNT_PENDING, record.getManifest_pending());
+        values.put(RECORD_TICKET, record.getManifest_pending());
 
         // 3. insert
         try {
@@ -558,7 +573,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             cursor.getString(8) + ";" + //SAILING_HOUR
                             cursor.getInt(9) + ";" + //INPUT
                             cursor.getInt(10) + ";" + //SYNC
-                            cursor.getInt(11) //PERMITTED
+                            cursor.getInt(11) + ";" + //PERMITTED
+                            cursor.getInt(12) + ";" + //MANIFEST TOTAL
+                            cursor.getInt(13) + ";" + //MANIFEST EMBARKED
+                            cursor.getInt(14) + ";" + //MANIFEST LANDED
+                            cursor.getInt(15) + ";" + //MANIFEST PENDING
+                            cursor.getString(16) + ";"   //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
             );
             cursor.moveToNext();
         }
