@@ -457,7 +457,7 @@ public class MainActivity extends AppCompatActivity
             else TextViewStatus.setText("HORARIO NO CORRESPONDE");
         else TextViewStatus.setText("FECHA NO CORRESPONDE");
 
-        String[] array;
+        String[] array=new String[20];
         if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
@@ -478,8 +478,8 @@ public class MainActivity extends AppCompatActivity
         else record.setInput(2);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
-        record.setPort_id(Integer.parseInt(port));
-        record.setShip_id(Integer.parseInt(ship));
+        record.setPort_id(array[4]);
+        record.setShip_id(array[5]);
         record.setSailing_hour(hour);
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
@@ -513,12 +513,19 @@ public class MainActivity extends AppCompatActivity
             record.setPerson_name("");
         else record.setPerson_name(TextViewFullname.getText().toString());
 
-        if (is_input) record.setInput(1);
-        else record.setInput(2);
-        record.setDatetime(getCurrentDateTime());
+        if (is_input) {
+            record.setInput(1);
+            record.setDatetime(getCurrentDateTime());
+        }
+        else {
+            record.setInput(2);
+            record.setSailing_hour(getCurrentDateTime());
+        }
         record.setSync(0);
         record.setOrigin(array[2]);
         record.setDestination(array[3]);
+        record.setPort_id(array[4]);
+        record.setShip_id(array[5]);
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
         //db.close();
@@ -558,8 +565,8 @@ public class MainActivity extends AppCompatActivity
             record.setPerson_name(arr[3]);
             record.setOrigin(arr[4]);
             record.setDestination(arr[5]);
-            record.setPort_id(Integer.parseInt(arr[6]));
-            record.setShip_id(Integer.parseInt(arr[7]));
+            record.setPort_id(arr[6]);
+            record.setShip_id(arr[7]);
             record.setSailing_hour(arr[8]);
             record.setInput(Integer.parseInt(arr[9]));
             record.setSync(Integer.parseInt(arr[10]));

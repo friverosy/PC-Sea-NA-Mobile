@@ -11,8 +11,8 @@ public class Record {
     String person_name;
     String origin;
     String destination;
-    int port_id;
-    int ship_id;
+    String port_id;
+    String ship_id;
     String sailing_hour;
     int input;
     int sync;
@@ -23,7 +23,7 @@ public class Record {
 
     }
 
-    public Record(Integer id, String person_document, String person_name, String origin,String destination, Integer port_id, Integer ship_id, String sailing_hour, Integer input, Integer sync, Integer permitted){
+    public Record(Integer id, String person_document, String person_name, String origin,String destination, String port_id, String ship_id, String sailing_hour, Integer input, Integer sync, Integer permitted){
 
         this.id = id;
         this.person_document = person_document;
@@ -70,19 +70,19 @@ public class Record {
         this.person_name = person_name;
     }
 
-    public int getPort_id() {
+    public String getPort_id() {
         return port_id;
     }
 
-    public void setPort_id(int port_id) {
+    public void setPort_id(String port_id) {
         this.port_id = port_id;
     }
 
-    public int getShip_id() {
+    public String getShip_id() {
         return ship_id;
     }
 
-    public void setShip_id(int ship_id) {
+    public void setShip_id(String ship_id) {
         this.ship_id = ship_id;
     }
 

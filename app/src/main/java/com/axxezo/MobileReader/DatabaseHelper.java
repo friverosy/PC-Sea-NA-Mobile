@@ -476,7 +476,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //return the person data if this person is in manifest table
         ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+        Cursor cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination,(select name from ports where id_api=(select port_id from config))," +
+                "(select name from ships where id=(select ship_id from config)) from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
         cursor.moveToFirst();
         String row = "";
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
@@ -550,10 +551,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             cursor.getString(1) + ";" + //DATETIME
                             cursor.getString(2) + ";" + //PERSON_DOCUMENT
                             cursor.getString(3) + ";" + //PERSON_NAME
-                            cursor.getInt(4) + ";" + //ORIGIN_ID
-                            cursor.getInt(5) + ";" + //DESTINATION_ID
-                            cursor.getInt(6) + ";" + //PORT_ID
-                            cursor.getInt(7) + ";" + //SHIP_ID
+                            cursor.getString(4) + ";" + //ORIGIN
+                            cursor.getString(5) + ";" + //DESTINATION
+                            cursor.getString(6) + ";" + //PORT
+                            cursor.getString(7) + ";" + //SHIP
                             cursor.getString(8) + ";" + //SAILING_HOUR
                             cursor.getInt(9) + ";" + //INPUT
                             cursor.getInt(10) + ";" + //SYNC
