@@ -133,7 +133,10 @@ public class MainActivity extends AppCompatActivity
     private Switch mySwitch;
     private static MainActivity mInstance;
 
-    DatabaseHelper db = new DatabaseHelper(this);
+
+    String SERVERIP = "192.168.1.100";
+
+    Server s = new Server(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,17 +157,20 @@ public class MainActivity extends AppCompatActivity
         mySwitch = (Switch) findViewById(R.id.mySwitch);
 
         writeLog("DEBUG", "Application has started Correctly");
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3001";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3001";
+        AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                 String text = "Ruta: " + db.getNameRouteSelected() + ", Puerto: " + db.getNamePortSelected() + "\n" +
                         "Nave: " + db.getNameShipSelected() + ", Hora: " + db.getHourSelected();
                 Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
+                db.close();
             }
         });
 
@@ -258,7 +264,8 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_find) {
             Intent intent = new Intent(this, find_people_in_manifest.class);
             startActivity(intent);
-        }if (id == R.id.nav_manual_registration) {
+        }
+        if (id == R.id.nav_manual_registration) {
             Intent intent = new Intent(this, manual_registration.class);
             startActivity(intent);
         }
@@ -380,6 +387,7 @@ public class MainActivity extends AppCompatActivity
     protected void onDestroy() {
         // TODO Auto-generated method stub
         super.onDestroy();
+        s.ServerKill();
     }
 
     @Override
@@ -391,6 +399,7 @@ public class MainActivity extends AppCompatActivity
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
+//	s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
     @Override
@@ -402,6 +411,15 @@ public class MainActivity extends AppCompatActivity
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                s.run();
+
+            }
+        });
+        t.start();
     }
 
     public void reset() {
@@ -423,13 +441,16 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void run() {
                 while (true) {
+                    DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                     try {
                         if (db.record_desync_count() >= 1)
                             OfflineRecordsSynchronizer();
+                        db.close();
                         Thread.sleep(30000); // 5 Min = 300000
                     } catch (Exception e) {
                         writeLog("ERROR", e.toString());
                     }
+                    db.close();
                 }
             }
         };
@@ -448,6 +469,8 @@ public class MainActivity extends AppCompatActivity
         boolean valid = false;
         String person = null;
         Record record = new Record(); // Object to be sended to API Axxezo.
+        final Record record_send = new Record();
+        DatabaseHelper db = new DatabaseHelper(this);
 
         if (date.equals(getCurrentDate()))
             if (hour.equals(db.getHourSelected()))
@@ -464,7 +487,7 @@ public class MainActivity extends AppCompatActivity
             else TextViewStatus.setText("HORARIO NO CORRESPONDE");
         else TextViewStatus.setText("FECHA NO CORRESPONDE");
 
-        String[] array=new String[20];
+        String[] array = new String[20];
         if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
@@ -490,14 +513,38 @@ public class MainActivity extends AppCompatActivity
         record.setSailing_hour(hour);
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
-        new RegisterTask(record).execute();
+        db.close();
+        /****************************Client**************************************************/
+        JSONObject json_to_send = new JSONObject();
+
+        try {
+            json_to_send.put("document", record.getPerson_document());
+            json_to_send.put("input", record.getInput());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        final String temp_string_1 = json_to_send.toString();
+        Log.d("Aca1", "AQUI");
+
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Client f = new Client(temp_string_1, SERVERIP, 8080);
+                f.run();
+            }
+        });
+        t.start();
+        /*****************************************************************************/
+        new RegisterTask(record, AxxezoAPI + "/records").execute();
     }
 
     public void documentValidator(String rut) {
         String person;
+        DatabaseHelper db = new DatabaseHelper(this);
         //schema validate person string=m.id_people,p.name where m is manifest and p is people
         person = db.validatePerson(rut);
-        String[] array=new String[20];
+        String[] array = new String[20];
         Record record = new Record(); // Object to be sended to API Axxezo.
         if (!person.isEmpty()) {
             mp3Permitted.start();
@@ -523,8 +570,7 @@ public class MainActivity extends AppCompatActivity
         if (is_input) {
             record.setInput(1);
             record.setDatetime(getCurrentDateTime());
-        }
-        else {
+        } else {
             record.setInput(2);
             record.setSailing_hour(getCurrentDateTime());
         }
@@ -539,9 +585,32 @@ public class MainActivity extends AppCompatActivity
         record.setManifest_pending(getStatusFromManifest(2));
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
-        //db.close();
+        db.close();
 
-        new RegisterTask(record).execute();
+
+/*****************Client******************************************************************/
+        JSONObject json_to_send = new JSONObject();
+
+        try {
+            json_to_send.put("document", record.getPerson_document());
+            json_to_send.put("input", record.getInput());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        final String temp_string_2 = json_to_send.toString();
+        Log.d("Aca2", "AQUI");
+
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Client f = new Client(temp_string_2, SERVERIP, 8080);
+                f.run();
+            }
+        });
+        t.start();
+        /**************************************************************************************************/
+        new RegisterTask(record, AxxezoAPI + "/records").execute();
     }
 
     public void makeToast(String msg) {
@@ -562,8 +631,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void OfflineRecordsSynchronizer() {
+        DatabaseHelper db = new DatabaseHelper(this);
         List records = db.get_desynchronized_records();
-        //db.close();
+        db.close();
 
         String[] arr;
         for (int i = 0; i <= records.size() - 1; i++) {
@@ -587,7 +657,7 @@ public class MainActivity extends AppCompatActivity
             record.setManifest_landed(getStatusFromManifest(4));
             record.setManifest_pending(getStatusFromManifest(2));
 
-            new RegisterTask(record).execute();
+            new RegisterTask(record, AxxezoAPI + "/records").execute();
         }
     }
 
@@ -642,8 +712,10 @@ public class MainActivity extends AppCompatActivity
                 httpPost.setHeader("Content-type", "application/json");
 
                 // 8. Execute POST request to the given URL
+
                 if (!AxxezoAPI.equals("http://:0")) {
                     HttpResponse httpResponse = httpclient.execute(httpPost);
+                    //Log.e("status code",httpResponse.getStatusLine().getStatusCode()+"");
                     // 9. receive response as inputStream
                     inputStream = httpResponse.getEntity().getContent();
 
@@ -655,8 +727,9 @@ public class MainActivity extends AppCompatActivity
                             // if has sync=0 its becouse its an offline record to be will synchronized.
                             if (record.getSync() == 0) {
                                 Log.d("---", "going into update record");
+                                DatabaseHelper db = new DatabaseHelper(this);
                                 db.update_record(record.getId());
-                                // db.close();
+                                db.close();
                             }
                         }
                     } else {
@@ -677,7 +750,7 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         } catch (Exception e) {
-            Log.d("---", "offline"+ e.getMessage().toString());
+            Log.d("---", "offline " + e.getMessage().toString());
         }
         // 11. return result
         return result;
@@ -686,14 +759,16 @@ public class MainActivity extends AppCompatActivity
     public class RegisterTask extends AsyncTask<Void, Void, String> {
 
         private Record newRecord;
+        private String url;
 
-        RegisterTask(Record newRecord) {
+        RegisterTask(Record newRecord, String url) {
             this.newRecord = newRecord;
+            this.url = url;
         }
 
         @Override
         protected String doInBackground(Void... params) {
-            return POST(newRecord, AxxezoAPI + "/api/");
+            return POST(newRecord, url);
         }
     }
 
@@ -1015,8 +1090,10 @@ public class MainActivity extends AppCompatActivity
     private void exitApp() {
         this.finishAffinity();
     }
+
     public int getStatusFromManifest(int position) {
-        int manifestCount=-1;
+        DatabaseHelper db = new DatabaseHelper(this);
+        int manifestCount = -1;
         int PendingCount = -1;
         int EmbarkedCount = -1;
         int LandedCount = -1;
@@ -1045,7 +1122,7 @@ public class MainActivity extends AppCompatActivity
                 count = LandedCount;
                 break;
         }
-
+        db.close();
         return count;
     }
 
