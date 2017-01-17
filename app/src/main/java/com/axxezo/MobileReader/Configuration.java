@@ -290,7 +290,7 @@ public class Configuration extends AppCompatActivity {
                     manifest_is_inside = select_from_manifest.get(0).split("\\|");
                     selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
                     hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
-
+                    //load manifest of the next day if the hour is
                     if (i > 0 && Integer.parseInt(hour_setting[0]) > 20) {
                         currentDatetime=getCurrentDate(1);
                         hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
@@ -313,7 +313,7 @@ public class Configuration extends AppCompatActivity {
                     //finally, delete from arraylist, the port
                     select_from_manifest.remove(selectionSpinnerPorts.toString());
                     Log.d("select_from_manifest", select_from_manifest.size() + "");
-                    db.insertInDB("update ports set is_in_manifest='TRUE' where id='" + selectionSpinnerPorts + "'");
+                    db.insertInDB("update ports set is_in_manifest='TRUE' where id_api='" + selectionSpinnerPorts + "'");
                     i++;
                 }
             }
@@ -694,6 +694,9 @@ public class Configuration extends AppCompatActivity {
         String localTime = date.format(currentLocalTime);
         return localTime;
     }
-
+    public String getToken_navieraAustral(){
+        return token_navieraAustral;
+    }
+    public String getURl(){ return URL;}
 
 }

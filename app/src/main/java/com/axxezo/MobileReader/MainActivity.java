@@ -336,7 +336,7 @@ public class MainActivity extends AppCompatActivity
                 barcodeStr = barcodeStr.substring(0, 9);
                 barcodeStr = barcodeStr.replace(" ", "");
                 if (barcodeStr.endsWith("K")) {
-                    flag = 1;
+                    barcodeStr=barcodeStr.replace("K","0");
                 }
 
                 // Define length of character.
@@ -408,6 +408,7 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
         initScan();
         UpdateDb();
+        updateManifest();
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
@@ -420,6 +421,38 @@ public class MainActivity extends AppCompatActivity
             }
         });
         t.start();
+    }
+
+    private void updateManifest() {
+       /* Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+                    try {
+                        Configuration conf = new Configuration();
+                        ArrayList<String> select_from_manifest = db.selectFromDB("select * from config", "|");
+                        String[] manifest_config = null;
+                        if (select_from_manifest.size() > 0) {
+                            manifest_config = select_from_manifest.get(0).split("\\|");
+                        }
+
+                        //getInformation = getManifest(URL, token_navieraAustral, route, port, Date, transports, Hour);
+                        db.insertManifestDB(getManifest(conf.getURl(),conf.getToken_navieraAustral(),Integer.parseInt(manifest_config[1].toString().trim()),Integer.parseInt(manifest_config[2].toString().trim()),getCurrentDate(),Integer.parseInt(manifest_config[3].toString().trim()),manifest_config[4]));
+                        if (Integer.parseInt(db.selectFirstFromDB("select count(id) from manifest")))
+                            OfflineRecordsSynchronizer();
+
+                        db.close();
+                        Thread.sleep(30000); // 5 Min = 300000
+                    } catch (Exception e) {
+                        writeLog("ERROR", e.toString());
+                    }
+                    db.close();
+                }
+            }
+        };
+        new Thread(runnable).start();
+*/
     }
 
     public void reset() {
@@ -567,13 +600,9 @@ public class MainActivity extends AppCompatActivity
             record.setPerson_name("");
         else record.setPerson_name(TextViewFullname.getText().toString());
 
-        if (is_input) {
-            record.setInput(1);
-            record.setDatetime(getCurrentDateTime());
-        } else {
-            record.setInput(2);
-            record.setSailing_hour(getCurrentDateTime());
-        }
+        if (is_input) record.setInput(1);
+        else record.setInput(2);
+        record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         record.setOrigin(array[2]);
         record.setDestination(array[3]);
@@ -684,12 +713,12 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("datetime", record.getDatetime());
             jsonObject.accumulate("doc", record.getPerson_document());
             jsonObject.accumulate("name", record.getPerson_name());
-            jsonObject.accumulate("origin_id", record.getOrigin());
-            jsonObject.accumulate("destination_id", record.getDestination());
-            jsonObject.accumulate("port_id", record.getPort_id());
-            jsonObject.accumulate("ship_id", record.getShip_id());
+            jsonObject.accumulate("origen", record.getOrigin());
+            jsonObject.accumulate("destination", record.getDestination());
+            jsonObject.accumulate("port", record.getPort_id());
+            jsonObject.accumulate("ship", record.getShip_id());
             jsonObject.accumulate("sailing_hour", record.getSailing_hour());
-            jsonObject.accumulate("input", record.getInput());
+            jsonObject.accumulate("state", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
             jsonObject.accumulate("manifest_total", record.getManifest_total());
             jsonObject.accumulate("manifest_embarked", record.getManifest_embarked());
@@ -1125,5 +1154,6 @@ public class MainActivity extends AppCompatActivity
         db.close();
         return count;
     }
+
 
 }
