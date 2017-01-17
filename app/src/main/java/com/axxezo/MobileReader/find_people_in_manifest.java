@@ -159,7 +159,7 @@ public class find_people_in_manifest extends AppCompatActivity {
                 barcodeStr = barcodeStr.substring(0, 9);
                 barcodeStr = barcodeStr.replace(" ", "");
                 if (barcodeStr.endsWith("K")) {
-                    flag = 1;
+                    barcodeStr=barcodeStr.replace("K","0");
                 }
 
                 // Define length of character.
