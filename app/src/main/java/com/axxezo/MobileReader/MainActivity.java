@@ -718,7 +718,7 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("name", record.getPerson_name());
             jsonObject.accumulate("origen", record.getOrigin());
             jsonObject.accumulate("destination", record.getDestination());
-            jsonObject.accumulate("port", record.getPort_id());
+            jsonObject.accumulate("port", record.getPort_id());//puerto de registro
             jsonObject.accumulate("ship", record.getShip_id());
             jsonObject.accumulate("sailing_hour", record.getSailing_hour());
             jsonObject.accumulate("state", record.getInput());

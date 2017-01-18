@@ -84,7 +84,7 @@ public class Configuration extends AppCompatActivity {
         });*/
         //inserts in db
         try {
-            db.insertJSON(new getAPIroutes().execute().get().toString(), "routes");
+            db.insertJSON(new getAPIInformation(URL,token_navieraAustral).execute().get(), "routes");
             db.close();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -140,7 +140,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerRoute = idElementSelected;
                         Log.i("id Log Routes", "----" + selectionSpinnerRoute);
                         try {
-                            db.insertJSON(new getAPIPorts(selectionSpinnerRoute).execute().get().toString(), "ports");
+                            db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute).execute().get(), "ports");
                             loadComboboxPorts();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -168,7 +168,7 @@ public class Configuration extends AppCompatActivity {
             manifest_is_inside = select_from_manifest.get(0).split("\\|");
             selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
             try {
-                db.insertJSON(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get().toString(), "ships");
+                db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships");
                 loadComboboxShips();
 
             } catch (JSONException e) {
@@ -204,7 +204,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerTransports = idElementSelected;
                         Log.i("id Log Ships", "----" + selectionSpinnerTransports);
                         try {
-                            db.insertJSON(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString(), "hours");
+                            db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0),selectionSpinnerTransports).execute().get(), "hours");
                             loadComboboxHours();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -274,11 +274,11 @@ public class Configuration extends AppCompatActivity {
                     String currentDatetime = getCurrentDate(0);
                     manifest_is_inside = select_from_manifest.get(0).split("\\|");
                     selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
-                    hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
+                    hour = new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts,currentDatetime, selectionSpinnerTransports).execute().get();
                     //load manifest of the next day if the hour is
                     if (i > 0 && Integer.parseInt(hour_setting[0]) > 20) {
                         currentDatetime = getCurrentDate(1);
-                        hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
+                        hour = new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime,selectionSpinnerTransports).execute().get();
                     }
                     //obtain the json hour information
                     JSONObject objectJson;
@@ -291,10 +291,10 @@ public class Configuration extends AppCompatActivity {
                                 hours = (jsonManifest.getJSONObject(0).getString("horas"));
                             }
                         } catch (JSONException e) {
-                            Log.e("error loadManifest hour", e.getMessage().toString());
+                            Log.e("error loadManifest hour", e.getMessage());
                         }
                     }
-                    db.insertJSON(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get().toString(),"manifest");
+                    db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get().toString(),"manifest");
                     //finally, delete from arraylist, the port
                     select_from_manifest.remove(selectionSpinnerPorts.toString());
                     Log.d("select_from_manifest", select_from_manifest.size() + "");
@@ -312,20 +312,93 @@ public class Configuration extends AppCompatActivity {
 
         //load size of manifest
 
-        ArrayList<String> select_counts = db.select("select count(*) from manifest", "|");
+        ArrayList<String> select_counts = db.select("select count(id) from manifest", "|");
         if (select_counts.size() > 0) {
             String[] binnacle_param_id = select_counts.get(0).split("\\|");
             Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(binnacle_param_id[0]) + " personas a la base de datos", Toast.LENGTH_LONG).show();
         }
     }
 
-    public class getAPIroutes extends AsyncTask<String, Void, String> {
-        private String getInformation = "";
+    public class getAPIInformation extends AsyncTask<String, Void, String> {
+        private String URL;
+        private String getInformation;
+        private String token;
+        private String date;
+        private String hour;
+        private int flag=-1;
+        private int route;
+        private int port;
+        private int transport;
+
+
+        getAPIInformation(String URL,String token){//routes
+            this.URL=URL;
+            this.token=token;
+            getInformation="";
+            flag=0;
+
+        }
+        getAPIInformation(String URL,String token,int route){//ports
+            this.URL=URL;
+            this.token=token;
+            this.route=route;
+            getInformation="";
+            flag=1;
+        }
+        getAPIInformation(String URL,String token,int route,int port,String Date){//transport
+            this.URL=URL;
+            this.token=token;
+            this.route=route;
+            this.port=port;
+            this.date=Date;
+            getInformation="";
+            flag=2;
+        }
+        getAPIInformation(String URL,String token,int route,int port,String Date,int transport){//hours
+            this.URL=URL;
+            this.token=token;
+            this.route=route;
+            this.port=port;
+            this.date=Date;
+            this.transport=transport;
+            getInformation="";
+            flag=3;
+        }
+        getAPIInformation(String URL,String token,int route, int port, int transport, String date, String hour) {//manifest
+            this.URL=URL;
+            this.token=token;
+            this.route = route;
+            this.port = port;
+            this.transport = transport;
+            this.date = date;
+            this.hour = hour;
+            getInformation="";
+            flag=4;
+        }
+
+
 
         @Override
         protected String doInBackground(String... strings) {
             try {
-                getInformation = getRoutes(URL, token_navieraAustral);
+                switch (flag){
+                    case 0:
+                        getInformation = getRoutes(URL, token);
+                        break;
+                    case 1:
+                        getInformation = getPorts(URL, token, route);
+                        break;
+                    case 2:
+                        getInformation = getTransports(URL, token, route, port, date);
+                        break;
+                    case 3:
+                        getInformation = getHours(URL, token, route, port, date, transport);
+                        break;
+                    case 4:
+                        getInformation = getManifest(URL, token, route, port, date, transport, hour);
+                        break;
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -341,127 +414,6 @@ public class Configuration extends AppCompatActivity {
         }
 
     }
-
-    public class getAPIPorts extends AsyncTask<String, Void, String> {
-        private String getInformation = "";
-        private int route;
-
-        getAPIPorts(int id_route) {
-            route = id_route;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getPorts(URL, token_navieraAustral, route);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    public class getAPITransports extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        String Date;
-
-        getAPITransports(int id_route, int id_port, String date) {
-            route = id_route;
-            port = id_port;
-            Date = date;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getTransports(URL, token_navieraAustral, route, port, Date);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        protected void onPostExecute(String result) {
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    public class getAPIHours extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        private int transports;
-        String Date;
-
-        getAPIHours(int route_id, int port_id, int transports_id, String date) {
-            route = route_id;
-            port = port_id;
-            transports = transports_id;
-            Date = date;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getHours(URL, token_navieraAustral, route, port, Date, transports);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-    }
-
-    public class getAPIManifest extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        private int transports;
-        String Date;
-        String Hour;
-
-        getAPIManifest(int id_route, int id_port, int id_transpot, String date, String hour) {
-            route = id_route;
-            port = id_port;
-            transports = id_transpot;
-            Date = date;
-            Hour = hour;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getManifest(URL, token_navieraAustral, route, port, Date, transports, Hour);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
     /*
            Give the avalaible routes in the System
            obtain the routes from api http://ticket.bsale.cl/control_api/routes
