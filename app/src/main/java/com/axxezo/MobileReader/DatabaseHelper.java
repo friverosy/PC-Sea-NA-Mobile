@@ -91,7 +91,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED,RECORD_COUNT_TOTAL,RECORD_COUNT_EMBARKED,RECORD_COUNT_LANDED,RECORD_COUNT_PENDING,RECORD_TICKET};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_COUNT_TOTAL, RECORD_COUNT_EMBARKED, RECORD_COUNT_LANDED, RECORD_COUNT_PENDING, RECORD_TICKET};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -179,14 +179,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_HOURS_TABLE);
         db.execSQL(CREATE_CONFIG_TABLE);
         db.execSQL(CREATE_MANIFEST_TABLE);
-
-        //db.execSQL("PRAGMA foreign_keys=ON;");
-        // first i must look the structure form of the get in api, and after create the table settings
-
-      /*  String CREATE_SETTING_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_SETTING + " (" +
-                "id INTEGER PRIMARY KEY, url TEXT, port INTEGET)";
-
-        db.execSQL(CREATE_SETTING_TABLE);*/
     }
 
     @Override
@@ -200,225 +192,176 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     /**
      * CRUD operations (create "add", read "get", update, delete)
      */
-    public void insertRoutesDB(String json) throws JSONException {
+
+    public void insertJSON(String json, String table) throws JSONException {
         SQLiteDatabase db = this.getWritableDatabase();
         JSONObject objectJson;
-        JSONArray jsonRoutes;
-        db.execSQL("DELETE FROM ROUTES");
-        if (!json.isEmpty() && json.length() > 3) {
-            objectJson = new JSONObject(json);
-            jsonRoutes = objectJson.getJSONArray("list_routes");
-            try {
-                db.beginTransaction();
-                Log.d("--add route", String.valueOf(db.isOpen()));
+        JSONArray jsonArray;
+        switch (table) {
+            case "routes":
+                if (!json.isEmpty() && json.length() > 3) {
+                    objectJson = new JSONObject(json);
+                    jsonArray = objectJson.getJSONArray("list_routes");
+                    try {
+                        db.beginTransaction();
+                        Log.d("--add route", String.valueOf(db.isOpen()));
+                        db.delete(TABLE_ROUTES, null, null);
 
-                db.delete(TABLE_ROUTES, null, null);
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            ContentValues values = new ContentValues();
+                            Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("id_ruta"), jsonArray.getJSONObject(i).getString("nombre_ruta"));
+                            values.put(ROUTE_ID, routes.getID());
+                            values.put(ROUTE_NAME, routes.getName().trim());
+                            Log.d("Routes content :", routes.toString());
+                            db.insert(TABLE_ROUTES, // table
+                                    null, //nullColumnHack
+                                    values); // key/value -> keys = column names/ values = column values
+                        }
+                        db.setTransactionSuccessful();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    } finally {
+                        db.endTransaction();
+                    }
 
-                for (int i = 0; i < jsonRoutes.length(); i++) {
-                    ContentValues values = new ContentValues();
-                    Routes routes = new Routes(jsonRoutes.getJSONObject(i).getInt("id_ruta"), jsonRoutes.getJSONObject(i).getString("nombre_ruta"));
-                    values.put(ROUTE_ID, routes.getID());
-                    values.put(ROUTE_NAME, routes.getName().trim());
-                    Log.d("Routes content :", routes.toString());
-                    db.insert(TABLE_ROUTES, // table
-                            null, //nullColumnHack
-                            values); // key/value -> keys = column names/ values = column values
-                }
-                db.setTransactionSuccessful();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                db.endTransaction();
-            }
+                } else
+                    Log.i("json content", json.toString());
+                break;
+            case "ports":
+                if (!json.isEmpty()) {
+                    objectJson = new JSONObject(json);
+                    jsonArray = objectJson.getJSONArray("list_sections_route");
+                    try {
+                        db.beginTransaction();
+                        db.delete(TABLE_PORTS, null, null);
 
-        } else
-            Log.i("json content", json.toString());
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            ContentValues values = new ContentValues();
+                            Ports port = new Ports(jsonArray.getJSONObject(i).getInt("id_ubicacion"), jsonArray.getJSONObject(i).getString("nombre_ubicacion"));
+                            values.put(PORT_ID_API, port.getId());
+                            values.put(PORT_NAME, port.getName().trim());
+                            Log.d("Ports content :", port.toString());
+                            db.insert(TABLE_PORTS, // table
+                                    null, //nullColumnHack
+                                    values); // key/value -> keys = column names/ values = column values
+                        }
+                        db.setTransactionSuccessful();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    } finally {
+                        db.endTransaction();
+                    }
+                } else
+                    Log.i("error", "Json empty!");
+                break;
+            case "ships":
+                if (!json.isEmpty()) {
+                    objectJson = new JSONObject(json);
+                    jsonArray = objectJson.getJSONArray("list_transport");
+                    try {
+                        db.beginTransaction();
+                        Log.d("--add transports", String.valueOf(db.isOpen()));
 
-        //db.close();
-    }
+                        db.delete(TABLE_SHIPS, null, null);
 
-    public void insertPortsDB(String json) throws JSONException {
-        SQLiteDatabase db = this.getWritableDatabase();
-        JSONObject objectJson;
-        JSONArray jsonRoutes;
-        if (!json.isEmpty()) {
-            objectJson = new JSONObject(json);
-            jsonRoutes = objectJson.getJSONArray("list_sections_route");
-            try {
-                db.beginTransaction();
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            ContentValues values = new ContentValues();
+                            Ships port = new Ships(jsonArray.getJSONObject(i).getInt("id_transporte"), jsonArray.getJSONObject(i).getString("nombre_transporte"));
+                            values.put(SHIP_ID, port.getID());
+                            values.put(SHIP_NAME, port.getName().trim());
+                            Log.d("Ships content :", port.toString());
+                            db.insert(TABLE_SHIPS, // table
+                                    null, //nullColumnHack
+                                    values); // key/value -> keys = column names/ values = column values
+                        }
+                        db.setTransactionSuccessful();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    } finally {
+                        db.endTransaction();
+                    }
+                } else
+                    Log.i("error", "Json empty!");
+                break;
+            case "hours":
+                if (!json.isEmpty()) {
+                    objectJson = new JSONObject(json);
+                    jsonArray = objectJson.getJSONArray("list_hours");
+                    try {
+                        db.beginTransaction();
+                        Log.d("--add Hours", String.valueOf(db.isOpen()));
 
-                db.delete(TABLE_PORTS, null, null);
+                        db.delete(TABLE_HOURS, null, null);
 
-                for (int i = 0; i < jsonRoutes.length(); i++) {
-                    ContentValues values = new ContentValues();
-                    Ports port = new Ports(jsonRoutes.getJSONObject(i).getInt("id_ubicacion"), jsonRoutes.getJSONObject(i).getString("nombre_ubicacion"));
-                    values.put(PORT_ID_API, port.getId());
-                    values.put(PORT_NAME, port.getName().trim());
-                    Log.d("Ports content :", port.toString());
-                    db.insert(TABLE_PORTS, // table
-                            null, //nullColumnHack
-                            values); // key/value -> keys = column names/ values = column values
-                }
-                db.setTransactionSuccessful();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                db.endTransaction();
-            }
-        } else
-            Log.i("error", "Json empty!");
-        //db.close();
-    }
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            ContentValues values = new ContentValues();
+                            Hours hours = new Hours(jsonArray.getJSONObject(i).getString("horas"));
+                            values.put(HOUR_NAME, hours.getName().trim());
+                            Log.d("Hours content :", hours.toString());
+                            db.insert(TABLE_HOURS, // table
+                                    null, //nullColumnHack
+                                    values); // key/value -> keys = column names/ values = column values
+                        }
+                        db.setTransactionSuccessful();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    } finally {
+                        db.endTransaction();
+                    }
+                } else
+                    Log.i("error", "Json empty!");
+                break;
+            case "manifest":
+                if (!json.isEmpty()) {
+                    objectJson = new JSONObject(json);
+                    jsonArray = objectJson.getJSONArray("manifiesto_pasajero");
+                    try {
+                        //db.delete(TABLE_MANIFEST, null, null);
+                        //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
+                        db.beginTransaction();
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            Log.d("for", String.valueOf(i));
+                            ContentValues valuesPerson = new ContentValues();
+                            ContentValues valuesManifest = new ContentValues();
 
-    public void insertShipsDB(String json) throws JSONException {
-        SQLiteDatabase db = this.getWritableDatabase();
-        JSONObject objectJson;
-        JSONArray jsonRoutes;
-        if (!json.isEmpty()) {
-            objectJson = new JSONObject(json);
-            jsonRoutes = objectJson.getJSONArray("list_transport");
-            try {
-                db.beginTransaction();
-                Log.d("--add transports", String.valueOf(db.isOpen()));
+                            People people = new People(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("nombre_pasajero"), jsonArray.getJSONObject(i).getString("nacionalidad"), 0);
+                            navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("origen"), jsonArray.getJSONObject(i).getString("destino"), 0);
 
-                db.delete(TABLE_SHIPS, null, null);
+                            String doc;
+                            doc = people.getDocument();
+                            if (people.getDocument().contains("-"))
+                                doc = doc.substring(0, doc.length() - 2);
 
-                for (int i = 0; i < jsonRoutes.length(); i++) {
-                    ContentValues values = new ContentValues();
-                    Ships port = new Ships(jsonRoutes.getJSONObject(i).getInt("id_transporte"), jsonRoutes.getJSONObject(i).getString("nombre_transporte"));
-                    values.put(SHIP_ID, port.getID());
-                    values.put(SHIP_NAME, port.getName().trim());
-                    Log.d("Ships content :", port.toString());
-                    db.insert(TABLE_SHIPS, // table
-                            null, //nullColumnHack
-                            values); // key/value -> keys = column names/ values = column values
-                }
-                db.setTransactionSuccessful();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                db.endTransaction();
-            }
-        } else
-            Log.i("error", "Json empty!");
-        //db.close();
-    }
+                            valuesPerson.put(PERSON_DOCUMENT, doc);
+                            valuesPerson.put(PERSON_NAME, people.getName().trim());
+                            valuesPerson.put(PERSON_NATIONALITY, people.getNationality());
+                            valuesPerson.put(PERSON_AGE, people.getAge());
 
-    public void insertHoursDB(String json) throws JSONException {
-        SQLiteDatabase db = this.getWritableDatabase();
-        JSONObject objectJson;
-        JSONArray jsonRoutes;
-        if (!json.isEmpty()) {
-            objectJson = new JSONObject(json);
-            jsonRoutes = objectJson.getJSONArray("list_hours");
-            try {
-                db.beginTransaction();
-                Log.d("--add Hours", String.valueOf(db.isOpen()));
+                            valuesManifest.put(MANIFEST_PEOPLE_ID, doc);
+                            valuesManifest.put(MANIFEST_ORIGIN, manifest.getOrigin());
+                            valuesManifest.put(MANIFEST_DESTINATION, manifest.getDestination());
+                            valuesManifest.put(MANIFEST_ISINSIDE, manifest.getIsInside());
 
-                db.delete(TABLE_HOURS, null, null);
-
-                for (int i = 0; i < jsonRoutes.length(); i++) {
-                    ContentValues values = new ContentValues();
-                    Hours hours = new Hours(jsonRoutes.getJSONObject(i).getString("horas"));
-                    values.put(HOUR_NAME, hours.getName().trim());
-                    Log.d("Hours content :", hours.toString());
-                    db.insert(TABLE_HOURS, // table
-                            null, //nullColumnHack
-                            values); // key/value -> keys = column names/ values = column values
-                }
-                db.setTransactionSuccessful();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                db.endTransaction();
-            }
-        } else
-            Log.i("error", "Json empty!");
-        // db.close();
-    }
-
-    public void insertManifestDB(String json) throws JSONException {
-        SQLiteDatabase db = this.getWritableDatabase();
-        JSONObject objectJson;
-        JSONArray jsonManifest;
-        if (!json.isEmpty()) {
-            objectJson = new JSONObject(json);
-            jsonManifest = objectJson.getJSONArray("manifiesto_pasajero");
-            try {
-                //db.delete(TABLE_MANIFEST, null, null);
-                //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
-                //db.beginTransaction();
-                for (int i = 0; i < jsonManifest.length(); i++) {
-                    Log.d("for", String.valueOf(i));
-                    ContentValues valuesPerson = new ContentValues();
-                    ContentValues valuesManifest = new ContentValues();
-
-                    People people = new People(jsonManifest.getJSONObject(i).getString("codigo_pasajero"), jsonManifest.getJSONObject(i).getString("nombre_pasajero"), jsonManifest.getJSONObject(i).getString("nacionalidad"), 0);
-                    navieraManifest manifest = new navieraManifest(jsonManifest.getJSONObject(i).getString("codigo_pasajero"), jsonManifest.getJSONObject(i).getString("origen"), jsonManifest.getJSONObject(i).getString("destino"), 0);
-
-                    String doc;
-                    doc = people.getDocument();
-                    if (people.getDocument().contains("-"))
-                        doc = doc.substring(0, doc.length() - 2);
-
-                    valuesPerson.put(PERSON_DOCUMENT, doc);
-                    valuesPerson.put(PERSON_NAME, people.getName().trim());
-                    valuesPerson.put(PERSON_NATIONALITY, people.getNationality());
-                    valuesPerson.put(PERSON_AGE, people.getAge());
-
-                    valuesManifest.put(MANIFEST_PEOPLE_ID, doc);
-                    valuesManifest.put(MANIFEST_ORIGIN, manifest.getOrigin());
-                    valuesManifest.put(MANIFEST_DESTINATION, manifest.getDestination());
-                    valuesManifest.put(MANIFEST_ISINSIDE, manifest.getIsInside());
-
-                    db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                            doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
-                    db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                            doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
-                    // Log.i("insert people","insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                    //         doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
-                    // Log.i("insert manifest","insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                    //         doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
-
-                }
-
-//                db.setTransactionSuccessful();
-                Log.d("total manifiesto", String.valueOf(manifest_count()));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (SQLException sqle) {
-                sqle.printStackTrace();
-            } finally {
-                // db.endTransaction();
-            }
-        } else
-            Log.i("error", "Json empty!");
-        //db.close();
-    }
-
-    public int manifest_count() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + MANIFEST_ID + " FROM " + TABLE_MANIFEST + ";", null);
-        return cursor.getCount();
-    }
-
-    public ArrayList<String> getListFromDB(String table) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        ArrayList<String> list = new ArrayList<String>();
-        Cursor cursor = db.rawQuery("SELECT * from " + table + ";", null);
-        Log.i("Tmp", "SELECT * from " + table + ";");
-        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-            if (cursor.isFirst()) {
-                list.add("");
-            }
-            list.add(cursor.getString(1));
+                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
+                                    doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
+                            db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
+                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                        }
+                        db.setTransactionSuccessful();
+                        Log.d("total manifiesto", selectFirst("select count(id) from manfiest"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    } catch (SQLException sqle) {
+                        sqle.printStackTrace();
+                    } finally {
+                        db.endTransaction();
+                    }
+                } else
+                    Log.i("error", "Json empty!");
+                break;
         }
-        Log.i("list String", "List: " + list.toString());
-        //db.close();
-        return list;
     }
-
-    public String selectFirstFromDB(String Query) {
+    public String selectFirst(String Query) {
         String firstElement = "";
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(Query, null);
@@ -428,59 +371,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //db.close();
         return firstElement;
     }
-
-    public void insertID(int i, String table) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        try {
-            db.beginTransaction();
-            ContentValues values = new ContentValues();
-            switch (table) {
-                case "routes":
-                    values.put(CONFIG_ROUTE_ID, i);
-                    break;
-                case "ports":
-                    values.put(CONFIG_PORT_ID, i);
-                    break;
-                case "ships":
-                    values.put(CONFIG_SHIP_ID, i);
-                    break;
-                case "hours":
-                    values.put(CONFIG_HOUR, i);
-                    break;
-            }
-            Log.d("ID route content :", i + "");
-            db.insert(TABLE_CONFIG, // table
-                    null, //nullColumnHack
-                    values); // key/value -> keys = column names/ values = column values
-        } finally {
-            db.setTransactionSuccessful();
-            db.endTransaction();
-        }
-        //db.close();
-    }
-
-    public void insertSettingsValues(int route, int port, int transport, String hour) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        try {
-            db.execSQL("DROP TABLE IF EXISTS config");
-            db.execSQL(CREATE_CONFIG_TABLE);
-            db.beginTransaction();
-            ContentValues values = new ContentValues();
-            values.put(CONFIG_ROUTE_ID, route);
-            values.put(CONFIG_PORT_ID, port);
-            values.put(CONFIG_SHIP_ID, transport);
-            values.put(CONFIG_HOUR, hour);
-            db.insert(TABLE_CONFIG, // table
-                    null, //nullColumnHack
-                    values); // key/value -> keys = column names/ values = column values
-            Log.i("VALUE SETTINGS", route + "," + port + "," + transport + "," + hour);
-        } finally {
-            db.setTransactionSuccessful();
-            db.endTransaction();
-        }
-        //db.close();
-    }
-
     //cris
     public String validatePerson(String rut) {
         //return the person data if this person is in manifest table
@@ -571,36 +461,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             cursor.getString(6) + ";" + //PORT
                             cursor.getString(7) + ";" + //SHIP
                             cursor.getString(8) + ";" + //SAILING_HOUR
-                            cursor.getInt(9) + ";" + //INPUT
-                            cursor.getInt(10) + ";" + //SYNC
-                            cursor.getInt(11) + ";" + //PERMITTED
-                            cursor.getInt(12) + ";" + //MANIFEST TOTAL
-                            cursor.getInt(13) + ";" + //MANIFEST EMBARKED
-                            cursor.getInt(14) + ";" + //MANIFEST LANDED
-                            cursor.getInt(15) + ";" + //MANIFEST PENDING
-                            cursor.getString(16) + ";"   //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
+                            cursor.getInt(9) + ";" +    //INPUT
+                            cursor.getInt(10) + ";" +   //SYNC
+                            cursor.getInt(11) + ";" +   //PERMITTED
+                            cursor.getInt(12) + ";" +   //MANIFEST TOTAL
+                            cursor.getInt(13) + ";" +   //MANIFEST EMBARKED
+                            cursor.getInt(14) + ";" +   //MANIFEST LANDED
+                            cursor.getInt(15) + ";" +   //MANIFEST PENDING
+                            cursor.getString(16) + ";"  //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
             );
             cursor.moveToNext();
         }
 
         cursor.close();
         //db.close();
-
         // 5. return
         return records;
-    }
-
-    public int record_desync_count() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        try {
-            Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " +
-                    TABLE_RECORDS + " WHERE " + RECORD_SYNC + "=0;", null);
-            //db.close();
-            return cursor.getCount();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return 0;
-        }
     }
 
     public void update_record(int id) {
@@ -623,140 +499,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (i > 0) Log.d("Local Record updated", String.valueOf(id));
         else Log.e("Error updating record", String.valueOf(id));
     }
-
-    public String getHourSelected() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        String hora = "";
-        String selectQuery = "SELECT " + TABLE_HOURS + "." + HOUR_NAME + " FROM " + TABLE_HOURS +
-                " INNER JOIN " + TABLE_CONFIG + " ON " +
-                TABLE_HOURS + "." + HOUR_NAME + " = " + TABLE_CONFIG + "." + CONFIG_HOUR + ";";
-        try {
-            Cursor c = db.rawQuery(selectQuery, new String[]{});
-            if (c.moveToFirst()) {
-                hora = c.getString(c.getColumnIndex(ROUTE_NAME));
-            }
-            c.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        //db.close();
-        return hora;
-    }
-
-    public String getShipSelected() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        String ship = "";
-        String selectQuery = "SELECT " + TABLE_SHIPS + "." + SHIP_ID + " FROM " + TABLE_SHIPS +
-                " INNER JOIN " + TABLE_CONFIG + " ON " +
-                TABLE_SHIPS + "." + SHIP_ID + " = " + TABLE_CONFIG + "." + CONFIG_SHIP_ID + ";";
-        try {
-            Cursor c = db.rawQuery(selectQuery, new String[]{});
-            if (c.moveToFirst()) {
-                ship = c.getString(c.getColumnIndex(SHIP_ID));
-            }
-            c.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        //db.close();
-        return ship;
-    }
-
-    public String getNameShipSelected() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        String ship = "";
-        String selectQuery = "SELECT " + TABLE_SHIPS + "." + SHIP_NAME + " FROM " + TABLE_SHIPS +
-                " INNER JOIN " + TABLE_CONFIG + " ON " +
-                TABLE_SHIPS + "." + SHIP_ID + " = " + TABLE_CONFIG + "." + CONFIG_SHIP_ID + ";";
-        try {
-            Cursor c = db.rawQuery(selectQuery, new String[]{});
-            if (c.moveToFirst()) {
-                ship = c.getString(c.getColumnIndex(SHIP_NAME));
-            }
-            c.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        //db.close();
-        return ship;
-    }
-
-    public String getRouteSelected() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        String route = "";
-        String selectQuery = "SELECT " + TABLE_ROUTES + "." + ROUTE_ID + " FROM " + TABLE_ROUTES +
-                " INNER JOIN " + TABLE_CONFIG + " ON " +
-                TABLE_ROUTES + "." + ROUTE_ID + " = " + TABLE_CONFIG + "." + CONFIG_ROUTE_ID + ";";
-        try {
-            Cursor c = db.rawQuery(selectQuery, new String[]{});
-            if (c.moveToFirst()) {
-                route = c.getString(c.getColumnIndex(ROUTE_ID));
-            }
-            c.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        // db.close();
-        return route;
-    }
-
-    public String getNameRouteSelected() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        String route = "";
-        String selectQuery = "SELECT " + TABLE_ROUTES + "." + ROUTE_NAME + " FROM " + TABLE_ROUTES +
-                " INNER JOIN " + TABLE_CONFIG + " ON " +
-                TABLE_ROUTES + "." + ROUTE_ID + " = " + TABLE_CONFIG + "." + CONFIG_ROUTE_ID + ";";
-        try {
-            Cursor c = db.rawQuery(selectQuery, new String[]{});
-            if (c.moveToFirst()) {
-                route = c.getString(c.getColumnIndex(ROUTE_NAME));
-            }
-            c.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        //db.close();
-        return route;
-    }
-
-    public String getPortSelected() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        String port = "";
-        String selectQuery = "SELECT " + TABLE_PORTS + "." + PORT_ID + " FROM " + TABLE_PORTS +
-                " INNER JOIN " + TABLE_CONFIG + " ON " +
-                TABLE_PORTS + "." + PORT_ID + " = " + TABLE_CONFIG + "." + CONFIG_PORT_ID + ";";
-        try {
-            Cursor c = db.rawQuery(selectQuery, new String[]{});
-            if (c.moveToFirst()) {
-                port = c.getString(c.getColumnIndex(PORT_ID));
-            }
-            c.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        // db.close();
-        return port;
-    }
-
-    public String getNamePortSelected() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        String port = "";
-        String selectQuery = "SELECT " + TABLE_PORTS + "." + PORT_NAME + " FROM " + TABLE_PORTS +
-                " INNER JOIN " + TABLE_CONFIG + " ON " +
-                TABLE_PORTS + "." + PORT_ID + " = " + TABLE_CONFIG + "." + CONFIG_PORT_ID + ";";
-        try {
-            Cursor c = db.rawQuery(selectQuery, new String[]{});
-            if (c.moveToFirst()) {
-                port = c.getString(c.getColumnIndex(PORT_NAME));
-            }
-            c.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        // db.close();
-        return port;
-    }
-
     public void updatePeopleManifest(String rut, int input) {
         SQLiteDatabase db = this.getWritableDatabase();
         try {
@@ -769,7 +511,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //db.close();
     }
 
-    public ArrayList<String> selectFromDB(String select, String split) {
+    public ArrayList<String> select(String select, String split) {
         ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(select, null);
@@ -785,10 +527,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         //db.close();
         return list;
-
     }
 
-    public boolean insertInDB(String insert) {
+    public boolean insert(String insert) {
         SQLiteDatabase db = this.getWritableDatabase();
         try {
             db.beginTransaction();
@@ -800,6 +541,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } finally {
             db.endTransaction();
         }
+    }
+
+    public ArrayList<String> getComboboxList(String table) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        ArrayList<String> list = new ArrayList<String>();
+        Cursor cursor = db.rawQuery("SELECT * from " + table + ";", null);
+        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+            if (cursor.isFirst()) {
+                switch(table){
+                    case "routes":
+                        list.add("< Elija una ruta >");
+                        break;
+                    case "ships":
+                        list.add("< Elija una nave >");
+                        break;
+                    case "hours":
+                        list.add("< Elija una hora >");
+                        break;
+                }
+            }
+            list.add(cursor.getString(1));
+        }
+        Log.i("list String", "List: " + list.toString());
+        //db.close();
+        return list;
     }
 
 

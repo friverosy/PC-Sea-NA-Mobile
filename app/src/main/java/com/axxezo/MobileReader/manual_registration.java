@@ -10,7 +10,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.Toast;
 
 import java.text.DateFormat;
@@ -46,7 +45,7 @@ public class manual_registration extends AppCompatActivity {
 
         //adapter spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.selectFromDB("select distinct origin from manifest union select distinct destination from manifest", ""));
+                android.R.layout.simple_spinner_item, db.select("select distinct origin from manifest union select distinct destination from manifest", ""));
         //set adapter to spinner
         origin.setAdapter(adapter);
         destination.setAdapter(adapter);
@@ -93,9 +92,9 @@ public class manual_registration extends AppCompatActivity {
                     name.setError("falta ingresar Nombre");
                 }
                 if (ticket_no.getText() != null && dni.getText() != null && name.getText() != null) {
-                    db.insertInDB("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
-                    db.insertInDB("insert into manifest(id_people,origin,destination) values('" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "')");
-                    db.insertInDB("insert into records(datetime,person_document,origin,destination,ticket,sync) values('" + getCurrentDateTime() + "','" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + ticket_no.getText().toString().toUpperCase() +"','"+0+"')");
+                    db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
+                    db.insert("insert into manifest(id_people,origin,destination) values('" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "')");
+                    db.insert("insert into records(datetime,person_document,origin,destination,ticket,sync) values('" + getCurrentDateTime() + "','" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + ticket_no.getText().toString().toUpperCase() +"','"+0+"')");
                     Toast.makeText(getApplicationContext(),"Persona Ingresada Exitosamente",Toast.LENGTH_LONG).show();
                     db.close();
 

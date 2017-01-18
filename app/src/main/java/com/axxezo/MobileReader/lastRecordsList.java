@@ -16,10 +16,8 @@ import android.widget.AdapterView;
 import android.widget.Filter;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class lastRecordsList extends ListActivity implements AdapterView.OnItemSelectedListener {
     private SQLiteDatabase newDB;
@@ -53,7 +51,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         //combo_destination.setOnItemSelectedListener(this);
         db = new DatabaseHelper(this);
 
-        ArrayList<String> select_from_manifest = db.selectFromDB("select distinct origin from manifest", "");
+        ArrayList<String> select_from_manifest = db.select("select distinct origin from manifest", "");
         String[] manifest_is_inside = null;
         ArrayList<String> listDestination = new ArrayList();
         listDestination.addAll(select_from_manifest);
@@ -110,7 +108,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
     }
 
     public int getStatusFromManifest(int position) {
-        ArrayList<String> select_counts = db.selectFromDB("select (select count(*) from manifest)," +
+        ArrayList<String> select_counts = db.select("select (select count(*) from manifest)," +
                 "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
                 "(select count(*) from manifest where is_inside=2)", "|");
         int count = 0;

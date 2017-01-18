@@ -1,22 +1,16 @@
 package com.axxezo.MobileReader;
 
-import android.animation.ValueAnimator;
-import android.content.ContentValues;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -39,7 +33,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 public class Configuration extends AppCompatActivity {
@@ -91,7 +84,7 @@ public class Configuration extends AppCompatActivity {
         });*/
         //inserts in db
         try {
-            db.insertRoutesDB(new getAPIroutes().execute().get().toString());
+            db.insertJSON(new getAPIroutes().execute().get().toString(), "routes");
             db.close();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -113,7 +106,9 @@ public class Configuration extends AppCompatActivity {
                         (combobox != null && combobox.getSelectedItem() != null) && !combobox.getSelectedItem().equals("")) {
                     loadButton.setProgress(10);
                     mVibrator.vibrate(100);
-                    db.insertSettingsValues(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, hour);
+                    db.insert("delete from config");
+                    db.insert("insert into config(route_id,port_id,ship_id,hour) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
+                            selectionSpinnerTransports + "','" + hour + "')");
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
@@ -129,7 +124,7 @@ public class Configuration extends AppCompatActivity {
         //create adapter from combobox
         combobox.setClickable(true);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getListFromDB("routes"));
+                android.R.layout.simple_spinner_item, db.getComboboxList("routes"));
         //set adapter to spinner
         combobox.setAdapter(adapter);
         //set listener from spinner
@@ -140,13 +135,12 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setProgress(0);
                 if (combobox.getSelectedItemPosition() != 0) {
                     String nameElement = combobox.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ROUTES where name=" + "'" + nameElement + "'"));
+                    int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ROUTES where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerRoute = idElementSelected;
                         Log.i("id Log Routes", "----" + selectionSpinnerRoute);
-                        // / db.insertID(idElementSelected,"ROUTES");
                         try {
-                            db.insertPortsDB(new getAPIPorts(selectionSpinnerRoute).execute().get().toString());
+                            db.insertJSON(new getAPIPorts(selectionSpinnerRoute).execute().get().toString(), "ports");
                             loadComboboxPorts();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -167,14 +161,14 @@ public class Configuration extends AppCompatActivity {
     }
 
     public void loadComboboxPorts() {
-        //int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ports where name=" + "'" + nameElement + "'"));
-        ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id_api from ports limit 1", "|");
+        //int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ports where name=" + "'" + nameElement + "'"));
+        ArrayList<String> select_from_manifest = db.select("SELECT id_api from ports limit 1", "|");
         String[] manifest_is_inside = null;
         if (select_from_manifest.size() > 0) {
             manifest_is_inside = select_from_manifest.get(0).split("\\|");
             selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
             try {
-                db.insertShipsDB(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get().toString());
+                db.insertJSON(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get().toString(), "ships");
                 loadComboboxShips();
 
             } catch (JSONException e) {
@@ -195,7 +189,7 @@ public class Configuration extends AppCompatActivity {
         //create adapter from comboboX
         combobox_transports.setClickable(true);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getListFromDB("ships"));
+                android.R.layout.simple_spinner_item, db.getComboboxList("ships"));
         //set adapter to spinner
         combobox_transports.setAdapter(adapter);
         //set listener from spinner
@@ -205,12 +199,12 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setProgress(0);
                 if (combobox_transports.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_transports.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ships where name=" + "'" + nameElement + "'"));
+                    int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ships where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerTransports = idElementSelected;
                         Log.i("id Log Ships", "----" + selectionSpinnerTransports);
                         try {
-                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
+                            db.insertJSON(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString(), "hours");
                             loadComboboxHours();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -234,7 +228,7 @@ public class Configuration extends AppCompatActivity {
     public void loadComboboxHours() {
         //create adapter from combobox
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getListFromDB("hours"));
+                android.R.layout.simple_spinner_item, db.getComboboxList("hours"));
         //set adapter to spinner
         combobox_hours.setAdapter(adapter);
         combobox_hours.setClickable(true);
@@ -245,21 +239,12 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setProgress(0);
                 if (combobox_hours.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_hours.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from Hours  where name=" + "'" + nameElement + "'"));
+                    int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from Hours  where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerHour = idElementSelected;
                         Log.i("id Log Hours", "----" + selectionSpinnerHour);
-                        try {
-                            hour = nameElement;
-                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-
+                        hour = nameElement;
+                        //db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
                     }
                 }
 
@@ -273,26 +258,26 @@ public class Configuration extends AppCompatActivity {
 
     public void loadManifest() {
         //first delete the manifest table
-        db.insertInDB("delete from manifest");
-        db.insertInDB("delete from sqlite_sequence where name='MANIFEST'");
+        db.insert("delete from manifest");
+        db.insert("delete from sqlite_sequence where name='MANIFEST'");
 
         //charge the manifest per each port in people table
         try {
-            ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id_api from ports where is_in_manifest='FALSE'", "");
-            ArrayList<String> select_hour_config = db.selectFromDB("SELECT hour from config", "");
+            ArrayList<String> select_from_manifest = db.select("SELECT id_api from ports where is_in_manifest='FALSE'", "");
+            ArrayList<String> select_hour_config = db.select("SELECT hour from config", "");
             String[] manifest_is_inside = null;
             String[] hour_setting = select_hour_config.get(0).split(":");
             String hours = "";
             if (select_from_manifest.size() > 0) {
                 int i = 0;
                 while (!select_from_manifest.isEmpty()) {
-                    String currentDatetime=getCurrentDate(0);
+                    String currentDatetime = getCurrentDate(0);
                     manifest_is_inside = select_from_manifest.get(0).split("\\|");
                     selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
                     hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
                     //load manifest of the next day if the hour is
                     if (i > 0 && Integer.parseInt(hour_setting[0]) > 20) {
-                        currentDatetime=getCurrentDate(1);
+                        currentDatetime = getCurrentDate(1);
                         hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
                     }
                     //obtain the json hour information
@@ -309,11 +294,11 @@ public class Configuration extends AppCompatActivity {
                             Log.e("error loadManifest hour", e.getMessage().toString());
                         }
                     }
-                    db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get().toString());
+                    db.insertJSON(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get().toString(),"manifest");
                     //finally, delete from arraylist, the port
                     select_from_manifest.remove(selectionSpinnerPorts.toString());
                     Log.d("select_from_manifest", select_from_manifest.size() + "");
-                    db.insertInDB("update ports set is_in_manifest='TRUE' where id_api='" + selectionSpinnerPorts + "'");
+                    db.insert("update ports set is_in_manifest='TRUE' where id_api='" + selectionSpinnerPorts + "'");
                     i++;
                 }
             }
@@ -327,7 +312,7 @@ public class Configuration extends AppCompatActivity {
 
         //load size of manifest
 
-        ArrayList<String> select_counts = db.selectFromDB("select count(*) from manifest", "|");
+        ArrayList<String> select_counts = db.select("select count(*) from manifest", "|");
         if (select_counts.size() > 0) {
             String[] binnacle_param_id = select_counts.get(0).split("\\|");
             Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(binnacle_param_id[0]) + " personas a la base de datos", Toast.LENGTH_LONG).show();
@@ -673,13 +658,12 @@ public class Configuration extends AppCompatActivity {
     public String getCurrentDate(int days) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime;
-        DateFormat date=new SimpleDateFormat("yyyy-MM-dd");
-        String returntime="";
+        DateFormat date = new SimpleDateFormat("yyyy-MM-dd");
+        String returntime = "";
         if (days == 0) {
             currentLocalTime = cal.getTime();
             returntime = date.format(currentLocalTime);
-        }
-        else if(days>0){
+        } else if (days > 0) {
             cal.add(Calendar.DAY_OF_MONTH, days); //Adds a day
             returntime = date.format(cal.getTime());
         }
@@ -694,9 +678,13 @@ public class Configuration extends AppCompatActivity {
         String localTime = date.format(currentLocalTime);
         return localTime;
     }
-    public String getToken_navieraAustral(){
+
+    public String getToken_navieraAustral() {
         return token_navieraAustral;
     }
-    public String getURl(){ return URL;}
+
+    public String getURl() {
+        return URL;
+    }
 
 }

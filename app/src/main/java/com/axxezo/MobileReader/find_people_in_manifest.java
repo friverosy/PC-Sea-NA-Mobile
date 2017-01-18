@@ -11,7 +11,6 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -246,7 +245,7 @@ public class find_people_in_manifest extends AppCompatActivity {
     }
 
     public void findInManifest(String document) {
-        ArrayList<String> select_from_manifest = db.selectFromDB("select ma.id_people,ma.origin,ma.destination, p.name,(select hour from config limit 1) from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'", "|");
+        ArrayList<String> select_from_manifest = db.select("select ma.id_people,ma.origin,ma.destination, p.name,(select hour from config limit 1) from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'", "|");
         if (select_from_manifest.size() > 0) {
             mp3Permitted.start();
             String[] manifest_is_inside = select_from_manifest.get(0).split("\\|");

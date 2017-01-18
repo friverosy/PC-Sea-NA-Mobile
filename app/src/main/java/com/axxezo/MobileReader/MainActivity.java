@@ -166,8 +166,10 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                String text = "Ruta: " + db.getNameRouteSelected() + ", Puerto: " + db.getNamePortSelected() + "\n" +
-                        "Nave: " + db.getNameShipSelected() + ", Hora: " + db.getHourSelected();
+                String text = "Ruta: " + db.selectFirst("select routes.name from routes inner join config on routes.id=config.route_id") +
+                        ", Puerto: " + db.selectFirst("select ports.name from ports inner join config on ports.id_api=config.port_id") + "\n" +
+                        "  Nave: " + db.selectFirst("select ships.name from ships inner join config on ships.id=config.ship_id") +
+                        ", Hora: " + db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour");
                 Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
                 db.close();
@@ -336,7 +338,8 @@ public class MainActivity extends AppCompatActivity
                 barcodeStr = barcodeStr.substring(0, 9);
                 barcodeStr = barcodeStr.replace(" ", "");
                 if (barcodeStr.endsWith("K")) {
-                    barcodeStr=barcodeStr.replace("K","0");
+                    barcodeStr = barcodeStr.replace("K", "0");
+
                 }
 
                 // Define length of character.
@@ -431,7 +434,7 @@ public class MainActivity extends AppCompatActivity
                     DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                     try {
                         Configuration conf = new Configuration();
-                        ArrayList<String> select_from_manifest = db.selectFromDB("select * from config", "|");
+                        ArrayList<String> select_from_manifest = db.select("select * from config", "|");
                         String[] manifest_config = null;
                         if (select_from_manifest.size() > 0) {
                             manifest_config = select_from_manifest.get(0).split("\\|");
@@ -439,7 +442,7 @@ public class MainActivity extends AppCompatActivity
 
                         //getInformation = getManifest(URL, token_navieraAustral, route, port, Date, transports, Hour);
                         db.insertManifestDB(getManifest(conf.getURl(),conf.getToken_navieraAustral(),Integer.parseInt(manifest_config[1].toString().trim()),Integer.parseInt(manifest_config[2].toString().trim()),getCurrentDate(),Integer.parseInt(manifest_config[3].toString().trim()),manifest_config[4]));
-                        if (Integer.parseInt(db.selectFirstFromDB("select count(id) from manifest")))
+                        if (Integer.parseInt(db.selectFirst("select count(id) from manifest")))
                             OfflineRecordsSynchronizer();
 
                         db.close();
@@ -476,7 +479,7 @@ public class MainActivity extends AppCompatActivity
                 while (true) {
                     DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                     try {
-                        if (db.record_desync_count() >= 1)
+                        if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                             OfflineRecordsSynchronizer();
                         db.close();
                         Thread.sleep(30000); // 5 Min = 300000
@@ -506,10 +509,10 @@ public class MainActivity extends AppCompatActivity
         DatabaseHelper db = new DatabaseHelper(this);
 
         if (date.equals(getCurrentDate()))
-            if (hour.equals(db.getHourSelected()))
-                if (route.equals(db.getRouteSelected()))
-                    if (port.equals(db.getPortSelected()))
-                        if (ship.equals(db.getShipSelected())) {
+            if (hour.equals(db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour")))
+                if (route.equals(db.selectFirst("select routes.id from routes inner join config on routes.id=config.route_id")))
+                    if (port.equals(db.selectFirst("select ports.id_api from ports inner join config on ports.id_api=config.port_id")))
+                        if (ship.equals(db.selectFirst("select ships.id from ships inner join config on ships.id=config.ship_id"))) {
                             person = db.validatePerson(rut);
                             if (!person.isEmpty())
                                 valid = true;
@@ -704,7 +707,7 @@ public class MainActivity extends AppCompatActivity
             HttpPost httpPost = new HttpPost(url);
 
             // 3. build jsonObject from jsonList
-            /*ArrayList<String> select_from_manifest = db.selectFromDB("select r.datetime,r.person_document,r id_api from ports limit 1", "|");
+            /*ArrayList<String> select_from_manifest = db.select("select r.datetime,r.person_document,r id_api from ports limit 1", "|");
             String[] manifest_is_inside = null;
             if (select_from_manifest.size() > 0) {
                 manifest_is_inside = select_from_manifest.get(0).split("\\|");
@@ -1126,7 +1129,7 @@ public class MainActivity extends AppCompatActivity
         int PendingCount = -1;
         int EmbarkedCount = -1;
         int LandedCount = -1;
-        ArrayList<String> select_counts = db.selectFromDB("select (select count(*) from manifest)," +
+        ArrayList<String> select_counts = db.select("select (select count(*) from manifest)," +
                 "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
                 "(select count(*) from manifest where is_inside=2)", "|");
         int count = 0;
