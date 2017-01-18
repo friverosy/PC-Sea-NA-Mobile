@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity
     private static MainActivity mInstance;
 
 
-    String SERVERIP = "192.168.1.100";
+    String SERVERIP = "192.168.1.50";
 
     Server s = new Server(this);
 
@@ -402,7 +402,7 @@ public class MainActivity extends AppCompatActivity
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
-//	s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
+      //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
     @Override
@@ -697,21 +697,10 @@ public class MainActivity extends AppCompatActivity
         InputStream inputStream;
         String result = "";
         String json = "";
+        String jsonCount = "";
         JSONObject jsonObject = new JSONObject();
+        JSONObject jsonObjectCount = new JSONObject();
         try {
-
-            // 1. create HttpClient
-            HttpClient httpclient = new DefaultHttpClient();
-
-            // 2. make POST request to the given URL
-            HttpPost httpPost = new HttpPost(url);
-
-            // 3. build jsonObject from jsonList
-            /*ArrayList<String> select_from_manifest = db.select("select r.datetime,r.person_document,r id_api from ports limit 1", "|");
-            String[] manifest_is_inside = null;
-            if (select_from_manifest.size() > 0) {
-                manifest_is_inside = select_from_manifest.get(0).split("\\|");
-            }*/
 
             jsonObject.accumulate("datetime", record.getDatetime());
             jsonObject.accumulate("doc", record.getPerson_document());
@@ -723,67 +712,82 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("sailing_hour", record.getSailing_hour());
             jsonObject.accumulate("state", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
-            jsonObject.accumulate("manifest_total", record.getManifest_total());
-            jsonObject.accumulate("manifest_embarked", record.getManifest_embarked());
-            jsonObject.accumulate("manifest_landed", record.getManifest_landed());
-            jsonObject.accumulate("manifest_pending", record.getManifest_pending());
-            jsonObject.accumulate("manifest_ticket", record.getTicket());
+
+            jsonObjectCount.accumulate("manifest_total", record.getManifest_total());
+            jsonObjectCount.accumulate("manifest_embarked", record.getManifest_embarked());
+            jsonObjectCount.accumulate("manifest_landed", record.getManifest_landed());
+            jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
+            jsonObjectCount.accumulate("boletus", record.getTicket());
+
+            ArrayList<JSONObject> temp = new ArrayList<>();
+            temp.add(jsonObject);
+            temp.add(jsonObjectCount);
 
             // 4. convert JSONObject to JSON to String
-            if (jsonObject.length() <= 14 && record.getId() != 0) { // 9 element on json
-                json = jsonObject.toString();
+            for (int i = 0; i < temp.size(); i++) {
+                // 1. create HttpClient
+                HttpClient httpclient = new DefaultHttpClient();
+                // 2. make POST request to the given URL
+                if (i == 1) {
+                    url = AxxezoAPI + "/manifest";
+                }
+                HttpPost httpPost = new HttpPost(url);
+                if (temp.get(i).length() <= 14 && record.getId() != 0) { // 9 element on json
+                    json = temp.get(i).toString();
 
-                // 5. set json to StringEntity
-                StringEntity se = new StringEntity(json);
+                    // 5. set json to StringEntity
+                    StringEntity se = new StringEntity(json);
 
-                // 6. set httpPost Entity
-                httpPost.setEntity(se);
+                    // 6. set httpPost Entity
+                    httpPost.setEntity(se);
 
-                // 7. Set some headers to inform server about the type of the content
-                httpPost.setHeader("Accept", "application/json");
-                httpPost.setHeader("Content-type", "application/json");
+                    // 7. Set some headers to inform server about the type of the content
+                    httpPost.setHeader("Accept", "application/json");
+                    httpPost.setHeader("Content-type", "application/json");
 
-                // 8. Execute POST request to the given URL
+                    // 8. Execute POST request to the given URL
 
-                if (!AxxezoAPI.equals("http://:0")) {
-                    HttpResponse httpResponse = httpclient.execute(httpPost);
-                    //Log.e("status code",httpResponse.getStatusLine().getStatusCode()+"");
-                    // 9. receive response as inputStream
-                    inputStream = httpResponse.getEntity().getContent();
+                    if (!AxxezoAPI.equals("http://:0")) {
+                        HttpResponse httpResponse = httpclient.execute(httpPost);
+                        //Log.e("status code",httpResponse.getStatusLine().getStatusCode()+"");
+                        // 9. receive response as inputStream
+                        inputStream = httpResponse.getEntity().getContent();
 
-                    // 10. convert inputstream to string
-                    if (inputStream != null) {
-                        result = convertInputStreamToString(inputStream);
-                        if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                            Log.d("json POSTED", json);
-                            // if has sync=0 its becouse its an offline record to be will synchronized.
-                            if (record.getSync() == 0) {
-                                Log.d("---", "going into update record");
-                                DatabaseHelper db = new DatabaseHelper(this);
-                                db.update_record(record.getId());
-                                db.close();
+                        // 10. convert inputstream to string
+                        if (inputStream != null) {
+                            result = convertInputStreamToString(inputStream);
+                            if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                                Log.d("json POSTED", json);
+                                // if has sync=0 its becouse its an offline record to be will synchronized.
+                                if (record.getSync() == 0) {
+                                    Log.d("---", "going into update record");
+                                    DatabaseHelper db = new DatabaseHelper(this);
+                                    db.update_record(record.getId());
+                                    db.close();
+                                }
                             }
+                        } else {
+                            result = String.valueOf(httpResponse.getStatusLine().getStatusCode());
                         }
+                        //result its the json to sent
+                        if (result.startsWith("http://"))
+                            result = "204"; //no content
                     } else {
-                        result = String.valueOf(httpResponse.getStatusLine().getStatusCode());
+                        mp3Error.start();
+                        //Toast.makeText(MainActivity.this, "Configure datos del servidor primero", Toast.LENGTH_LONG).show();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                makeToast("Configure datos del servidor primero");
+                            }
+                        });
                     }
-                    //result its the json to sent
-                    if (result.startsWith("http://"))
-                        result = "204"; //no content
-                } else {
-                    mp3Error.start();
-                    //Toast.makeText(MainActivity.this, "Configure datos del servidor primero", Toast.LENGTH_LONG).show();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            makeToast("Configure datos del servidor primero");
-                        }
-                    });
                 }
             }
         } catch (Exception e) {
             Log.d("---", "offline " + e.getMessage().toString());
         }
+
         // 11. return result
         return result;
     }

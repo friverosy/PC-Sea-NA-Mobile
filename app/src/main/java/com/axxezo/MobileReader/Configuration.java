@@ -31,6 +31,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
@@ -106,9 +107,6 @@ public class Configuration extends AppCompatActivity {
                         (combobox != null && combobox.getSelectedItem() != null) && !combobox.getSelectedItem().equals("")) {
                     loadButton.setProgress(10);
                     mVibrator.vibrate(100);
-                    db.insert("delete from config");
-                    db.insert("insert into config(route_id,port_id,ship_id,hour) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
-                            selectionSpinnerTransports + "','" + hour + "')");
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
@@ -260,13 +258,13 @@ public class Configuration extends AppCompatActivity {
         //first delete the manifest table
         db.insert("delete from manifest");
         db.insert("delete from sqlite_sequence where name='MANIFEST'");
+        db.insert("delete from config");
+        db.insert("delete from sqlite_sequence where name='CONFIG'");
 
         //charge the manifest per each port in people table
         try {
             ArrayList<String> select_from_manifest = db.select("SELECT id_api from ports where is_in_manifest='FALSE'", "");
-            ArrayList<String> select_hour_config = db.select("SELECT hour from config", "");
             String[] manifest_is_inside = null;
-            String[] hour_setting = select_hour_config.get(0).split(":");
             String hours = "";
             if (select_from_manifest.size() > 0) {
                 int i = 0;
@@ -275,11 +273,6 @@ public class Configuration extends AppCompatActivity {
                     manifest_is_inside = select_from_manifest.get(0).split("\\|");
                     selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
                     hour = new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts,currentDatetime, selectionSpinnerTransports).execute().get();
-                    //load manifest of the next day if the hour is
-                    if (i > 0 && Integer.parseInt(hour_setting[0]) > 20) {
-                        currentDatetime = getCurrentDate(1);
-                        hour = new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime,selectionSpinnerTransports).execute().get();
-                    }
                     //obtain the json hour information
                     JSONObject objectJson;
                     JSONArray jsonManifest;
@@ -294,8 +287,19 @@ public class Configuration extends AppCompatActivity {
                             Log.e("error loadManifest hour", e.getMessage());
                         }
                     }
-                    db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get().toString(),"manifest");
-                    //finally, delete from arraylist, the port
+                    //load manifest of the next day is greather than 20 pm
+                    String[] splitHour=new String[5];
+                    if(i>0) {
+                         splitHour= db.selectFirst("select hour from config limit 1").split(":");
+                    }
+                    if (i > 0 && Integer.parseInt(splitHour[0]) > 20) {
+                        currentDatetime = getCurrentDate(1);
+                        hour = new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime,selectionSpinnerTransports).execute().get();
+                    }
+                    db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(),"manifest");
+                    db.insert("insert into config(route_id,port_id,ship_id,hour) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
+                            selectionSpinnerTransports + "','" + hours + "')");
+                    //finally, boolean true in port
                     select_from_manifest.remove(selectionSpinnerPorts.toString());
                     Log.d("select_from_manifest", select_from_manifest.size() + "");
                     db.insert("update ports set is_in_manifest='TRUE' where id_api='" + selectionSpinnerPorts + "'");

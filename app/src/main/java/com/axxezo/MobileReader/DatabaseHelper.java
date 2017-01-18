@@ -324,7 +324,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             ContentValues valuesPerson = new ContentValues();
                             ContentValues valuesManifest = new ContentValues();
 
-                            People people = new People(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("nombre_pasajero"), jsonArray.getJSONObject(i).getString("nacionalidad"), 0);
+                            People people = new People(jsonArray.getJSONObject(i).getString("codigo_pasajero").trim(), jsonArray.getJSONObject(i).getString("nombre_pasajero"), jsonArray.getJSONObject(i).getString("nacionalidad"), 0);
                             navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("origen"), jsonArray.getJSONObject(i).getString("destino"), 0);
 
                             String doc;
@@ -348,7 +348,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                     doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
                         }
                         db.setTransactionSuccessful();
-                        Log.d("total manifiesto", selectFirst("select count(id) from manfiest"));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     } catch (SQLException sqle) {

@@ -49,6 +49,7 @@ public class Server implements  Runnable {
                         Socket client = serverSocket.accept();
 
                         Log.d("Server", "Connected");//Connected to client.
+
                         connected=true;
 
                         try {
@@ -64,6 +65,8 @@ public class Server implements  Runnable {
                                     JSONObject json_received = new JSONObject(line);
                                     //db.updatePeopleManifest(json_received.get("document").toString(),Integer.parseInt(json_received.get("input").toString()));
                                     db.updatePeopleManifest(json_received.get("document").toString(),5);
+                                    //Client client1 = new Client("200", SERVERIP, SERVERPORT);
+                                    //client1.run();
                                     db.close();
                                     in.close();
                                     client.close();
