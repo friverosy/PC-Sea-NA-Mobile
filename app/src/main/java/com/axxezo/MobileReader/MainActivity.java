@@ -65,6 +65,7 @@ import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -106,6 +107,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -170,9 +172,9 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                 String text = "Ruta: " + db.selectFirst("select routes.name from routes inner join config on routes.id=config.route_id");
-                       // ", Puerto: " + db.selectFirst("select ports.name from ports inner join config on ports.id_api=config.port_id") + "\n" +
-                       // "  Nave: " + db.selectFirst("select ships.name from ships inner join config on ships.id=config.ship_id") +
-                       // ", Hora: " + db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour");
+                // ", Puerto: " + db.selectFirst("select ports.name from ports inner join config on ports.id_api=config.port_id") + "\n" +
+                // "  Nave: " + db.selectFirst("select ships.name from ships inner join config on ships.id=config.ship_id") +
+                // ", Hora: " + db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour");
                 Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
                 db.close();
@@ -405,7 +407,7 @@ public class MainActivity extends AppCompatActivity
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
-      //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
+        //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
     @Override
@@ -430,35 +432,40 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void updateManifest() {
-       Runnable runnable = new Runnable() {
+        final Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                while (true) {
-                    DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                    try {
-                        ArrayList<String> select_from_manifest = db.select("select * from config", "|");
-                        String[] manifest_config = null;
-                        int count_after=Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                        for(int i=0;i<select_from_manifest.size();i++) {
-                            if (select_from_manifest.size() > 0) {
-                                manifest_config = select_from_manifest.get(0).split("\\|");
-                            }
-                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral,Integer.parseInt(manifest_config[1]),Integer.parseInt(manifest_config[2]),Integer.parseInt(manifest_config[3]), getCurrentDate(), manifest_config[4]).execute().get(), "manifest");
+                DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+                try {
+                    ArrayList<String> select_from_manifest = db.select("select * from config", "|");
+                    String[] manifest_config = null;
+                    int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+                    for (int i = 0; i < select_from_manifest.size(); i++) {
+                        if (select_from_manifest.size() > 0) {
+                            manifest_config = select_from_manifest.get(i).split("\\|");
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest");
                         }
-                        int count_before=Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                        if(count_before!=count_after){
-                            int total=count_before-count_after;
-                            Toast.makeText(getApplication(),"se han actualizado "+total+" en el manifiesto",Toast.LENGTH_SHORT).show();
-                            TextViewManifestUpdate.setTextColor(Color.WHITE);
-                            TextViewManifestUpdate.setText("Ultima Actualizacion "+getCurrentDateTime());
-                        }
-                        db.close();
-                        Thread.sleep(300000); // 5 Min = 300000
-                    } catch (Exception e) {
-                        writeLog("ERROR", e.toString());
                     }
+                    int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+                    Log.d("manifest offline", "estoy aqui");
+                    if (count_before != count_after) {
+                        int total = count_before - count_after;
+                        Log.d("manifest diff", total + "");
+                        Toast.makeText(getApplication(), "se han actualizado " + total + " en el manifiesto", Toast.LENGTH_SHORT).show();
+                        TextViewManifestUpdate.setTextColor(Color.WHITE);
+                        TextViewManifestUpdate.setText("Ultima Actualizacion " + getCurrentDateTime());
+                        Log.d("actualizacion manifest", total + "");
+                    }
+                    //Thread.sleep(3000);
+                } catch (Exception e) {
+                    writeLog("ERROR", e.toString());
+                } finally {
                     db.close();
+                    handler.postDelayed(this,300000); // 5 Min = 300000
                 }
+
+                db.close();
             }
         };
         new Thread(runnable).start();
@@ -814,173 +821,12 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public class getAPIManifest extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        private int transports;
-        String Date;
-        String Hour;
-
-        getAPIManifest(int id_route, int id_port, int id_transpot, String date, String hour) {
-            route = id_route;
-            port = id_port;
-            transports = id_transpot;
-            Date = date;
-            Hour = hour;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getManifest(URL, token_navieraAustral, route, port, Date, transports, Hour);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    public String getRoutes(String Url, String Token) throws IOException {
-        URL url = new URL(Url + "/routes");
-        String content = null;
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
-            } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-
-        } catch (IOException ioe) {
-
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content == null || content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d("Routes Server response", content);
-        return content;
-    }
-
-    public String getPorts(String Url, String Token, int ID_route) throws IOException {
-        URL url = new URL(Url + "/ports?route=" + ID_route);
-        String content = "";
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
-            } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-
-        } catch (IOException ioe) {
-
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d("Ports Server response", content);
-        return content;
-    }
-
-    public String getTransports(String Url, String Token, int ID_route, int ID_port, String date) throws IOException {
-        //String date must be in format yyyy-MM-dd
-        URL url = new URL(Url + "/transports?route=" + ID_route + "&date=" + date + "&port=" + ID_port);
-        String content = "";
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
-            } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-
-        } catch (IOException ioe) {
-
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d("trans Server response", content);
-        return content;
-    }
-
-    public String getHours(String Url, String Token, int ID_route, int ID_port, String date, int ID_transport) throws IOException {
-        //String date must be in format yyyy-MM-dd
-        URL url = new URL(Url + "/hours?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport);
-        String content = "";
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
-            } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-
-        } catch (IOException ioe) {
-
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d(" Hour Server response", content);
-        return content;
-    }
 
     public String getManifest(String Url, String Token, int ID_route, int ID_port, String date, int ID_transport, String hour) throws IOException {
         //String date must be in format yyyy-MM-dd
         //String hour must be in format HH-dd
-        URL url = new URL(Url + "/hours?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
+        URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
+        Log.d("manifest main", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -1059,35 +905,35 @@ public class MainActivity extends AppCompatActivity
         db.close();
         return count;
     }
+
     public class getAPIInformation extends AsyncTask<String, Void, String> {
         private String URL;
         private String getInformation;
         private String token;
         private String date;
         private String hour;
-        private int flag=-1;
+        private int flag = -1;
         private int route;
         private int port;
         private int transport;
 
-        getAPIInformation(String URL,String token,int route, int port, int transport, String date, String hour) {//manifest
-            this.URL=URL;
-            this.token=token;
+        getAPIInformation(String URL, String token, int route, int port, int transport, String date, String hour) {//manifest
+            this.URL = URL;
+            this.token = token;
             this.route = route;
             this.port = port;
             this.transport = transport;
             this.date = date;
             this.hour = hour;
-            getInformation="";
-            flag=4;
+            getInformation = "";
+            flag = 4;
         }
-
 
 
         @Override
         protected String doInBackground(String... strings) {
             try {
-                switch (flag){
+                switch (flag) {
                     case 4:
                         getInformation = getManifest(URL, token, route, port, date, transport, hour);
                         break;

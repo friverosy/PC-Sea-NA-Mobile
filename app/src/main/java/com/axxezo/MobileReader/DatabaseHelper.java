@@ -87,6 +87,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String CONFIG_PORT_ID = "port_id";
     private static final String CONFIG_SHIP_ID = "ship_id";
     private static final String CONFIG_HOUR = "hour";
+    private static final String CONFIG_DATE = "date";
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
@@ -161,7 +162,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             CONFIG_ROUTE_ID + " INTEGER, " +
             CONFIG_PORT_ID + " INTEGER, " +
             CONFIG_SHIP_ID + " INTEGER, " +
-            CONFIG_HOUR + " TEXT);";
+            CONFIG_HOUR + " TEXT, " +
+            CONFIG_DATE + " TEXT);";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

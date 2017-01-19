@@ -318,8 +318,8 @@ public class Configuration extends AppCompatActivity {
                         }
                     }
                     db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest");
-                    db.insert("insert into config(route_id,port_id,ship_id,hour) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
-                            selectionSpinnerTransports + "','" + hours + "')");
+                    db.insert("insert into config(route_id,port_id,ship_id,hour,date) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
+                            selectionSpinnerTransports + "','" + hours + "','" + currentDatetime +"')");
                     //finally, boolean true in port
                     select_from_manifest.remove(selectionSpinnerPorts.toString());
                     Log.d("select_from_manifest", select_from_manifest.size() + "");

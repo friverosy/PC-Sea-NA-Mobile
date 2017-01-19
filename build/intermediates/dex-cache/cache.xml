@@ -12,12 +12,39 @@
     </item>
     <item
         is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.wdullaer\materialdatetimepicker\2.5.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="06e747980282ac9a96c036c43d07908d0f3347f6">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\com.wdullaer-materialdatetimepicker-2.5.0_b3a2e1cdad46219b2f3894820166d1db6cd7af2c.jar" />
+    </item>
+    <item
+        is-multidex="false"
         jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.android.support\animated-vector-drawable\23.4.0\jars\classes.jar"
         jumboMode="false"
         optimize="true"
         revision="23.0.2"
         sha1="de4db3785756bfb0915a9f59a9b3f2fea7407be4">
         <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\com.android.support-animated-vector-drawable-23.4.0_d735f899ce5380b98c402e889a976dba1d6f3177.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\org.freemarker\freemarker\2.3.23\cd143cd8c02a9f838e3cb75a6dfe133750437f6d\freemarker-2.3.23.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="cd143cd8c02a9f838e3cb75a6dfe133750437f6d">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\freemarker-2.3.23_c521a593bb01da69309b984e5c3492a23417e893.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.4.0\jars\libs\internal_impl-23.4.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="ea3c07504d2c8f4b13aa17c45c1b68ed9c1c3674">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\internal_impl-23.4.0_1c72fee837e60a389596c82a3a98fe13e0eef1a6.jar" />
     </item>
     <item
         is-multidex="false"
@@ -48,51 +75,6 @@
     </item>
     <item
         is-multidex="false"
-        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\23.4.0\jars\classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="23.0.2"
-        sha1="548f06de403a9409f00554b3ee12a9fdea0e236c">
-        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\com.android.support-appcompat-v7-23.4.0_85177db8665a7220554fd200a2750813d010ed2c.jar" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\com.googlecode.ez-vcard\ez-vcard\0.10.0\f833343fd0f39c28db9ede759714f38c222c2d2c\ez-vcard-0.10.0.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="23.0.2"
-        sha1="f833343fd0f39c28db9ede759714f38c222c2d2c">
-        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\ez-vcard-0.10.0_5581e110d4bc0f4aa8e9d222080f357ceaa0c5c3.jar" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.wdullaer\materialdatetimepicker\2.5.0\jars\classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="23.0.2"
-        sha1="06e747980282ac9a96c036c43d07908d0f3347f6">
-        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\com.wdullaer-materialdatetimepicker-2.5.0_b3a2e1cdad46219b2f3894820166d1db6cd7af2c.jar" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\org.freemarker\freemarker\2.3.23\cd143cd8c02a9f838e3cb75a6dfe133750437f6d\freemarker-2.3.23.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="23.0.2"
-        sha1="cd143cd8c02a9f838e3cb75a6dfe133750437f6d">
-        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\freemarker-2.3.23_c521a593bb01da69309b984e5c3492a23417e893.jar" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.4.0\jars\libs\internal_impl-23.4.0.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="23.0.2"
-        sha1="ea3c07504d2c8f4b13aa17c45c1b68ed9c1c3674">
-        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\internal_impl-23.4.0_1c72fee837e60a389596c82a3a98fe13e0eef1a6.jar" />
-    </item>
-    <item
-        is-multidex="false"
         jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.android.support\support-v4\23.4.0\jars\classes.jar"
         jumboMode="false"
         optimize="true"
@@ -120,6 +102,15 @@
     </item>
     <item
         is-multidex="false"
+        jar="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\23.4.0\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="548f06de403a9409f00554b3ee12a9fdea0e236c">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\com.android.support-appcompat-v7-23.4.0_85177db8665a7220554fd200a2750813d010ed2c.jar" />
+    </item>
+    <item
+        is-multidex="false"
         jar="C:\Users\axxezo\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\23.4.0\support-annotations-23.4.0.jar"
         jumboMode="false"
         optimize="true"
@@ -144,6 +135,15 @@
         revision="23.0.2"
         sha1="5326d9a850d491714fef8cbfaa9ea3416f0bf0d2">
         <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\com.android.support-design-23.4.0_bcc0d29a102be27fdb9f558c048aadc689662c58.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\axxezo\.gradle\caches\modules-2\files-2.1\com.googlecode.ez-vcard\ez-vcard\0.10.0\f833343fd0f39c28db9ede759714f38c222c2d2c\ez-vcard-0.10.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.2"
+        sha1="f833343fd0f39c28db9ede759714f38c222c2d2c">
+        <dex dex="C:\Users\axxezo\Desktop\Sealand\repo Proyectos\Android Proyectos\navieraaustralmobile\app\build\intermediates\pre-dexed\debug\ez-vcard-0.10.0_5581e110d4bc0f4aa8e9d222080f357ceaa0c5c3.jar" />
     </item>
     <item
         is-multidex="false"
