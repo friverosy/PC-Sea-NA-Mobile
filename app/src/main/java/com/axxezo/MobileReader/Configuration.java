@@ -14,7 +14,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-
 import com.dd.CircularProgressButton;
 
 import org.json.JSONArray;
@@ -31,7 +30,6 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
@@ -85,7 +83,7 @@ public class Configuration extends AppCompatActivity {
         });*/
         //inserts in db
         try {
-            db.insertJSON(new getAPIInformation(URL,token_navieraAustral).execute().get(), "routes");
+            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes");
             db.close();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -138,7 +136,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerRoute = idElementSelected;
                         Log.i("id Log Routes", "----" + selectionSpinnerRoute);
                         try {
-                            db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute).execute().get(), "ports");
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "ports");
                             loadComboboxPorts();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -166,7 +164,7 @@ public class Configuration extends AppCompatActivity {
             manifest_is_inside = select_from_manifest.get(0).split("\\|");
             selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
             try {
-                db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships");
+                db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships");
                 loadComboboxShips();
 
             } catch (JSONException e) {
@@ -202,7 +200,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerTransports = idElementSelected;
                         Log.i("id Log Ships", "----" + selectionSpinnerTransports);
                         try {
-                            db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0),selectionSpinnerTransports).execute().get(), "hours");
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0), selectionSpinnerTransports).execute().get(), "hours");
                             loadComboboxHours();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -272,7 +270,7 @@ public class Configuration extends AppCompatActivity {
                     String currentDatetime = getCurrentDate(0);
                     manifest_is_inside = select_from_manifest.get(0).split("\\|");
                     selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
-                    hour = new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts,currentDatetime, selectionSpinnerTransports).execute().get();
+                    hour = new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime, selectionSpinnerTransports).execute().get();
                     //obtain the json hour information
                     JSONObject objectJson;
                     JSONArray jsonManifest;
@@ -288,15 +286,21 @@ public class Configuration extends AppCompatActivity {
                         }
                     }
                     //load manifest of the next day is greather than 20 pm
-                    String[] splitHour=new String[5];
-                    if(i>0) {
-                         splitHour= db.selectFirst("select hour from config limit 1").split(":");
+                    String[] splitHour = new String[5];
+                    int hour = -1;
+
+                    if (i == 0) {
+                        splitHour = db.selectFirst("select hour from config limit 1").split(":");
+                        hour = Integer.parseInt(splitHour[0]);
                     }
-                    if (i > 0 && Integer.parseInt(splitHour[0]) > 20) {
+                    if (hour > 20) {
                         currentDatetime = getCurrentDate(1);
-                        hour = new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime,selectionSpinnerTransports).execute().get();
-                    }
-                    db.insertJSON(new getAPIInformation(URL,token_navieraAustral,selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(),"manifest");
+                        hours = new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime, selectionSpinnerTransports).execute().get();
+                    } else
+                        currentDatetime = getCurrentDate(0);
+
+
+                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest");
                     db.insert("insert into config(route_id,port_id,ship_id,hour) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
                             selectionSpinnerTransports + "','" + hours + "')");
                     //finally, boolean true in port
@@ -329,63 +333,66 @@ public class Configuration extends AppCompatActivity {
         private String token;
         private String date;
         private String hour;
-        private int flag=-1;
+        private int flag = -1;
         private int route;
         private int port;
         private int transport;
 
 
-        getAPIInformation(String URL,String token){//routes
-            this.URL=URL;
-            this.token=token;
-            getInformation="";
-            flag=0;
+        getAPIInformation(String URL, String token) {//routes
+            this.URL = URL;
+            this.token = token;
+            getInformation = "";
+            flag = 0;
 
         }
-        getAPIInformation(String URL,String token,int route){//ports
-            this.URL=URL;
-            this.token=token;
-            this.route=route;
-            getInformation="";
-            flag=1;
+
+        getAPIInformation(String URL, String token, int route) {//ports
+            this.URL = URL;
+            this.token = token;
+            this.route = route;
+            getInformation = "";
+            flag = 1;
         }
-        getAPIInformation(String URL,String token,int route,int port,String Date){//transport
-            this.URL=URL;
-            this.token=token;
-            this.route=route;
-            this.port=port;
-            this.date=Date;
-            getInformation="";
-            flag=2;
+
+        getAPIInformation(String URL, String token, int route, int port, String Date) {//transport
+            this.URL = URL;
+            this.token = token;
+            this.route = route;
+            this.port = port;
+            this.date = Date;
+            getInformation = "";
+            flag = 2;
         }
-        getAPIInformation(String URL,String token,int route,int port,String Date,int transport){//hours
-            this.URL=URL;
-            this.token=token;
-            this.route=route;
-            this.port=port;
-            this.date=Date;
-            this.transport=transport;
-            getInformation="";
-            flag=3;
+
+        getAPIInformation(String URL, String token, int route, int port, String Date, int transport) {//hours
+            this.URL = URL;
+            this.token = token;
+            this.route = route;
+            this.port = port;
+            this.date = Date;
+            this.transport = transport;
+            getInformation = "";
+            flag = 3;
         }
-        getAPIInformation(String URL,String token,int route, int port, int transport, String date, String hour) {//manifest
-            this.URL=URL;
-            this.token=token;
+
+        getAPIInformation(String URL, String token, int route, int port, int transport, String date, String hour) {//manifest
+            this.URL = URL;
+            this.token = token;
             this.route = route;
             this.port = port;
             this.transport = transport;
             this.date = date;
             this.hour = hour;
-            getInformation="";
-            flag=4;
+            getInformation = "";
+            flag = 4;
         }
-
 
 
         @Override
         protected String doInBackground(String... strings) {
             try {
-                switch (flag){
+                switch (flag) {
                     case 0:
                         getInformation = getRoutes(URL, token);
                         break;
@@ -418,6 +425,7 @@ public class Configuration extends AppCompatActivity {
         }
 
     }
+
     /*
            Give the avalaible routes in the System
            obtain the routes from api http://ticket.bsale.cl/control_api/routes

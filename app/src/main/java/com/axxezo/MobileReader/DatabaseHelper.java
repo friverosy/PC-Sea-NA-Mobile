@@ -7,7 +7,6 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -360,16 +359,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 break;
         }
     }
+
     public String selectFirst(String Query) {
         String firstElement = "";
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(Query, null);
         cursor.moveToFirst();
-        firstElement = cursor.getString(0);
+        if (cursor.getCount() == 0)
+            return Query = "";
+        else
+            firstElement = cursor.getString(0);
         Log.i("first element", "-----" + firstElement);
         //db.close();
         return firstElement;
     }
+
     //cris
     public String validatePerson(String rut) {
         //return the person data if this person is in manifest table
@@ -498,6 +502,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (i > 0) Log.d("Local Record updated", String.valueOf(id));
         else Log.e("Error updating record", String.valueOf(id));
     }
+
     public void updatePeopleManifest(String rut, int input) {
         SQLiteDatabase db = this.getWritableDatabase();
         try {
@@ -548,7 +553,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery("SELECT * from " + table + ";", null);
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
             if (cursor.isFirst()) {
-                switch(table){
+                switch (table) {
                     case "routes":
                         list.add("< Elija una ruta >");
                         break;

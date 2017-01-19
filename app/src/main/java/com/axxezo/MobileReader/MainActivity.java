@@ -59,6 +59,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.device.ScanManager;
+import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
@@ -116,6 +117,7 @@ public class MainActivity extends AppCompatActivity
     private TextView TextViewFullname;
     private TextView TextViewRut;
     private TextView TextViewStatus;
+    private TextView TextViewManifestUpdate;
     private ImageView imageview;
     private final static String SCAN_ACTION = "urovo.rcv.message";//扫描结束action
     private Vibrator mVibrator;
@@ -150,6 +152,7 @@ public class MainActivity extends AppCompatActivity
         TextViewFullname = (TextView) findViewById(R.id.fullname);
         TextViewRut = (TextView) findViewById(R.id.rut);
         TextViewStatus = (TextView) findViewById(R.id.status);
+        TextViewManifestUpdate = (TextView) findViewById(R.id.textView_lastManifestUpdate);
         imageview = (ImageView) findViewById(R.id.imageView);
         mp3Dennied = MediaPlayer.create(MainActivity.this, R.raw.bad);
         mp3Permitted = MediaPlayer.create(MainActivity.this, R.raw.good);
@@ -166,10 +169,10 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                String text = "Ruta: " + db.selectFirst("select routes.name from routes inner join config on routes.id=config.route_id") +
-                        ", Puerto: " + db.selectFirst("select ports.name from ports inner join config on ports.id_api=config.port_id") + "\n" +
-                        "  Nave: " + db.selectFirst("select ships.name from ships inner join config on ships.id=config.ship_id") +
-                        ", Hora: " + db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour");
+                String text = "Ruta: " + db.selectFirst("select routes.name from routes inner join config on routes.id=config.route_id");
+                       // ", Puerto: " + db.selectFirst("select ports.name from ports inner join config on ports.id_api=config.port_id") + "\n" +
+                       // "  Nave: " + db.selectFirst("select ships.name from ships inner join config on ships.id=config.ship_id") +
+                       // ", Hora: " + db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour");
                 Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
                 db.close();
@@ -427,26 +430,30 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void updateManifest() {
-       /* Runnable runnable = new Runnable() {
+       Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                     try {
-                        Configuration conf = new Configuration();
                         ArrayList<String> select_from_manifest = db.select("select * from config", "|");
                         String[] manifest_config = null;
-                        if (select_from_manifest.size() > 0) {
-                            manifest_config = select_from_manifest.get(0).split("\\|");
+                        int count_after=Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+                        for(int i=0;i<select_from_manifest.size();i++) {
+                            if (select_from_manifest.size() > 0) {
+                                manifest_config = select_from_manifest.get(0).split("\\|");
+                            }
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral,Integer.parseInt(manifest_config[1]),Integer.parseInt(manifest_config[2]),Integer.parseInt(manifest_config[3]), getCurrentDate(), manifest_config[4]).execute().get(), "manifest");
                         }
-
-                        //getInformation = getManifest(URL, token_navieraAustral, route, port, Date, transports, Hour);
-                        db.insertManifestDB(getManifest(conf.getURl(),conf.getToken_navieraAustral(),Integer.parseInt(manifest_config[1].toString().trim()),Integer.parseInt(manifest_config[2].toString().trim()),getCurrentDate(),Integer.parseInt(manifest_config[3].toString().trim()),manifest_config[4]));
-                        if (Integer.parseInt(db.selectFirst("select count(id) from manifest")))
-                            OfflineRecordsSynchronizer();
-
+                        int count_before=Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+                        if(count_before!=count_after){
+                            int total=count_before-count_after;
+                            Toast.makeText(getApplication(),"se han actualizado "+total+" en el manifiesto",Toast.LENGTH_SHORT).show();
+                            TextViewManifestUpdate.setTextColor(Color.WHITE);
+                            TextViewManifestUpdate.setText("Ultima Actualizacion "+getCurrentDateTime());
+                        }
                         db.close();
-                        Thread.sleep(30000); // 5 Min = 300000
+                        Thread.sleep(300000); // 5 Min = 300000
                     } catch (Exception e) {
                         writeLog("ERROR", e.toString());
                     }
@@ -455,7 +462,6 @@ public class MainActivity extends AppCompatActivity
             }
         };
         new Thread(runnable).start();
-*/
     }
 
     public void reset() {
@@ -482,7 +488,7 @@ public class MainActivity extends AppCompatActivity
                         if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                             OfflineRecordsSynchronizer();
                         db.close();
-                        Thread.sleep(30000); // 5 Min = 300000
+                        Thread.sleep(300000); // 5 Min = 300000
                     } catch (Exception e) {
                         writeLog("ERROR", e.toString());
                     }
@@ -808,114 +814,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public class getAPIroutes extends AsyncTask<String, Void, String> {
-        private String getInformation = "";
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getRoutes(URL, token_navieraAustral);
-                Log.i("getInformation", "asd:" + getInformation);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-        protected void onPostExecute(String result) {
-        }
-
-    }
-
-    public class getAPIPorts extends AsyncTask<String, Void, String> {
-        private String getInformation = "";
-        private int route;
-
-        getAPIPorts(int id_route) {
-            route = id_route;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getPorts(URL, token_navieraAustral, route);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    public class getAPITransports extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        String Date;
-
-        getAPITransports(int id_route, int id_port, String date) {
-            route = id_route;
-            port = id_port;
-            Date = date;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getTransports(URL, token_navieraAustral, route, port, Date);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    public class getAPIHours extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        private int transports;
-        String Date;
-
-        getAPIHours(int route_id, int port_id, int transports_id, String date) {
-            route_id = route;
-            port_id = port;
-            transports_id = port;
-            Date = date;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getHours(URL, token_navieraAustral, route, port, Date, transports);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-    }
-
     public class getAPIManifest extends AsyncTask<String, Void, String> {
         public String getInformation = "";
         private int route;
@@ -1160,6 +1058,55 @@ public class MainActivity extends AppCompatActivity
         }
         db.close();
         return count;
+    }
+    public class getAPIInformation extends AsyncTask<String, Void, String> {
+        private String URL;
+        private String getInformation;
+        private String token;
+        private String date;
+        private String hour;
+        private int flag=-1;
+        private int route;
+        private int port;
+        private int transport;
+
+        getAPIInformation(String URL,String token,int route, int port, int transport, String date, String hour) {//manifest
+            this.URL=URL;
+            this.token=token;
+            this.route = route;
+            this.port = port;
+            this.transport = transport;
+            this.date = date;
+            this.hour = hour;
+            getInformation="";
+            flag=4;
+        }
+
+
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                switch (flag){
+                    case 4:
+                        getInformation = getManifest(URL, token, route, port, date, transport, hour);
+                        break;
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return getInformation;
+        }
+
+        @Override
+        public String toString() {
+            return getInformation + "";
+        }
+
+        protected void onPostExecute(String result) {
+        }
+
     }
 
 
