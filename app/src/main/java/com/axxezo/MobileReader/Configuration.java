@@ -235,6 +235,8 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setProgress(0);
                 if (combobox_hours.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_hours.getSelectedItem().toString();
+                    db.insert("delete from hours");
+                    db.insert("insert into hours(name) values('" + nameElement + "')");
                     int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from Hours  where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerHour = idElementSelected;
@@ -270,36 +272,51 @@ public class Configuration extends AppCompatActivity {
                     String currentDatetime = getCurrentDate(0);
                     manifest_is_inside = select_from_manifest.get(0).split("\\|");
                     selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
-                    hour = new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime, selectionSpinnerTransports).execute().get();
-                    //obtain the json hour information
+                    hours = db.selectFirst("select name from hours order by id desc limit 1");
                     JSONObject objectJson;
                     JSONArray jsonManifest;
-                    if (!hour.isEmpty()) {
-                        objectJson = new JSONObject(hour);
-                        jsonManifest = objectJson.getJSONArray("list_hours");
-                        try {
-                            for (int j = 0; j < jsonManifest.length(); j++) {
-                                hours = (jsonManifest.getJSONObject(0).getString("horas"));
-                            }
-                        } catch (JSONException e) {
-                            Log.e("error loadManifest hour", e.getMessage());
-                        }
-                    }
                     //load manifest of the next day is greather than 20 pm
                     String[] splitHour = new String[5];
-                    int hour = -1;
+                    if (i > 0) {
+                        splitHour = db.selectFirst("select hour from config order by id desc limit 1").split(":");
+                        int hour_last_route = Integer.parseInt(splitHour[0]);
 
-                    if (i == 0) {
-                        splitHour = db.selectFirst("select hour from config limit 1").split(":");
-                        hour = Integer.parseInt(splitHour[0]);
+                        if (hour_last_route > 20) {
+                            currentDatetime = getCurrentDate(1);
+                            hour = new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime, selectionSpinnerTransports).execute().get();
+                            if (!hour.isEmpty()) {
+                                objectJson = new JSONObject(hour);
+                                jsonManifest = objectJson.getJSONArray("list_hours");
+                                try {
+                                    for (int j = 0; j < jsonManifest.length(); j++) {
+                                        if (jsonManifest.length() > 1) {
+                                            hours = (jsonManifest.getJSONObject(jsonManifest.length() - 1).getString("horas"));
+                                        }else
+                                            hours = (jsonManifest.getJSONObject(0).getString("horas"));
+                                    }
+                                } catch (JSONException e) {
+                                    Log.e("error loadManifest hour", e.getMessage());
+                                }
+                            }
+                        } else {
+                            currentDatetime = getCurrentDate(0);
+                            hour = new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime, selectionSpinnerTransports).execute().get();
+                            if (!hour.isEmpty()) {
+                                objectJson = new JSONObject(hour);
+                                jsonManifest = objectJson.getJSONArray("list_hours");
+                                try {
+                                    for (int j = 0; j < jsonManifest.length(); j++) {
+                                        if (jsonManifest.length() > 1) {
+                                            hours = (jsonManifest.getJSONObject(jsonManifest.length() - 1).getString("horas"));
+                                        }else
+                                            hours = (jsonManifest.getJSONObject(0).getString("horas"));
+                                    }
+                                } catch (JSONException e) {
+                                    Log.e("error loadManifest hour", e.getMessage());
+                                }
+                            }
+                        }
                     }
-                    if (hour > 20) {
-                        currentDatetime = getCurrentDate(1);
-                        hours = new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, currentDatetime, selectionSpinnerTransports).execute().get();
-                    } else
-                        currentDatetime = getCurrentDate(0);
-
-
                     db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest");
                     db.insert("insert into config(route_id,port_id,ship_id,hour) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
                             selectionSpinnerTransports + "','" + hours + "')");

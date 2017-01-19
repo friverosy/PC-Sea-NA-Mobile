@@ -719,10 +719,10 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("state", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
 
-            jsonObjectCount.accumulate("manifest_total", record.getManifest_total());
-            jsonObjectCount.accumulate("manifest_embarked", record.getManifest_embarked());
-            jsonObjectCount.accumulate("manifest_landed", record.getManifest_landed());
-            jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
+            jsonObjectCount.accumulate("total", record.getManifest_total());
+            jsonObjectCount.accumulate("embarkeds", record.getManifest_embarked());
+            jsonObjectCount.accumulate("landed", record.getManifest_landed());
+            //jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
             jsonObjectCount.accumulate("boletus", record.getTicket());
 
             ArrayList<JSONObject> temp = new ArrayList<>();
@@ -735,7 +735,7 @@ public class MainActivity extends AppCompatActivity
                 HttpClient httpclient = new DefaultHttpClient();
                 // 2. make POST request to the given URL
                 if (i == 1) {
-                    url = AxxezoAPI + "/manifest";
+                    url = AxxezoAPI + "/manifests/update";
                 }
                 HttpPost httpPost = new HttpPost(url);
                 if (temp.get(i).length() <= 14 && record.getId() != 0) { // 9 element on json

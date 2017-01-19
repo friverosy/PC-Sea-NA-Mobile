@@ -232,7 +232,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     jsonArray = objectJson.getJSONArray("list_sections_route");
                     try {
                         db.beginTransaction();
-                        db.delete(TABLE_PORTS, null, null);
+                        db.execSQL("delete from ports");
 
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
@@ -288,8 +288,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     jsonArray = objectJson.getJSONArray("list_hours");
                     try {
                         db.beginTransaction();
-                        Log.d("--add Hours", String.valueOf(db.isOpen()));
-
                         db.delete(TABLE_HOURS, null, null);
 
                         for (int i = 0; i < jsonArray.length(); i++) {
