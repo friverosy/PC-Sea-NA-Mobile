@@ -94,18 +94,25 @@ public class manual_registration extends AppCompatActivity {
                 if (ticket_no.getText() != null && dni.getText() != null && name.getText() != null) {
                     db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
                     db.insert("insert into manifest(id_people,origin,destination) values('" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "')");
-                    db.insert("insert into records(datetime,person_document,origin,destination,ticket,sync) values('" + getCurrentDateTime() + "','" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + ticket_no.getText().toString().toUpperCase() +"','"+0+"')");
+                   // db.insert("insert into records(datetime,person_document,origin,destination,ticket,sync) values('" + getCurrentDateTime() + "','" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + ticket_no.getText().toString().toUpperCase() +"','"+0+"')");
                     Toast.makeText(getApplicationContext(),"Persona Ingresada Exitosamente",Toast.LENGTH_LONG).show();
+                    Record record=new Record();
+                    record.setDatetime(getCurrentDateTime("yyy-MM-dd HH:mm:ss.S"));
+                    record.setPerson_document(dni.getText().toString().toUpperCase());
+                    record.setOrigin(origin.getSelectedItem().toString().trim());
+                    record.setDestination(destination.getSelectedItem().toString().trim());
+                    record.setTicket(Integer.parseInt(ticket_no.getText().toString()));
+                    record.setPermitted(0);
+                    db.add_record(record);
                     db.close();
-
                 }
             }
         });
 
 
     }
-
-    public String getCurrentDateTime() {
+    //dd-MM-yyyy hh:MM:ss
+    public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
         DateFormat date = new SimpleDateFormat("dd-MM-yyyy hh:MM:ss");

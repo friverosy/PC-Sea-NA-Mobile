@@ -14,7 +14,7 @@ public class Record {
     String port_id;
     String ship_id;
     String sailing_hour;
-    String ticket;
+    int ticket;
     int manifest_total;
     int manifest_landed;
     int manifest_embarked;
@@ -170,11 +170,11 @@ public class Record {
         this.manifest_embarked = manifest_embarked;
     }
 
-    public String getTicket() {
+    public int getTicket() {
         return ticket;
     }
 
-    public void setTicket(String ticket) {
+    public void setTicket(int ticket) {
         this.ticket = ticket;
     }
 }

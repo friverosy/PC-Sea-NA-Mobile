@@ -73,7 +73,7 @@
             android:ems="10"
             android:fontFamily="serif"
             android:hint="Ingrese Numero Boleta aqui"
-            android:inputType="textPersonName"
+            android:inputType="textPersonName|number"
             android:textAlignment="center"
             android:textAllCaps="false"
             android:textSize="14sp"

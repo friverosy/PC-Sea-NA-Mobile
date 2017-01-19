@@ -67,6 +67,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -79,8 +80,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -136,6 +140,8 @@ public class MainActivity extends AppCompatActivity
     private boolean is_input = true;
     private Switch mySwitch;
     private static MainActivity mInstance;
+    private Spinner comboLanded;
+    private String selectedSpinnerLanded;
 
 
     String SERVERIP = "192.168.1.50";
@@ -155,11 +161,13 @@ public class MainActivity extends AppCompatActivity
         TextViewRut = (TextView) findViewById(R.id.rut);
         TextViewStatus = (TextView) findViewById(R.id.status);
         TextViewManifestUpdate = (TextView) findViewById(R.id.textView_lastManifestUpdate);
+        comboLanded = (Spinner) findViewById(R.id.spinner_setLanded);
         imageview = (ImageView) findViewById(R.id.imageView);
         mp3Dennied = MediaPlayer.create(MainActivity.this, R.raw.bad);
         mp3Permitted = MediaPlayer.create(MainActivity.this, R.raw.good);
         mp3Error = MediaPlayer.create(MainActivity.this, R.raw.error);
         mySwitch = (Switch) findViewById(R.id.mySwitch);
+        selectedSpinnerLanded="";
 
         writeLog("DEBUG", "Application has started Correctly");
         //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3001";
@@ -172,9 +180,6 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                 String text = "Ruta: " + db.selectFirst("select routes.name from routes inner join config on routes.id=config.route_id");
-                // ", Puerto: " + db.selectFirst("select ports.name from ports inner join config on ports.id_api=config.port_id") + "\n" +
-                // "  Nave: " + db.selectFirst("select ships.name from ships inner join config on ships.id=config.ship_id") +
-                // ", Hora: " + db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour");
                 Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
                 db.close();
@@ -202,6 +207,22 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+        DatabaseHelper db =new DatabaseHelper(this);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc",""));
+        comboLanded.setAdapter(adapter);
+        comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedSpinnerLanded=comboLanded.getSelectedItem().toString();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        db.close();
     }
 
     @Override
@@ -377,7 +398,7 @@ public class MainActivity extends AppCompatActivity
     public String getCurrentDateTime() {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("dd-MM-yyy HH:mm:ss");
+        DateFormat date = new SimpleDateFormat("yyy-MM-dd HH:mm:ss.S");
         String localTime = date.format(currentLocalTime);
         return localTime;
     }
@@ -437,10 +458,11 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void run() {
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+                int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
                 try {
                     ArrayList<String> select_from_manifest = db.select("select * from config", "|");
                     String[] manifest_config = null;
-                    int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+
                     for (int i = 0; i < select_from_manifest.size(); i++) {
                         if (select_from_manifest.size() > 0) {
                             manifest_config = select_from_manifest.get(i).split("\\|");
@@ -448,8 +470,9 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                     int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                    Log.d("manifest offline", "estoy aqui");
-                    if (count_before != count_after) {
+                    Log.d("count_before= ",count_before+"");
+                    Log.d("count_after= ",count_after+"");
+                    if (count_before > count_after) {
                         int total = count_before - count_after;
                         Log.d("manifest diff", total + "");
                         Toast.makeText(getApplication(), "se han actualizado " + total + " en el manifiesto", Toast.LENGTH_SHORT).show();
@@ -462,7 +485,7 @@ public class MainActivity extends AppCompatActivity
                     writeLog("ERROR", e.toString());
                 } finally {
                     db.close();
-                    handler.postDelayed(this,300000); // 5 Min = 300000
+                    handler.postDelayed(this, 300000); // 5 Min = 300000
                 }
 
                 db.close();
@@ -495,7 +518,7 @@ public class MainActivity extends AppCompatActivity
                         if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                             OfflineRecordsSynchronizer();
                         db.close();
-                        Thread.sleep(300000); // 5 Min = 300000
+                        Thread.sleep(30000); // 5 Min = 300000
                     } catch (Exception e) {
                         writeLog("ERROR", e.toString());
                     }
@@ -524,7 +547,7 @@ public class MainActivity extends AppCompatActivity
         if (date.equals(getCurrentDate()))
             if (hour.equals(db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour")))
                 if (route.equals(db.selectFirst("select routes.id from routes inner join config on routes.id=config.route_id")))
-                    if (port.equals(db.selectFirst("select ports.id_api from ports inner join config on ports.id_api=config.port_id")))
+                    if (port.equals(db.selectFirst("select port_id from config where port_id='"+port+"'")))
                         if (ship.equals(db.selectFirst("select ships.id from ships inner join config on ships.id=config.ship_id"))) {
                             person = db.validatePerson(rut);
                             if (!person.isEmpty())
@@ -622,7 +645,7 @@ public class MainActivity extends AppCompatActivity
         record.setSync(0);
         record.setOrigin(array[2]);
         record.setDestination(array[3]);
-        record.setPort_id(array[4]);
+        record.setPort_id(selectedSpinnerLanded);
         record.setShip_id(array[5]);
         record.setManifest_total(getStatusFromManifest(1));
         record.setManifest_embarked(getStatusFromManifest(3));
@@ -701,6 +724,7 @@ public class MainActivity extends AppCompatActivity
             record.setManifest_embarked(getStatusFromManifest(3));
             record.setManifest_landed(getStatusFromManifest(4));
             record.setManifest_pending(getStatusFromManifest(2));
+            record.setTicket(Integer.parseInt(arr[16]));
 
             new RegisterTask(record, AxxezoAPI + "/records").execute();
         }
@@ -725,12 +749,14 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("sailing_hour", record.getSailing_hour());
             jsonObject.accumulate("state", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
+            jsonObject.accumulate("boletus", record.getTicket());
 
             jsonObjectCount.accumulate("total", record.getManifest_total());
             jsonObjectCount.accumulate("embarkeds", record.getManifest_embarked());
             jsonObjectCount.accumulate("landed", record.getManifest_landed());
             //jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
-            jsonObjectCount.accumulate("boletus", record.getTicket());
+            Log.d("ticket",record.getTicket()+"");
+            Log.d("test",record.getManifest_embarked()+"");
 
             ArrayList<JSONObject> temp = new ArrayList<>();
             temp.add(jsonObject);
@@ -742,7 +768,7 @@ public class MainActivity extends AppCompatActivity
                 HttpClient httpclient = new DefaultHttpClient();
                 // 2. make POST request to the given URL
                 if (i == 1) {
-                    url = AxxezoAPI + "/manifests/update";
+                    url = AxxezoAPI + "/manifests/update?[where][total][gte]=0";
                 }
                 HttpPost httpPost = new HttpPost(url);
                 if (temp.get(i).length() <= 14 && record.getId() != 0) { // 9 element on json

@@ -419,7 +419,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_COUNT_EMBARKED, record.getManifest_embarked());
         values.put(RECORD_COUNT_LANDED, record.getManifest_landed());
         values.put(RECORD_COUNT_PENDING, record.getManifest_pending());
-        values.put(RECORD_TICKET, record.getManifest_pending());
+        values.put(RECORD_TICKET, record.getTicket());
 
         // 3. insert
         try {
@@ -471,7 +471,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             cursor.getInt(13) + ";" +   //MANIFEST EMBARKED
                             cursor.getInt(14) + ";" +   //MANIFEST LANDED
                             cursor.getInt(15) + ";" +   //MANIFEST PENDING
-                            cursor.getString(16) + ";"  //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
+                            cursor.getInt(16) + ";"  //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
             );
             cursor.moveToNext();
         }
