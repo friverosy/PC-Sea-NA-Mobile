@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity
         mp3Permitted = MediaPlayer.create(MainActivity.this, R.raw.good);
         mp3Error = MediaPlayer.create(MainActivity.this, R.raw.error);
         mySwitch = (Switch) findViewById(R.id.mySwitch);
-        selectedSpinnerLanded="";
+        selectedSpinnerLanded = "";
 
         writeLog("DEBUG", "Application has started Correctly");
         //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3001";
@@ -207,14 +207,14 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
-        DatabaseHelper db =new DatabaseHelper(this);
+        DatabaseHelper db = new DatabaseHelper(this);
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc",""));
+                android.R.layout.simple_spinner_item, db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc", ""));
         comboLanded.setAdapter(adapter);
         comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedSpinnerLanded=comboLanded.getSelectedItem().toString();
+                selectedSpinnerLanded = comboLanded.getSelectedItem().toString();
             }
 
             @Override
@@ -470,8 +470,8 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                     int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                    Log.d("count_before= ",count_before+"");
-                    Log.d("count_after= ",count_after+"");
+                    Log.d("count_before= ", count_before + "");
+                    Log.d("count_after= ", count_after + "");
                     if (count_before > count_after) {
                         int total = count_before - count_after;
                         Log.d("manifest diff", total + "");
@@ -547,12 +547,26 @@ public class MainActivity extends AppCompatActivity
         if (date.equals(getCurrentDate()))
             if (hour.equals(db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour")))
                 if (route.equals(db.selectFirst("select routes.id from routes inner join config on routes.id=config.route_id")))
-                    if (port.equals(db.selectFirst("select port_id from config where port_id='"+port+"'")))
+                    if (port.equals(db.selectFirst("select port_id from config where port_id='" + port + "'")))
                         if (ship.equals(db.selectFirst("select ships.id from ships inner join config on ships.id=config.ship_id"))) {
                             person = db.validatePerson(rut);
-                            if (!person.isEmpty())
+                            if (!person.isEmpty()) {
                                 valid = true;
-                            else TextViewStatus.setText("PERSONA NO ENCONTRADA EN EL MANIFIESTO");
+                            } else TextViewStatus.setText("PERSONA NO ENCONTRADA EN EL MANIFIESTO");
+                            if (is_input) {
+                                if (!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))) {
+                                    TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
+                                    valid = false;
+                                } else
+                                    valid = true;
+                            }
+                            if (!is_input) {
+                                if (!selectedSpinnerLanded.equals(db.selectFirst("select destination from manifest where id_people='" + rut + "'"))) {
+                                    TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
+                                    valid = false;
+                                } else
+                                    valid = true;
+                            }
                         } else TextViewStatus.setText("NAVE NO CORRESPONDE");
                     else TextViewStatus.setText("PUERTO NO CORRESPONDE");
                 else TextViewStatus.setText("RUTA NO CORRESPONDE");
@@ -560,13 +574,17 @@ public class MainActivity extends AppCompatActivity
         else TextViewStatus.setText("FECHA NO CORRESPONDE");
 
         String[] array = new String[20];
-        if (valid) {
+        if (valid)
+
+        {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
             array = person.split(",");
             TextViewFullname.setText(array[1]);
             record.setPermitted(1);
-        } else {
+        } else
+
+        {
             mp3Dennied.start();
             imageview.setImageResource(R.drawable.img_false);
             TextViewRut.setText(rut);
@@ -575,10 +593,18 @@ public class MainActivity extends AppCompatActivity
         }
 
         record.setPerson_document(rut);
-        record.setPerson_name(TextViewFullname.getText().toString());
+        record.setPerson_name(TextViewFullname.getText().
+
+                toString()
+
+        );
         if (is_input) record.setInput(1);
         else record.setInput(2);
-        record.setDatetime(getCurrentDateTime());
+        record.setDatetime(
+
+                getCurrentDateTime()
+
+        );
         record.setSync(0);
         record.setPort_id(array[4]);
         record.setShip_id(array[5]);
@@ -586,15 +612,24 @@ public class MainActivity extends AppCompatActivity
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
         db.close();
-        /****************************Client**************************************************/
+        /****************************
+         * Client
+         **************************************************/
         JSONObject json_to_send = new JSONObject();
 
-        try {
+        try
+
+        {
             json_to_send.put("document", record.getPerson_document());
             json_to_send.put("input", record.getInput());
-        } catch (JSONException e) {
+        } catch (
+                JSONException e
+                )
+
+        {
             e.printStackTrace();
         }
+
         final String temp_string_1 = json_to_send.toString();
         Log.d("Aca1", "AQUI");
 
@@ -608,7 +643,13 @@ public class MainActivity extends AppCompatActivity
         });
         t.start();
         /*****************************************************************************/
-        new RegisterTask(record, AxxezoAPI + "/records").execute();
+        new
+
+                RegisterTask(record, AxxezoAPI + "/records")
+
+                .
+
+                        execute();
     }
 
     public void documentValidator(String rut) {
@@ -618,7 +659,27 @@ public class MainActivity extends AppCompatActivity
         person = db.validatePerson(rut);
         String[] array = new String[20];
         Record record = new Record(); // Object to be sended to API Axxezo.
+        boolean valid = false;
+        /*if (!person.isEmpty()) {
+
+        }*/
         if (!person.isEmpty()) {
+            if (is_input) {
+                if (!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))) {
+                    TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
+                    valid = false;
+                } else
+                    valid = true;
+            }
+            if (!is_input) {
+                if (!selectedSpinnerLanded.equals(db.selectFirst("select destination from manifest where id_people='" + rut + "'"))) {
+                    TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
+                    valid = false;
+                } else
+                    valid = true;
+            }
+        }
+        if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
             array = person.split(",");
@@ -628,7 +689,7 @@ public class MainActivity extends AppCompatActivity
         } else {
             mp3Dennied.start();
             TextViewRut.setText(rut);
-            TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
+           // TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
             imageview.setImageResource(R.drawable.img_false);
             record.setPermitted(0);
         }
@@ -755,8 +816,8 @@ public class MainActivity extends AppCompatActivity
             jsonObjectCount.accumulate("embarkeds", record.getManifest_embarked());
             jsonObjectCount.accumulate("landed", record.getManifest_landed());
             //jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
-            Log.d("ticket",record.getTicket()+"");
-            Log.d("test",record.getManifest_embarked()+"");
+            Log.d("ticket", record.getTicket() + "");
+            Log.d("test", record.getManifest_embarked() + "");
 
             ArrayList<JSONObject> temp = new ArrayList<>();
             temp.add(jsonObject);
