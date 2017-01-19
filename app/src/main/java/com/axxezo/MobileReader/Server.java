@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.util.Collections;
 import java.util.List;
 import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 import org.json.JSONObject;
 
@@ -35,7 +36,7 @@ public class Server implements  Runnable {
     public Server(Context context){
         this.AppContext=context;
     }
-
+    final Handler handler = new Handler();
         public void run() {
             Log.d("Server",SERVERIP);
             try {
@@ -61,6 +62,7 @@ public class Server implements  Runnable {
                                     Log.d("Server", line);
 
                                     recivedMsg = line;
+                                    //if(recivedMsg!="200")
 
                                     JSONObject json_received = new JSONObject(line);
                                     //db.updatePeopleManifest(json_received.get("document").toString(),Integer.parseInt(json_received.get("input").toString()));

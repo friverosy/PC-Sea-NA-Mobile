@@ -605,11 +605,7 @@ public class MainActivity extends AppCompatActivity
         );
         if (is_input) record.setInput(1);
         else record.setInput(2);
-        record.setDatetime(
-
-                getCurrentDateTime()
-
-        );
+        record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         record.setPort_id(array[4]);
         record.setShip_id(array[5]);
@@ -625,8 +621,8 @@ public class MainActivity extends AppCompatActivity
         try
 
         {
-            json_to_send.put("document", record.getPerson_document());
-            json_to_send.put("status", record.getInput());
+            json_to_send.accumulate("document", record.getPerson_document());
+            json_to_send.accumulate("status", is_input?1:2);
         } catch (
                 JSONException e
                 )
@@ -636,14 +632,16 @@ public class MainActivity extends AppCompatActivity
         }
 
         final String temp_string_1 = json_to_send.toString();
-        Log.d("Aca1", "AQUI");
+        Log.d("JSON CLIENT",temp_string_1);
 
 
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
+
                 Client f = new Client(temp_string_1, SERVERIP, 8080);
                 f.run();
+
             }
         });
         t.start();
