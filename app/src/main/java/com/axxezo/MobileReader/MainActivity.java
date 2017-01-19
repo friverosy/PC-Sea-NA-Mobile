@@ -63,6 +63,7 @@ import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -112,6 +113,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import static com.axxezo.MobileReader.R.id.status;
+
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -144,7 +147,7 @@ public class MainActivity extends AppCompatActivity
     private String selectedSpinnerLanded;
 
 
-    String SERVERIP = "192.168.1.50";
+    String SERVERIP = "192.168.1.55";
 
     Server s = new Server(this);
 
@@ -159,7 +162,7 @@ public class MainActivity extends AppCompatActivity
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         TextViewFullname = (TextView) findViewById(R.id.fullname);
         TextViewRut = (TextView) findViewById(R.id.rut);
-        TextViewStatus = (TextView) findViewById(R.id.status);
+        TextViewStatus = (TextView) findViewById(status);
         TextViewManifestUpdate = (TextView) findViewById(R.id.textView_lastManifestUpdate);
         comboLanded = (Spinner) findViewById(R.id.spinner_setLanded);
         imageview = (ImageView) findViewById(R.id.imageView);
@@ -170,8 +173,8 @@ public class MainActivity extends AppCompatActivity
         selectedSpinnerLanded = "";
 
         writeLog("DEBUG", "Application has started Correctly");
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3001";
-        AxxezoAPI = "http://192.168.1.126:3000/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000";
+        //AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -428,7 +431,7 @@ public class MainActivity extends AppCompatActivity
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
-        //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
+          s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
     @Override
@@ -457,6 +460,7 @@ public class MainActivity extends AppCompatActivity
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
+                wifiState(false);
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                 int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
                 try {
@@ -489,6 +493,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 db.close();
+                wifiState(true);
             }
         };
         new Thread(runnable).start();
@@ -621,7 +626,7 @@ public class MainActivity extends AppCompatActivity
 
         {
             json_to_send.put("document", record.getPerson_document());
-            json_to_send.put("input", record.getInput());
+            json_to_send.put("status", record.getInput());
         } catch (
                 JSONException e
                 )
@@ -1040,6 +1045,10 @@ public class MainActivity extends AppCompatActivity
         protected void onPostExecute(String result) {
         }
 
+    }
+    public void wifiState(boolean bool){
+        WifiManager wifiManager = (WifiManager)this.getSystemService(Context.WIFI_SERVICE);
+        wifiManager.setWifiEnabled(bool);
     }
 
 
