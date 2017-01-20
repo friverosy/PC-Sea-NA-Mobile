@@ -50,16 +50,14 @@ public class Server implements  Runnable {
                         Socket client = serverSocket.accept();
 
                         Log.d("Server", "Connected");//Connected to client.
-
                         connected=true;
 
                         try {
                             line = null;
                             while (connected) {
                                 in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                                if((line = in.readLine())!=null)
-                                {
-                                    Log.d("Server", line);
+                                if ((line = in.readLine())!=null) {
+                                    //Log.d("Server", line);
 
                                     recivedMsg = line;
                                     //if(recivedMsg!="200")
@@ -73,30 +71,22 @@ public class Server implements  Runnable {
                                     in.close();
                                     client.close();
                                     connected=false;
-
-                                }
-                                else
-                                {
+                                } else {
                                     recivedMsg = "empty";
                                     in.close();
                                     client.close();
                                     connected=false;
                                 }
                             }
-
                         } catch (Exception e) {
-
                             Log.d("Server","Connection interrupted");
                             e.printStackTrace();
                         }
                     }
                 } else {
-
                     Log.d("Server","No IP");
-
                 }
             } catch (Exception e) {
-
                 Log.d("Server","error "+ e);
                 e.printStackTrace();
             }
@@ -111,7 +101,6 @@ public class Server implements  Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
 
     /*******Kill Server*******/
@@ -124,37 +113,35 @@ public class Server implements  Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
+    /*Get IP Address*/
+    public static String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        boolean isIPv4 = sAddr.indexOf(':')<0;
 
-        /*Get IP Address*/
-        public static String getIPAddress(boolean useIPv4) {
-            try {
-                List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-                for (NetworkInterface intf : interfaces) {
-                    List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-                    for (InetAddress addr : addrs) {
-                        if (!addr.isLoopbackAddress()) {
-                            String sAddr = addr.getHostAddress();
-                            boolean isIPv4 = sAddr.indexOf(':')<0;
-
-                            if (useIPv4) {
-                                if (isIPv4)
-                                    return sAddr;
-                            } else {
-                                if (!isIPv4) {
-                                    int delim = sAddr.indexOf('%'); //Drop ip6 zone suffix, just in case.....
-                                    return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
-                                }
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); //Drop ip6 zone suffix, just in case.....
+                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
                             }
                         }
                     }
                 }
-            } catch (Exception e) {
-                Log.d("ServerGetIP","error "+ e);
-                e.printStackTrace();
             }
-            return "";
+        } catch (Exception e) {
+            Log.d("ServerGetIP","error "+ e);
+            e.printStackTrace();
         }
+        return "";
+    }
 }

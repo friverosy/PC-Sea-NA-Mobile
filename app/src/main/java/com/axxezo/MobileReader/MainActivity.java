@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity
     private String selectedSpinnerLanded;
 
 
-    String SERVERIP = "192.168.1.55";
+    String SERVERIP = "192.168.1.51";
 
     Server s = new Server(this);
 
@@ -173,8 +173,8 @@ public class MainActivity extends AppCompatActivity
         selectedSpinnerLanded = "";
 
         writeLog("DEBUG", "Application has started Correctly");
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000";
-        //AxxezoAPI = "http://192.168.1.126:3000/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -330,11 +330,9 @@ public class MainActivity extends AppCompatActivity
             byte[] barcode = intent.getByteArrayExtra("barocode");
             int barocodelen = intent.getIntExtra("length", 0);
             byte barcodeType = intent.getByteExtra("barcodeType", (byte) 0);
-            Log.i("codetype", String.valueOf(barcodeType));
             barcodeStr = new String(barcode, 0, barocodelen);
             String rawCode = barcodeStr;
             writeLog("Raw Code:", rawCode);
-            Log.d("---", rawCode);
 
             int flag = 0; // 0 for end without k, 1 with k
             Person person = new Person();
@@ -343,7 +341,6 @@ public class MainActivity extends AppCompatActivity
                 if (barcodeStr.contains("client_code")) {
                     // Its a ticket
                     try {
-                        Log.d("barcode", barcodeStr);
                         JSONObject json = new JSONObject(barcodeStr);
                         String doc = json.getString("client_code");
                         doc = doc.substring(0, doc.length() - 2);
@@ -474,15 +471,11 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
                     int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                    Log.d("count_before= ", count_before + "");
-                    Log.d("count_after= ", count_after + "");
                     if (count_before > count_after) {
                         int total = count_before - count_after;
-                        Log.d("manifest diff", total + "");
                         Toast.makeText(getApplication(), "se han actualizado " + total + " en el manifiesto", Toast.LENGTH_SHORT).show();
                         TextViewManifestUpdate.setTextColor(Color.WHITE);
                         TextViewManifestUpdate.setText("Ultima Actualizacion " + getCurrentDateTime());
-                        Log.d("actualizacion manifest", total + "");
                     }
                     //Thread.sleep(3000);
                 } catch (Exception e) {
@@ -613,28 +606,18 @@ public class MainActivity extends AppCompatActivity
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
         db.close();
-        /****************************
-         * Client
-         **************************************************/
+
+        /********************** CLient socket ******************************/
         JSONObject json_to_send = new JSONObject();
 
-        try
-
-        {
+        try {
             json_to_send.accumulate("document", record.getPerson_document());
             json_to_send.accumulate("status", is_input?1:2);
-        } catch (
-                JSONException e
-                )
-
-        {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
         final String temp_string_1 = json_to_send.toString();
-        Log.d("JSON CLIENT",temp_string_1);
-
-
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -646,13 +629,7 @@ public class MainActivity extends AppCompatActivity
         });
         t.start();
         /*****************************************************************************/
-        new
-
-                RegisterTask(record, AxxezoAPI + "/records")
-
-                .
-
-                        execute();
+        new RegisterTask(record, AxxezoAPI + "/records").execute();
     }
 
     public void documentValidator(String rut) {
@@ -698,7 +675,6 @@ public class MainActivity extends AppCompatActivity
         }
 
         record.setPerson_document(rut);
-        Log.i("manifest", TextViewFullname.getText().toString());
         if (TextViewFullname.getText().equals("NO ESTA EN EL MANIFIESTO"))
             record.setPerson_name("");
         else record.setPerson_name(TextViewFullname.getText().toString());
@@ -720,7 +696,7 @@ public class MainActivity extends AppCompatActivity
         db.close();
 
 
-/*****************Client******************************************************************/
+        /***************** Client socket ****************************************/
         JSONObject json_to_send = new JSONObject();
 
         try {
@@ -730,8 +706,6 @@ public class MainActivity extends AppCompatActivity
             e.printStackTrace();
         }
         final String temp_string_2 = json_to_send.toString();
-        Log.d("Aca2", "AQUI");
-
 
         Thread t = new Thread(new Runnable() {
             @Override
@@ -741,7 +715,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
         t.start();
-        /**************************************************************************************************/
+        /************************************************************************/
         new RegisterTask(record, AxxezoAPI + "/records").execute();
     }
 
@@ -770,7 +744,6 @@ public class MainActivity extends AppCompatActivity
         String[] arr;
         for (int i = 0; i <= records.size() - 1; i++) {
             Record record = new Record();
-            Log.d("Missing Sync", records.get(i).toString());
             arr = records.get(i).toString().split(";");
             record.setId(Integer.parseInt(arr[0]));
             record.setDatetime(arr[1]);
@@ -819,8 +792,6 @@ public class MainActivity extends AppCompatActivity
             jsonObjectCount.accumulate("embarkeds", record.getManifest_embarked());
             jsonObjectCount.accumulate("landed", record.getManifest_landed());
             //jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
-            Log.d("ticket", record.getTicket() + "");
-            Log.d("test", record.getManifest_embarked() + "");
 
             ArrayList<JSONObject> temp = new ArrayList<>();
             temp.add(jsonObject);
@@ -863,7 +834,6 @@ public class MainActivity extends AppCompatActivity
                                 Log.d("json POSTED", json);
                                 // if has sync=0 its becouse its an offline record to be will synchronized.
                                 if (record.getSync() == 0) {
-                                    Log.d("---", "going into update record");
                                     DatabaseHelper db = new DatabaseHelper(this);
                                     db.update_record(record.getId());
                                     db.close();
@@ -916,7 +886,6 @@ public class MainActivity extends AppCompatActivity
         //String date must be in format yyyy-MM-dd
         //String hour must be in format HH-dd
         URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
-        Log.d("manifest main", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -933,9 +902,10 @@ public class MainActivity extends AppCompatActivity
             } else
                 content = convertInputStreamToString(getData);
         } catch (MalformedURLException me) {
+            me.printStackTrace();
 
         } catch (IOException ioe) {
-
+            ioe.printStackTrace();
         }
         if (conn != null) {
             conn.disconnect();
@@ -943,7 +913,7 @@ public class MainActivity extends AppCompatActivity
         if (content.length() <= 2) { //[]
             content = "204"; // No content
         }
-        Log.d("Manifes Server response", content);
+        //Log.i("Manifest response", content);
         return content;
     }
 

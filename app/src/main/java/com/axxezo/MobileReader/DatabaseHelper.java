@@ -205,7 +205,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     jsonArray = objectJson.getJSONArray("list_routes");
                     try {
                         db.beginTransaction();
-                        Log.d("--add route", String.valueOf(db.isOpen()));
                         db.delete(TABLE_ROUTES, null, null);
 
                         for (int i = 0; i < jsonArray.length(); i++) {
@@ -213,7 +212,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("id_ruta"), jsonArray.getJSONObject(i).getString("nombre_ruta"));
                             values.put(ROUTE_ID, routes.getID());
                             values.put(ROUTE_NAME, routes.getName().trim());
-                            Log.d("Routes content :", routes.toString());
                             db.insert(TABLE_ROUTES, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -241,7 +239,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             Ports port = new Ports(jsonArray.getJSONObject(i).getInt("id_ubicacion"), jsonArray.getJSONObject(i).getString("nombre_ubicacion"));
                             values.put(PORT_ID_API, port.getId());
                             values.put(PORT_NAME, port.getName().trim());
-                            Log.d("Ports content :", port.toString());
                             db.insert(TABLE_PORTS, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -261,7 +258,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     jsonArray = objectJson.getJSONArray("list_transport");
                     try {
                         db.beginTransaction();
-                        Log.d("--add transports", String.valueOf(db.isOpen()));
 
                         db.delete(TABLE_SHIPS, null, null);
 
@@ -270,7 +266,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             Ships port = new Ships(jsonArray.getJSONObject(i).getInt("id_transporte"), jsonArray.getJSONObject(i).getString("nombre_transporte"));
                             values.put(SHIP_ID, port.getID());
                             values.put(SHIP_NAME, port.getName().trim());
-                            Log.d("Ships content :", port.toString());
                             db.insert(TABLE_SHIPS, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -296,7 +291,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             ContentValues values = new ContentValues();
                             Hours hours = new Hours(jsonArray.getJSONObject(i).getString("horas"));
                             values.put(HOUR_NAME, hours.getName().trim());
-                            Log.d("Hours content :", hours.toString());
                             db.insert(TABLE_HOURS, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -319,7 +313,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                         db.beginTransaction();
                         for (int i = 0; i < jsonArray.length(); i++) {
-                            Log.d("for", String.valueOf(i));
                             ContentValues valuesPerson = new ContentValues();
                             ContentValues valuesManifest = new ContentValues();
 
@@ -369,7 +362,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             return Query = "";
         else
             firstElement = cursor.getString(0);
-        Log.i("first element", "-----" + firstElement);
         //db.close();
         return firstElement;
     }
@@ -567,7 +559,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             list.add(cursor.getString(1));
         }
-        Log.i("list String", "List: " + list.toString());
         //db.close();
         return list;
     }

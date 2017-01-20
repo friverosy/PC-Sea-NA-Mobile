@@ -1,6 +1,7 @@
 package com.axxezo.MobileReader;
 
 import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -60,6 +61,7 @@ public class Configuration extends AppCompatActivity {
         setContentView(R.layout.activity_configuration);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        wifiState(false);
 
         combobox = (Spinner) findViewById(R.id.spinner);
         // combobox_ports = (Spinner) findViewById(R.id.spinner_ports);
@@ -108,6 +110,7 @@ public class Configuration extends AppCompatActivity {
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
+                    wifiState(true);
                 } else {
                     Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
                     loadButton.setProgress(-1);
@@ -668,4 +671,8 @@ public class Configuration extends AppCompatActivity {
         return URL;
     }
 
+    public void wifiState(boolean bool){
+        WifiManager wifiManager = (WifiManager)this.getSystemService(Context.WIFI_SERVICE);
+        wifiManager.setWifiEnabled(bool);
+    }
 }

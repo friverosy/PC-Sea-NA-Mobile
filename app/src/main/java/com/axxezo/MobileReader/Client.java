@@ -38,12 +38,11 @@ public class Client implements  Runnable {
             s.close();
         } catch (UnknownHostException e) {
             e.printStackTrace();
-            Log.d("Client", "UnknownHost");
+            //Log.d("Client", "UnknownHost");
         } catch (IOException e) {
             e.printStackTrace();
-            Log.d("Client", "IO");
+            //Log.d("Client", "IO");
         }
-
 
     }
 }
