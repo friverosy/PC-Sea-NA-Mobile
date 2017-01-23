@@ -81,6 +81,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
@@ -113,6 +114,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import static com.axxezo.MobileReader.R.id.content_main;
 import static com.axxezo.MobileReader.R.id.status;
 
 
@@ -205,16 +207,20 @@ public class MainActivity extends AppCompatActivity
                 if (isChecked) {
                     is_input = true;
                 } else {
+                    is_input = false;
                 }
             }
         });
         DatabaseHelper db = new DatabaseHelper(this);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc", ""));
         comboLanded.setAdapter(adapter);
         comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                /*if(adapter.isEmpty()){
+                    adapter.add("<Seleccione Principal en menu lateral para recargar");
+                }*/
                 selectedSpinnerLanded = comboLanded.getSelectedItem().toString();
             }
 
@@ -341,7 +347,7 @@ public class MainActivity extends AppCompatActivity
                         JSONObject json = new JSONObject(barcodeStr);
                         String doc = json.getString("client_code");
 
-                        if (doc.contains("-")){
+                        if (doc.contains("-")) {
                             doc = doc.substring(0, doc.indexOf("-"));
                         }
 
@@ -456,7 +462,7 @@ public class MainActivity extends AppCompatActivity
             public void run() {
                 // wifiState(false);
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+                int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
                 try {
                     ArrayList<String> select_from_manifest = db.select("select * from config", "|");
                     String[] manifest_config = null;
@@ -467,8 +473,9 @@ public class MainActivity extends AppCompatActivity
                             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest");
                         }
                     }
-                    int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                    if (count_before > count_after) {
+
+                    int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+                    if (count_before != count_after) {
                         int total = count_before - count_after;
                         Toast.makeText(getApplication(), "se han actualizado " + total + " en el manifiesto", Toast.LENGTH_SHORT).show();
                         TextViewManifestUpdate.setTextColor(Color.WHITE);
@@ -479,7 +486,7 @@ public class MainActivity extends AppCompatActivity
                     writeLog("ERROR", e.toString());
                 } finally {
                     db.close();
-                    handler.postDelayed(this,450000); // 5 Min = 300000 7 min=450000
+                    handler.postDelayed(this, 450000); // 5 Min = 300000 7 min=450000
                 }
 
                 db.close();
@@ -538,12 +545,12 @@ public class MainActivity extends AppCompatActivity
         Record record = new Record(); // Object to be sended to API Axxezo.
         final Record record_send = new Record();
         DatabaseHelper db = new DatabaseHelper(this);
-        rut=rut.trim();
+        rut = rut.trim();
 
         if (date.equals(getCurrentDate()))
             if (hour.equals(db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour")))
                 if (route.equals(db.selectFirst("select routes.id from routes inner join config on routes.id=config.route_id")))
-                    if (port.equals(db.selectFirst("select port_id from config where port_id='" + port + "'")))
+                    if (port.equals(db.selectFirst("select id_api from ports where name='" + selectedSpinnerLanded + "'")))
                         if (ship.equals(db.selectFirst("select ships.id from ships inner join config on ships.id=config.ship_id"))) {
                             person = db.validatePerson(rut);
                             if (!person.isEmpty()) {
@@ -604,7 +611,10 @@ public class MainActivity extends AppCompatActivity
 
 
         db.add_record(record);
-        db.updatePeopleManifest(rut, record.getInput());
+        if (valid)
+            db.updatePeopleManifest(rut, record.getInput());
+        else
+            db.updatePeopleManifest(rut, 0);
         db.close();
 
         /********************** CLient socket ******************************/
@@ -670,7 +680,8 @@ public class MainActivity extends AppCompatActivity
             mp3Dennied.start();
             TextViewRut.setText(rut);
 
-            is_input = false;TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
+            is_input = false;
+            TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
             imageview.setImageResource(R.drawable.img_false);
             record.setPermitted(0);
         }
@@ -887,6 +898,7 @@ public class MainActivity extends AppCompatActivity
         //String date must be in format yyyy-MM-dd
         //String hour must be in format HH-dd
         URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
+        Log.d("url manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {

@@ -238,7 +238,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             ContentValues values = new ContentValues();
                             Ports port = new Ports(jsonArray.getJSONObject(i).getInt("id_ubicacion"), jsonArray.getJSONObject(i).getString("nombre_ubicacion"));
                             values.put(PORT_ID_API, port.getId());
-                            values.put(PORT_NAME, port.getName().trim());
+                            values.put(PORT_NAME, port.getName().trim().toUpperCase());
                             db.insert(TABLE_PORTS, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -383,6 +383,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             list.add(row);
         }
+        cursor.close();
         //db.close();
         return row;
     }
@@ -521,6 +522,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             list.add(row);
         }
+        cursor.close();
         //db.close();
         return list;
     }
@@ -560,6 +562,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             list.add(cursor.getString(1));
         }
         //db.close();
+        cursor.close();
         return list;
     }
 

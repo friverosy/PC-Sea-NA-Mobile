@@ -1,6 +1,7 @@
 package com.axxezo.MobileReader;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -9,7 +10,9 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -110,7 +113,9 @@ public class Configuration extends AppCompatActivity {
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
-                   //wifiState(true);
+                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    startActivity(intent);
+                    //wifiState(true);
                 } else {
                     Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
                     loadButton.setProgress(-1);
@@ -289,7 +294,7 @@ public class Configuration extends AppCompatActivity {
                                     for (int j = 0; j < jsonManifest.length(); j++) {
                                         if (jsonManifest.length() > 1) {
                                             hours = (jsonManifest.getJSONObject(jsonManifest.length() - 1).getString("horas"));
-                                        }else
+                                        } else
                                             hours = (jsonManifest.getJSONObject(0).getString("horas"));
                                     }
                                 } catch (JSONException e) {
@@ -306,7 +311,7 @@ public class Configuration extends AppCompatActivity {
                                     for (int j = 0; j < jsonManifest.length(); j++) {
                                         if (jsonManifest.length() > 1) {
                                             hours = (jsonManifest.getJSONObject(jsonManifest.length() - 1).getString("horas"));
-                                        }else
+                                        } else
                                             hours = (jsonManifest.getJSONObject(0).getString("horas"));
                                     }
                                 } catch (JSONException e) {
@@ -317,7 +322,7 @@ public class Configuration extends AppCompatActivity {
                     }
                     db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest");
                     db.insert("insert into config(route_id,port_id,ship_id,hour,date) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
-                            selectionSpinnerTransports + "','" + hours + "','" + currentDatetime +"')");
+                            selectionSpinnerTransports + "','" + hours + "','" + currentDatetime + "')");
                     //finally, boolean true in port
                     select_from_manifest.remove(selectionSpinnerPorts.toString());
                     Log.d("select_from_manifest", select_from_manifest.size() + "");
@@ -660,8 +665,8 @@ public class Configuration extends AppCompatActivity {
         return URL;
     }
 
-    public void wifiState(boolean bool){
-        WifiManager wifiManager = (WifiManager)this.getSystemService(Context.WIFI_SERVICE);
+    public void wifiState(boolean bool) {
+        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(bool);
     }
 }
