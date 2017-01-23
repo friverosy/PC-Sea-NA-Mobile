@@ -206,7 +206,6 @@ public class MainActivity extends AppCompatActivity
                 if (isChecked) {
                     is_input = true;
                 } else {
-                    is_input = false;
                 }
             }
         });
@@ -676,7 +675,8 @@ public class MainActivity extends AppCompatActivity
         } else {
             mp3Dennied.start();
             TextViewRut.setText(rut);
-            TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
+
+            is_input = false;TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
             imageview.setImageResource(R.drawable.img_false);
             record.setPermitted(0);
         }
