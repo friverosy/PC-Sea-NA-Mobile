@@ -148,7 +148,6 @@ public class Configuration extends AppCompatActivity {
                         } catch (ExecutionException e) {
                             e.printStackTrace();
                         }
-
                     }
                 }
             }
@@ -169,7 +168,6 @@ public class Configuration extends AppCompatActivity {
             try {
                 db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships");
                 loadComboboxShips();
-
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
@@ -212,10 +210,8 @@ public class Configuration extends AppCompatActivity {
                         } catch (ExecutionException e) {
                             e.printStackTrace();
                         }
-
                     }
                 }
-
             }
 
             @Override
@@ -248,7 +244,6 @@ public class Configuration extends AppCompatActivity {
                         //db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
                     }
                 }
-
             }
 
             @Override
@@ -339,7 +334,6 @@ public class Configuration extends AppCompatActivity {
         }
 
         //load size of manifest
-
         ArrayList<String> select_counts = db.select("select count(id) from manifest", "|");
         if (select_counts.size() > 0) {
             String[] binnacle_param_id = select_counts.get(0).split("\\|");
@@ -364,7 +358,6 @@ public class Configuration extends AppCompatActivity {
             this.token = token;
             getInformation = "";
             flag = 0;
-
         }
 
         getAPIInformation(String URL, String token, int route) {//ports
@@ -408,7 +401,6 @@ public class Configuration extends AppCompatActivity {
             flag = 4;
         }
 
-
         @Override
         protected String doInBackground(String... strings) {
             try {
@@ -429,7 +421,6 @@ public class Configuration extends AppCompatActivity {
                         getInformation = getManifest(URL, token, route, port, date, transport, hour);
                         break;
                 }
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -443,7 +434,6 @@ public class Configuration extends AppCompatActivity {
 
         protected void onPostExecute(String result) {
         }
-
     }
 
     /*
@@ -636,7 +626,6 @@ public class Configuration extends AppCompatActivity {
 
         inputStream.close();
         return result;
-
     }
 
     public String getCurrentDate(int days) {
