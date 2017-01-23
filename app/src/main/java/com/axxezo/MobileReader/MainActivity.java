@@ -577,24 +577,36 @@ public class MainActivity extends AppCompatActivity
         else TextViewStatus.setText("FECHA NO CORRESPONDE");
 
         String[] array = new String[20];
+        if (person != null)
+            array = person.split(";");
+        else
+            array =db.validatePerson(rut).split(";");
         if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
-            array = person.split(";");
+            //array = person.split(";");
             TextViewFullname.setText(array[1]);
             record.setPermitted(1);
         } else {
             mp3Dennied.start();
             imageview.setImageResource(R.drawable.img_false);
             TextViewRut.setText(rut);
-            TextViewFullname.setText("");
+            if (array[1] != null)
+                TextViewFullname.setText(array[1]);
+            else
+                TextViewFullname.setText("");
             record.setPermitted(0);
         }
 
         record.setPerson_document(rut);
         record.setPerson_name(TextViewFullname.getText().toString());
-        if (is_input) record.setInput(1);
+
+        if (array[1] != null) record.setPerson_name(array[1]);
+        else record.setPerson_name("");
+        if (is_input && valid) record.setInput(1);
         else record.setInput(2);
+        if (!valid)
+            record.setInput(-1);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         record.setPort_id(array[4]);
