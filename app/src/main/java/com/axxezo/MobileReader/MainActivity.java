@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity
     private String selectedSpinnerLanded;
 
 
-    String SERVERIP = "192.168.1.51";
+    String SERVERIP = "192.168.1.120";
 
     Server s = new Server(this);
 
@@ -428,7 +428,7 @@ public class MainActivity extends AppCompatActivity
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
-          s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
+        s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
     @Override
@@ -457,7 +457,7 @@ public class MainActivity extends AppCompatActivity
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                wifiState(false);
+                // wifiState(false);
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                 int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
                 try {
@@ -482,11 +482,11 @@ public class MainActivity extends AppCompatActivity
                     writeLog("ERROR", e.toString());
                 } finally {
                     db.close();
-                    handler.postDelayed(this, 300000); // 5 Min = 300000
+                    handler.postDelayed(this,450000); // 5 Min = 300000 7 min=450000
                 }
 
                 db.close();
-                wifiState(true);
+                //   wifiState(true);
             }
         };
         new Thread(runnable).start();
@@ -541,6 +541,7 @@ public class MainActivity extends AppCompatActivity
         Record record = new Record(); // Object to be sended to API Axxezo.
         final Record record_send = new Record();
         DatabaseHelper db = new DatabaseHelper(this);
+        rut=rut.trim();
 
         if (date.equals(getCurrentDate()))
             if (hour.equals(db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour")))
@@ -577,7 +578,7 @@ public class MainActivity extends AppCompatActivity
         {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
-            array = person.split(",");
+            array = person.split(";");
             TextViewFullname.setText(array[1]);
             record.setPermitted(1);
         } else
@@ -591,11 +592,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         record.setPerson_document(rut);
-        record.setPerson_name(TextViewFullname.getText().
-
-                toString()
-
-        );
+        record.setPerson_name(TextViewFullname.getText().toString());
         if (is_input) record.setInput(1);
         else record.setInput(2);
         record.setDatetime(getCurrentDateTime());
@@ -603,6 +600,16 @@ public class MainActivity extends AppCompatActivity
         record.setPort_id(array[4]);
         record.setShip_id(array[5]);
         record.setSailing_hour(hour);
+        //add information that isn`t content in qr code
+        ArrayList<String> select_from_manifest = db.select("select origin,destination from manifest where id_people='" + rut + "'", "|");
+        String[] manifest_config = null;
+        if (select_from_manifest.size() > 0) {
+            manifest_config = select_from_manifest.get(0).split("\\|");
+            record.setOrigin(manifest_config[0]);
+            record.setDestination(manifest_config[1]);
+        }
+
+
         db.add_record(record);
         db.updatePeopleManifest(rut, record.getInput());
         db.close();
@@ -612,7 +619,7 @@ public class MainActivity extends AppCompatActivity
 
         try {
             json_to_send.accumulate("document", record.getPerson_document());
-            json_to_send.accumulate("status", is_input?1:2);
+            json_to_send.accumulate("status", is_input ? 1 : 2);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -669,7 +676,7 @@ public class MainActivity extends AppCompatActivity
         } else {
             mp3Dennied.start();
             TextViewRut.setText(rut);
-           // TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
+            TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
             imageview.setImageResource(R.drawable.img_false);
             record.setPermitted(0);
         }
@@ -1014,8 +1021,9 @@ public class MainActivity extends AppCompatActivity
         }
 
     }
-    public void wifiState(boolean bool){
-        WifiManager wifiManager = (WifiManager)this.getSystemService(Context.WIFI_SERVICE);
+
+    public void wifiState(boolean bool) {
+        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(bool);
     }
 

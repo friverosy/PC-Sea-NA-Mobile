@@ -378,7 +378,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
             int i = 0;
             while (i < cursor.getColumnCount()) {
-                row = row + cursor.getString(i) + ",";
+                row = row + cursor.getString(i) + ";";
                 i++;
             }
             list.add(row);
