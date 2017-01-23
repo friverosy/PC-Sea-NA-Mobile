@@ -61,7 +61,7 @@ public class Configuration extends AppCompatActivity {
         setContentView(R.layout.activity_configuration);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        wifiState(false);
+        //wifiState(false);
 
         combobox = (Spinner) findViewById(R.id.spinner);
         // combobox_ports = (Spinner) findViewById(R.id.spinner_ports);
@@ -110,7 +110,7 @@ public class Configuration extends AppCompatActivity {
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
-                    wifiState(true);
+                    //wifiState(true);
                 } else {
                     Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
                     loadButton.setProgress(-1);

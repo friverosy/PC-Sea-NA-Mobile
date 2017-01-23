@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity
     private String selectedSpinnerLanded;
 
 
-    String SERVERIP = "192.168.1.51";
+    String SERVERIP = "192.168.1.141";
 
     Server s = new Server(this);
 
@@ -339,19 +339,21 @@ public class MainActivity extends AppCompatActivity
 
             if (barcodeType == 28) { // QR code
                 if (barcodeStr.contains("client_code")) {
-                    // Its a ticket
-                    try {
+                    try { // Its a ticket
                         JSONObject json = new JSONObject(barcodeStr);
                         String doc = json.getString("client_code");
-                        doc = doc.substring(0, doc.length() - 2);
+
+                        if (doc.contains("-")){
+                            doc = doc.substring(0, doc.indexOf("-"));
+                        }
+
                         person.setDocument(doc);
                         barcodeStr = doc;
                         ticketValidator(doc, json.getString("route"), json.getString("port"), json.getString("date"), json.getString("hour"), json.getString("transport"));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                } else {
-                    // Its a DNI Card.
+                } else { // Its a DNI Card.
                     barcodeStr = barcodeStr.substring(
                             barcodeStr.indexOf("RUN=") + 4,
                             barcodeStr.indexOf("&type"));
@@ -365,7 +367,6 @@ public class MainActivity extends AppCompatActivity
                 barcodeStr = barcodeStr.replace(" ", "");
                 if (barcodeStr.endsWith("K")) {
                     barcodeStr = barcodeStr.replace("K", "0");
-
                 }
 
                 // Define length of character.
@@ -444,9 +445,7 @@ public class MainActivity extends AppCompatActivity
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-
                 s.run();
-
             }
         });
         t.start();
@@ -457,7 +456,7 @@ public class MainActivity extends AppCompatActivity
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                wifiState(false);
+                //Seal@(false);
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                 int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
                 try {
@@ -486,7 +485,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 db.close();
-                wifiState(true);
+                //wifiState(true);
             }
         };
         new Thread(runnable).start();
@@ -572,17 +571,13 @@ public class MainActivity extends AppCompatActivity
         else TextViewStatus.setText("FECHA NO CORRESPONDE");
 
         String[] array = new String[20];
-        if (valid)
-
-        {
+        if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
             array = person.split(",");
             TextViewFullname.setText(array[1]);
             record.setPermitted(1);
-        } else
-
-        {
+        } else {
             mp3Dennied.start();
             imageview.setImageResource(R.drawable.img_false);
             TextViewRut.setText(rut);
@@ -591,9 +586,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         record.setPerson_document(rut);
-        record.setPerson_name(TextViewFullname.getText().
-
-                toString()
+        record.setPerson_name(TextViewFullname.getText().toString()
 
         );
         if (is_input) record.setInput(1);
@@ -624,11 +617,11 @@ public class MainActivity extends AppCompatActivity
 
                 Client f = new Client(temp_string_1, SERVERIP, 8080);
                 f.run();
-
             }
         });
         t.start();
         /*****************************************************************************/
+
         new RegisterTask(record, AxxezoAPI + "/records").execute();
     }
 
@@ -695,7 +688,6 @@ public class MainActivity extends AppCompatActivity
         db.updatePeopleManifest(rut, record.getInput());
         db.close();
 
-
         /***************** Client socket ****************************************/
         JSONObject json_to_send = new JSONObject();
 
@@ -716,6 +708,7 @@ public class MainActivity extends AppCompatActivity
         });
         t.start();
         /************************************************************************/
+
         new RegisterTask(record, AxxezoAPI + "/records").execute();
     }
 
@@ -989,7 +982,6 @@ public class MainActivity extends AppCompatActivity
             flag = 4;
         }
 
-
         @Override
         protected String doInBackground(String... strings) {
             try {
@@ -1018,6 +1010,5 @@ public class MainActivity extends AppCompatActivity
         WifiManager wifiManager = (WifiManager)this.getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(bool);
     }
-
 
 }
