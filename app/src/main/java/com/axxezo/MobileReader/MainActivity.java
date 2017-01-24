@@ -200,7 +200,8 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         // set by default
-        is_input = true;
+        //is_input = true;
+        mySwitch.setChecked(true);
         mySwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -580,7 +581,7 @@ public class MainActivity extends AppCompatActivity
         if (person != null)
             array = person.split(";");
         else
-            array =db.validatePerson(rut).split(";");
+            array = db.validatePerson(rut).split(";");
         if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
@@ -591,7 +592,7 @@ public class MainActivity extends AppCompatActivity
             mp3Dennied.start();
             imageview.setImageResource(R.drawable.img_false);
             TextViewRut.setText(rut);
-            if (array[1] != null)
+            if (!array[0].equals(""))
                 TextViewFullname.setText(array[1]);
             else
                 TextViewFullname.setText("");
@@ -601,7 +602,7 @@ public class MainActivity extends AppCompatActivity
         record.setPerson_document(rut);
         record.setPerson_name(TextViewFullname.getText().toString());
 
-        if (array[1] != null) record.setPerson_name(array[1]);
+        if (!array[0].equals("")) record.setPerson_name(array[1]);
         else record.setPerson_name("");
         if (is_input && valid) record.setInput(1);
         else record.setInput(2);
@@ -609,8 +610,10 @@ public class MainActivity extends AppCompatActivity
             record.setInput(-1);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
-        record.setPort_id(array[4]);
-        record.setShip_id(array[5]);
+        if(!array[0].equals("")) {
+            record.setPort_id(array[4]);
+            record.setShip_id(array[5]);
+        }
         record.setSailing_hour(hour);
         //add information that isn`t content in qr code
         ArrayList<String> select_from_manifest = db.select("select origin,destination from manifest where id_people='" + rut + "'", "|");
@@ -620,8 +623,7 @@ public class MainActivity extends AppCompatActivity
             record.setOrigin(manifest_config[0]);
             record.setDestination(manifest_config[1]);
         }
-
-
+        Log.d("estoy en ticket v", record.getInput() + "");
         db.add_record(record);
         if (valid)
             db.updatePeopleManifest(rut, record.getInput());
@@ -662,9 +664,12 @@ public class MainActivity extends AppCompatActivity
         String[] array = new String[20];
         Record record = new Record(); // Object to be sended to API Axxezo.
         boolean valid = false;
-        /*if (!person.isEmpty()) {
-
-        }*/
+        Log.d("dv:estoy en doc val", person.toString()+ "");
+        Log.d("dv:input antes if",is_input+"");
+        Log.d("dv:rut:",rut+"");
+        Log.d("dv:rut:",rut+"");
+        Log.d("dv:selectSpinner:",selectedSpinnerLanded+"");
+        Log.d("dv:if:",!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))+"");
         if (!person.isEmpty()) {
             if (is_input) {
                 if (!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))) {
@@ -681,18 +686,19 @@ public class MainActivity extends AppCompatActivity
                     valid = true;
             }
         }
+        Log.d("dv:input despues if",is_input+"");
+        Log.d("dv:valid?=",valid+"");
         if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
-            array = person.split(",");
+            array = person.split(";");
             TextViewFullname.setText(array[1]);
             TextViewRut.setText(array[0]);
             record.setPermitted(1);
         } else {
             mp3Dennied.start();
             TextViewRut.setText(rut);
-
-            is_input = false;
+            //is_input = false;
             TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
             imageview.setImageResource(R.drawable.img_false);
             record.setPermitted(0);
@@ -703,8 +709,14 @@ public class MainActivity extends AppCompatActivity
             record.setPerson_name("");
         else record.setPerson_name(TextViewFullname.getText().toString());
 
-        if (is_input) record.setInput(1);
+        if (array[1] != null) record.setPerson_name(array[1]);
+        else record.setPerson_name("");
+        if (is_input && valid) record.setInput(1);
         else record.setInput(2);
+        if (!valid)
+            record.setInput(-1);
+        //if (is_input) record.setInput(1);
+        //else record.setInput(2);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         record.setOrigin(array[2]);

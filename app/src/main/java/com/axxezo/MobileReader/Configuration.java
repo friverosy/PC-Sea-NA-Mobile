@@ -113,8 +113,8 @@ public class Configuration extends AppCompatActivity {
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    startActivity(intent);
+                    //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    //startActivity(intent);
                     //wifiState(true);
                 } else {
                     Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
