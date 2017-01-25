@@ -21,6 +21,9 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
+    //context
+    private Context context;
+
     //Table names
     private static final String TABLE_PEOPLE = "PEOPLE";
     private static final String TABLE_RECORDS = "RECORDS";
@@ -167,6 +170,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.context = context;
     }
 
     @Override
@@ -196,6 +200,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insertJSON(String json, String table) throws JSONException {
         SQLiteDatabase db = this.getWritableDatabase();
+        log_app log = new log_app();
         JSONObject objectJson;
         JSONArray jsonArray;
         switch (table) {
@@ -217,8 +222,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                     values); // key/value -> keys = column names/ values = column values
                         }
                         db.setTransactionSuccessful();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    } catch (android.database.SQLException e) {
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
                     }
@@ -244,8 +249,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                     values); // key/value -> keys = column names/ values = column values
                         }
                         db.setTransactionSuccessful();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    } catch (android.database.SQLException e) {
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
                     }
@@ -271,8 +276,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                     values); // key/value -> keys = column names/ values = column values
                         }
                         db.setTransactionSuccessful();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    } catch (android.database.SQLException e) {
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
                     }
@@ -296,8 +301,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                     values); // key/value -> keys = column names/ values = column values
                         }
                         db.setTransactionSuccessful();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    } catch (android.database.SQLException e) {
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
                     }
@@ -324,16 +329,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             if (people.getDocument().contains("-"))
                                 doc = doc.substring(0, doc.length() - 2);
 
-                            valuesPerson.put(PERSON_DOCUMENT, doc);
-                            valuesPerson.put(PERSON_NAME, people.getName().trim());
-                            valuesPerson.put(PERSON_NATIONALITY, people.getNationality());
-                            valuesPerson.put(PERSON_AGE, people.getAge());
-
-                            valuesManifest.put(MANIFEST_PEOPLE_ID, doc);
-                            valuesManifest.put(MANIFEST_ORIGIN, manifest.getOrigin());
-                            valuesManifest.put(MANIFEST_DESTINATION, manifest.getDestination());
-                            valuesManifest.put(MANIFEST_ISINSIDE, manifest.getIsInside());
-
                             db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
                                     doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
                             db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
@@ -341,28 +336,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         }
                         db.setTransactionSuccessful();
                     } catch (JSONException e) {
-                        e.printStackTrace();
-                    } catch (SQLException sqle) {
-                        sqle.printStackTrace();
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                    } catch (android.database.SQLException e) {
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
                     }
                 } else
                     Log.i("error", "Json empty!");
                 break;
-        }
+
+        }//finnaly close db
+        db.close();
     }
 
     public String selectFirst(String Query) {
         String firstElement = "";
+        log_app log = new log_app();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(Query, null);
-        cursor.moveToFirst();
-        if (cursor.getCount() == 0)
-            return Query = "";
-        else
-            firstElement = cursor.getString(0);
-        //db.close();
+        try {
+            Cursor cursor = db.rawQuery(Query, null);
+            cursor.moveToFirst();
+            if (cursor.getCount() == 0)
+                return Query = "";
+            else
+                firstElement = cursor.getString(0);
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            db.close();
+        }
         return firstElement;
     }
 
@@ -371,27 +374,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //return the person data if this person is in manifest table
         ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination,(select name from ports where id_api=(select port_id from config))," +
-                "(select name from ships where id=(select ship_id from config)) from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
-        cursor.moveToFirst();
+        log_app log = new log_app();
+        Cursor cursor = null;
         String row = "";
-        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-            int i = 0;
-            while (i < cursor.getColumnCount()) {
-                row = row + cursor.getString(i) + ";";
-                i++;
+        try {
+            cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination,(select name from ports where id_api=(select port_id from config))," +
+                    "(select name from ships where id=(select ship_id from config)) from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+            cursor.moveToFirst();
+            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+                int i = 0;
+                while (i < cursor.getColumnCount()) {
+                    row = row + cursor.getString(i) + ";";
+                    i++;
+                }
+                list.add(row);
             }
-            list.add(row);
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            if (cursor != null)
+                cursor.close();
+            db.close();
         }
-        cursor.close();
-        //db.close();
         return row;
     }
 
     public void add_record(Record record) {
-
         // 1. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
+        log_app log = new log_app();
 
         // 2. create ContentValues to add key "column"/value
         ContentValues values = new ContentValues();
@@ -416,153 +427,187 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // 3. insert
         try {
+            db.beginTransaction();
             db.insert(TABLE_RECORDS, null, values);
-        } catch (SQLException e) {
-            Log.e("DataBase Error", "Error to insert record: " + values);
-            e.printStackTrace();
+            db.setTransactionSuccessful();
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
-
         // 4. close
-        // db.close();
+        finally {
+            db.endTransaction();
+            db.close();
+        }
     }
 
     public List get_desynchronized_records() {
-
+        log_app log = new log_app();
+        Cursor cursor = null;
+        List<String> records = new ArrayList<>();
         // 1. get reference to readable DB
         SQLiteDatabase db = this.getReadableDatabase();
+        try {
 
-        // 2. build query
-        Cursor cursor =
-                db.query(TABLE_RECORDS, // a. table
-                        RECORDS_COLUMNS, // b. column names
-                        RECORD_SYNC + "=0", // c. selections
-                        null, // d. selections args
-                        null, // e. group by
-                        null, // f. having
-                        null, // g. order by
-                        null); // h. limit
+            // 2. build query
+            cursor =
+                    db.query(TABLE_RECORDS, // a. table
+                            RECORDS_COLUMNS, // b. column names
+                            RECORD_SYNC + "=0", // c. selections
+                            null, // d. selections args
+                            null, // e. group by
+                            null, // f. having
+                            null, // g. order by
+                            null); // h. limit
 
-        // 3. get all
-        cursor.moveToFirst();
-        List<String> records = new ArrayList<>();
+            // 3. get all
+            cursor.moveToFirst();
 
-        while (cursor.isAfterLast() == false) {
-            records.add(
-                    cursor.getInt(0) + ";" + //ID
-                            cursor.getString(1) + ";" + //DATETIME
-                            cursor.getString(2) + ";" + //PERSON_DOCUMENT
-                            cursor.getString(3) + ";" + //PERSON_NAME
-                            cursor.getString(4) + ";" + //ORIGIN
-                            cursor.getString(5) + ";" + //DESTINATION
-                            cursor.getString(6) + ";" + //PORT
-                            cursor.getString(7) + ";" + //SHIP
-                            cursor.getString(8) + ";" + //SAILING_HOUR
-                            cursor.getInt(9) + ";" +    //INPUT
-                            cursor.getInt(10) + ";" +   //SYNC
-                            cursor.getInt(11) + ";" +   //PERMITTED
-                            cursor.getInt(12) + ";" +   //MANIFEST TOTAL
-                            cursor.getInt(13) + ";" +   //MANIFEST EMBARKED
-                            cursor.getInt(14) + ";" +   //MANIFEST LANDED
-                            cursor.getInt(15) + ";" +   //MANIFEST PENDING
-                            cursor.getInt(16) + ";"  //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
-            );
-            cursor.moveToNext();
+            while (!cursor.isAfterLast()) {
+                records.add(
+                        cursor.getInt(0) + ";" + //ID
+                                cursor.getString(1) + ";" + //DATETIME
+                                cursor.getString(2) + ";" + //PERSON_DOCUMENT
+                                cursor.getString(3) + ";" + //PERSON_NAME
+                                cursor.getString(4) + ";" + //ORIGIN
+                                cursor.getString(5) + ";" + //DESTINATION
+                                cursor.getString(6) + ";" + //PORT
+                                cursor.getString(7) + ";" + //SHIP
+                                cursor.getString(8) + ";" + //SAILING_HOUR
+                                cursor.getInt(9) + ";" +    //INPUT
+                                cursor.getInt(10) + ";" +   //SYNC
+                                cursor.getInt(11) + ";" +   //PERMITTED
+                                cursor.getInt(12) + ";" +   //MANIFEST TOTAL
+                                cursor.getInt(13) + ";" +   //MANIFEST EMBARKED
+                                cursor.getInt(14) + ";" +   //MANIFEST LANDED
+                                cursor.getInt(15) + ";" +   //MANIFEST PENDING
+                                cursor.getInt(16) + ";"  //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
+                );
+                cursor.moveToNext();
+            }
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            if (cursor != null)
+                cursor.close();
+            db.close();
         }
-
-        cursor.close();
-        //db.close();
         // 5. return
         return records;
     }
 
     public void update_record(int id) {
+        log_app log = new log_app();
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         int i = 0;
         try {
+            db.beginTransaction();
             values.put(RECORD_SYNC, 1);
-
             // 3. updating row
             i = db.update(TABLE_RECORDS, //table
                     values, // column/value
                     RECORD_ID + "=" + id, // where
                     null);
-        } catch (SQLException e) {
-            e.printStackTrace();
+            db.setTransactionSuccessful();
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            // 4. close
+            db.endTransaction();
+            db.close();
         }
-        // 4. close
-        //db.close();
         if (i > 0) Log.d("Local Record updated", String.valueOf(id));
         else Log.e("Error updating record", String.valueOf(id));
     }
 
     public void updatePeopleManifest(String rut, int input) {
         SQLiteDatabase db = this.getWritableDatabase();
+        log_app log = new log_app();
         try {
-            ContentValues valores = new ContentValues();
-            valores.put("is_inside", input);
-            db.update(TABLE_MANIFEST, valores, "id_people=" + rut, null);
-        } catch (SQLException e) {
-            e.printStackTrace();
+            db.beginTransaction();
+            db.execSQL("update manifest set is_inside="+input+" where id_people='"+rut+"'");
+            db.setTransactionSuccessful();
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            db.endTransaction();
+            db.close();
         }
-        //db.close();
     }
 
     public ArrayList<String> select(String select, String split) {
         ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(select, null);
-        cursor.moveToFirst();
-        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-            int i = 0;
-            String row = "";
-            while (i < cursor.getColumnCount()) {
-                row = row + cursor.getString(i) + split;
-                i++;
+        log_app log = new log_app();
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery(select, null);
+            cursor.moveToFirst();
+            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+                int i = 0;
+                String row = "";
+                while (i < cursor.getColumnCount()) {
+                    row = row + cursor.getString(i) + split;
+                    i++;
+                }
+                list.add(row);
             }
-            list.add(row);
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            if (cursor != null)
+                cursor.close();
+            db.close();
         }
-        cursor.close();
-        //db.close();
         return list;
     }
 
-    public boolean insert(String insert) {
+    public void insert(String insert) {
         SQLiteDatabase db = this.getWritableDatabase();
+        log_app log = new log_app();
         try {
             db.beginTransaction();
             db.execSQL(insert);
             db.setTransactionSuccessful();
-            return true;
-        } catch (android.database.SQLException s) {
-            return false;
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         } finally {
             db.endTransaction();
+            db.close();
         }
+
     }
 
     public ArrayList<String> getComboboxList(String table) {
         SQLiteDatabase db = this.getReadableDatabase();
         ArrayList<String> list = new ArrayList<String>();
-        Cursor cursor = db.rawQuery("SELECT * from " + table + ";", null);
-        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-            if (cursor.isFirst()) {
-                switch (table) {
-                    case "routes":
-                        list.add("< Elija una ruta >");
-                        break;
-                    case "ships":
-                        list.add("< Elija una nave >");
-                        break;
-                    case "hours":
-                        list.add("< Elija una hora >");
-                        break;
+        log_app log = new log_app();
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery("SELECT * from " + table + ";", null);
+            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+                if (cursor.isFirst()) {
+                    switch (table) {
+                        case "routes":
+                            list.add("< Elija una ruta >");
+                            break;
+                        case "ships":
+                            list.add("< Elija una nave >");
+                            break;
+                        case "hours":
+                            list.add("< Elija una hora >");
+                            break;
+                    }
                 }
+                list.add(cursor.getString(1));
             }
-            list.add(cursor.getString(1));
+        } catch (android.database.SQLException e) {
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            if (cursor != null)
+                cursor.close();
+            db.close();
         }
-        //db.close();
-        cursor.close();
         return list;
     }
 

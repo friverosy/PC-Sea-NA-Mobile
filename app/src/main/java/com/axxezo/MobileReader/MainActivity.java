@@ -147,6 +147,7 @@ public class MainActivity extends AppCompatActivity
     private static MainActivity mInstance;
     private Spinner comboLanded;
     private String selectedSpinnerLanded;
+    private log_app log;
 
     String SERVERIP = "192.168.1.120";
 
@@ -171,9 +172,10 @@ public class MainActivity extends AppCompatActivity
         mp3Permitted = MediaPlayer.create(MainActivity.this, R.raw.good);
         mp3Error = MediaPlayer.create(MainActivity.this, R.raw.error);
         mySwitch = (Switch) findViewById(R.id.mySwitch);
+        log = new log_app();
+        //log.writeLog(this, "MainActivity", "DEBUG", "app start");
         selectedSpinnerLanded = "";
 
-        writeLog("DEBUG", "Application has started Correctly");
         //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
         AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
@@ -230,6 +232,7 @@ public class MainActivity extends AppCompatActivity
 
             }
         });
+
         db.close();
     }
 
@@ -337,7 +340,6 @@ public class MainActivity extends AppCompatActivity
             byte barcodeType = intent.getByteExtra("barcodeType", (byte) 0);
             barcodeStr = new String(barcode, 0, barocodelen);
             String rawCode = barcodeStr;
-            writeLog("Raw Code:", rawCode);
 
             int flag = 0; // 0 for end without k, 1 with k
             Person person = new Person();
@@ -358,6 +360,9 @@ public class MainActivity extends AppCompatActivity
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+                } else if (rawCode.equals("qvs5yhK80arZE6PDVoNp")) {//configuration QR
+                    Intent loadLog = new Intent(getApplicationContext(), log_show.class);
+                    startActivity(loadLog);
                 } else { // Its a DNI Card.
                     barcodeStr = barcodeStr.substring(
                             barcodeStr.indexOf("RUN=") + 4,
@@ -395,9 +400,7 @@ public class MainActivity extends AppCompatActivity
                 barcodeStr = barcodeStr.replace("K", "");
                 documentValidator(barcodeStr);
             }
-
             Log.i("Cooked Barcode", barcodeStr);
-            writeLog("Cooked Barcode", barcodeStr);
         }
     };
 
@@ -484,11 +487,13 @@ public class MainActivity extends AppCompatActivity
                     }
                     //Thread.sleep(3000);
                 } catch (Exception e) {
-                    writeLog("ERROR", e.toString());
+                    //  writeLog("ERROR", e.toString());
                 } finally {
                     db.close();
-                    handler.postDelayed(this, 450000); // 5 Min = 300000 7 min=450000
+                    Log.e("manifest", "actualizando manifest!");
+                    handler.postDelayed(this, 100000); // 5 Min = 300000 7 min=450000
                 }
+
 
                 db.close();
                 //wifiState(true);
@@ -521,9 +526,9 @@ public class MainActivity extends AppCompatActivity
                         if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                             OfflineRecordsSynchronizer();
                         db.close();
-                        Thread.sleep(30000); // 5 Min = 300000
+                        Thread.sleep(10000); // 5 Min = 300000
                     } catch (Exception e) {
-                        writeLog("ERROR", e.toString());
+                        //writeLog("ERROR", e.toString());
                     }
                     db.close();
                 }
@@ -610,7 +615,7 @@ public class MainActivity extends AppCompatActivity
             record.setInput(-1);
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
-        if(!array[0].equals("")) {
+        if (!array[0].equals("")) {
             record.setPort_id(array[4]);
             record.setShip_id(array[5]);
         }
@@ -664,12 +669,12 @@ public class MainActivity extends AppCompatActivity
         String[] array = new String[20];
         Record record = new Record(); // Object to be sended to API Axxezo.
         boolean valid = false;
-        Log.d("dv:estoy en doc val", person.toString()+ "");
-        Log.d("dv:input antes if",is_input+"");
-        Log.d("dv:rut:",rut+"");
-        Log.d("dv:rut:",rut+"");
-        Log.d("dv:selectSpinner:",selectedSpinnerLanded+"");
-        Log.d("dv:if:",!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))+"");
+        Log.d("dv:estoy en doc val", person.toString() + "");
+        Log.d("dv:input antes if", is_input + "");
+        Log.d("dv:rut:", rut + "");
+        Log.d("dv:rut:", rut + "");
+        Log.d("dv:selectSpinner:", selectedSpinnerLanded + "");
+        Log.d("dv:if:", !selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'")) + "");
         if (!person.isEmpty()) {
             if (is_input) {
                 if (!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))) {
@@ -686,8 +691,8 @@ public class MainActivity extends AppCompatActivity
                     valid = true;
             }
         }
-        Log.d("dv:input despues if",is_input+"");
-        Log.d("dv:valid?=",valid+"");
+        Log.d("dv:input despues if", is_input + "");
+        Log.d("dv:valid?=", valid + "");
         if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
@@ -757,19 +762,6 @@ public class MainActivity extends AppCompatActivity
 
     public void makeToast(String msg) {
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
-    }
-
-    public void writeLog(String LogType, String content) {
-        String filename = "AccessControl.log";
-        String message = getCurrentDateTime() + " [" + LogType + "]" + ": " + content + "\n";
-        FileOutputStream outputStream;
-        try {
-            outputStream = openFileOutput(filename, Context.MODE_APPEND);
-            outputStream.write(message.getBytes());
-        } catch (Exception e) {
-            e.printStackTrace();
-            writeLog("ERROR", e.toString());
-        }
     }
 
     public void OfflineRecordsSynchronizer() {
@@ -859,7 +851,7 @@ public class MainActivity extends AppCompatActivity
 
                     if (!AxxezoAPI.equals("http://:0")) {
                         HttpResponse httpResponse = httpclient.execute(httpPost);
-                        //Log.e("status code",httpResponse.getStatusLine().getStatusCode()+"");
+                        //LogApp.e("status code",httpResponse.getStatusLine().getStatusCode()+"");
                         // 9. receive response as inputStream
                         inputStream = httpResponse.getEntity().getContent();
 
@@ -950,7 +942,7 @@ public class MainActivity extends AppCompatActivity
         if (content.length() <= 2) { //[]
             content = "204"; // No content
         }
-        //Log.i("Manifest response", content);
+        //LogApp.i("Manifest response", content);
         return content;
     }
 

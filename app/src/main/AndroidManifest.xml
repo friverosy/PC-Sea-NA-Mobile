@@ -39,8 +39,9 @@
             android:label="@string/title_find"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name="com.axxezo.MobileReader.manual_registration"
-            android:label="Registro Manual"></activity>
+            android:name=".manual_registration"
+            android:label="Registro Manual" />
+        <activity  android:name=".log_show"></activity>
     </application>
 
 </manifest>

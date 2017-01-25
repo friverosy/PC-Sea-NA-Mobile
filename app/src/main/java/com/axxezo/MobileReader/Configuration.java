@@ -142,7 +142,7 @@ public class Configuration extends AppCompatActivity {
                     int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ROUTES where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerRoute = idElementSelected;
-                        Log.i("id Log Routes", "----" + selectionSpinnerRoute);
+                        Log.i("id LogApp Routes", "----" + selectionSpinnerRoute);
                         try {
                             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "ports");
                             loadComboboxPorts();
@@ -204,7 +204,7 @@ public class Configuration extends AppCompatActivity {
                     int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ships where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerTransports = idElementSelected;
-                        Log.i("id Log Ships", "----" + selectionSpinnerTransports);
+                        Log.i("id LogApp Ships", "----" + selectionSpinnerTransports);
                         try {
                             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0), selectionSpinnerTransports).execute().get(), "hours");
                             loadComboboxHours();
@@ -244,7 +244,7 @@ public class Configuration extends AppCompatActivity {
                     int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from Hours  where name=" + "'" + nameElement + "'"));
                     if (idElementSelected != 0) {
                         selectionSpinnerHour = idElementSelected;
-                        Log.i("id Log Hours", "----" + selectionSpinnerHour);
+                        Log.i("id LogApp Hours", "----" + selectionSpinnerHour);
                         hour = nameElement;
                         //db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
                     }

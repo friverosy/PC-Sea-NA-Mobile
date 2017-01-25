@@ -57,7 +57,7 @@ public class Server implements  Runnable {
                             while (connected) {
                                 in = new BufferedReader(new InputStreamReader(client.getInputStream()));
                                 if ((line = in.readLine())!=null) {
-                                    //Log.d("Server", line);
+                                    //LogApp.d("Server", line);
 
                                     recivedMsg = line;
                                     //if(recivedMsg!="200")
