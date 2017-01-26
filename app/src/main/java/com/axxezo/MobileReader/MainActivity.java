@@ -68,7 +68,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
-import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -81,7 +80,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
@@ -100,7 +98,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -113,8 +110,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import static com.axxezo.MobileReader.R.id.content_main;
 import static com.axxezo.MobileReader.R.id.status;
 
 
@@ -153,6 +151,8 @@ public class MainActivity extends AppCompatActivity
 
     Server s = new Server(this);
 
+    private int manifestUpdate = 1;//in minutes
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -173,11 +173,10 @@ public class MainActivity extends AppCompatActivity
         mp3Error = MediaPlayer.create(MainActivity.this, R.raw.error);
         mySwitch = (Switch) findViewById(R.id.mySwitch);
         log = new log_app();
-        //log.writeLog(this, "MainActivity", "DEBUG", "app start");
         selectedSpinnerLanded = "";
 
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        AxxezoAPI = "http://192.168.1.126:3000/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        //AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -232,8 +231,11 @@ public class MainActivity extends AppCompatActivity
 
             }
         });
-
+        UpdateDb();
+        //updateManifest();
+        asyncUpdateManifestinTime();
         db.close();
+
     }
 
     @Override
@@ -380,9 +382,9 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 // Define length of character.
-                if (Integer.parseInt(barcodeStr) > 400000000 && flag == 0) {
+                if (Integer.parseInt(barcodeStr) < 10000000) {
                     barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 2);
-                } else if (flag == 0) {
+                } else {
                     barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 1);
                 }
 
@@ -407,7 +409,7 @@ public class MainActivity extends AppCompatActivity
     public String getCurrentDateTime() {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("yyy-MM-dd HH:mm:ss.S");
+        DateFormat date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'");
         String localTime = date.format(currentLocalTime);
         return localTime;
     }
@@ -445,8 +447,9 @@ public class MainActivity extends AppCompatActivity
         // TODO Auto-generated method stub
         super.onResume();
         initScan();
-        UpdateDb();
-        updateManifest();
+        //UpdateDb();
+        //updateManifest();
+        //asyncUpdateManifestinTime();
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
@@ -459,47 +462,82 @@ public class MainActivity extends AppCompatActivity
         t.start();
     }
 
-    private void updateManifest() {
+    private void asyncUpdateManifestinTime() {
+           /* Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    while (true) {
+                        DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+                        try {
+                            new UpdateManifest().execute();
+                            Thread.sleep(20000); // 5 Min = 300000
+                        } catch (Exception e) {
+                            //writeLog("ERROR", e.toString());
+                        }
+                        db.close();
+                    }
+                }
+            };
+            new Thread(runnable).start();*/
         final Handler handler = new Handler();
-        Runnable runnable = new Runnable() {
+        Timer timer = new Timer();
+
+        TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                // wifiState(false);
-                DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                try {
-                    ArrayList<String> select_from_manifest = db.select("select * from config", "|");
-                    String[] manifest_config = null;
-
-                    for (int i = 0; i < select_from_manifest.size(); i++) {
-                        if (select_from_manifest.size() > 0) {
-                            manifest_config = select_from_manifest.get(i).split("\\|");
-                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest");
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            new UpdateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        } catch (Exception e) {
+                            // error, do something
                         }
                     }
-
-                    int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-                    if (count_before != count_after) {
-                        int total = count_before - count_after;
-                        Toast.makeText(getApplication(), "se han actualizado " + total + " en el manifiesto", Toast.LENGTH_SHORT).show();
-                        TextViewManifestUpdate.setTextColor(Color.WHITE);
-                        TextViewManifestUpdate.setText("Ultima Actualizacion " + getCurrentDateTime());
-                    }
-                    //Thread.sleep(3000);
-                } catch (Exception e) {
-                    //  writeLog("ERROR", e.toString());
-                } finally {
-                    db.close();
-                    Log.e("manifest", "actualizando manifest!");
-                    handler.postDelayed(this, 100000); // 5 Min = 300000 7 min=450000
-                }
-
-
-                db.close();
-                //wifiState(true);
+                });
             }
         };
-        new Thread(runnable).start();
+
+        timer.schedule(task, 0, 300000);  // interval of one minute
+    }
+
+    private int updateManifest() {
+        // wifiState(false);
+        DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+        log_app log = new log_app();
+        int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+        Log.e("count before", count_before + "");
+        Log.e("manifest", "estoy actualizando manifest!!");
+        try {
+            ArrayList<String> select_from_manifest = db.select("select * from config", "|");
+            String[] manifest_config = null;
+
+            for (int i = 0; i < select_from_manifest.size(); i++) {
+                if (select_from_manifest.size() > 0) {
+                    manifest_config = select_from_manifest.get(i).split("\\|");
+                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest");
+                }
+            }
+
+            int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
+            Log.e("count after", count_after + "");
+            if (count_before != count_after) {
+                int total = count_before - count_after;
+                Toast.makeText(getApplication(), "se han actualizado " + total + " en el manifiesto", Toast.LENGTH_SHORT).show();
+                TextViewManifestUpdate.setTextColor(Color.WHITE);
+                TextViewManifestUpdate.setText("Ultima Actualizacion " + getCurrentDateTime());
+            }
+            //Thread.sleep(3000);
+        } catch (Exception e) {
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+        } finally {
+            db.close();
+            //handler.postDelayed(this, 100000); // 5 Min = 300000 7 min=450000
+        }
+
+
+        db.close();
+        //wifiState(true);
+        return 0;
     }
 
     public void reset() {
@@ -517,12 +555,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void UpdateDb() {
-        Runnable runnable = new Runnable() {
+     /*   Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                     try {
+                        Log.e("update db","update db");
                         if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                             OfflineRecordsSynchronizer();
                         db.close();
@@ -534,7 +573,30 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         };
-        new Thread(runnable).start();
+        new Thread(runnable).start();*/
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
+        final DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            Log.e("update db", "update db");
+                            if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
+                                OfflineRecordsSynchronizer();
+                            db.close();
+                        } catch (Exception e) {
+                            // error, do something
+                        }
+                    }
+                });
+            }
+        };
+
+        timer.schedule(task, 0, 360000);  // interval of one minute
     }
 
     public String getCurrentDate() {
@@ -601,6 +663,7 @@ public class MainActivity extends AppCompatActivity
                 TextViewFullname.setText(array[1]);
             else
                 TextViewFullname.setText("");
+
             record.setPermitted(0);
         }
 
@@ -628,12 +691,19 @@ public class MainActivity extends AppCompatActivity
             record.setOrigin(manifest_config[0]);
             record.setDestination(manifest_config[1]);
         }
-        Log.d("estoy en ticket v", record.getInput() + "");
         db.add_record(record);
         if (valid)
-            db.updatePeopleManifest(rut, record.getInput());
-        else
-            db.updatePeopleManifest(rut, 0);
+            if (is_input)
+                db.updatePeopleManifest(rut, 1);
+            else if (!is_input)
+                db.updatePeopleManifest(rut, 2);
+        String validator = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
+        if (!valid && !validator.isEmpty()) {
+            if (Integer.parseInt(validator) > 0) {
+                //db.updatePeopleManifest(rut, record.getInput());
+            } else
+                db.updatePeopleManifest(rut, 0);
+        }
         db.close();
 
         /********************** CLient socket ******************************/
@@ -658,7 +728,8 @@ public class MainActivity extends AppCompatActivity
         t.start();
         /*****************************************************************************/
 
-        new RegisterTask(record, AxxezoAPI + "/records").execute();
+        new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ;
     }
 
     public void documentValidator(String rut) {
@@ -669,12 +740,6 @@ public class MainActivity extends AppCompatActivity
         String[] array = new String[20];
         Record record = new Record(); // Object to be sended to API Axxezo.
         boolean valid = false;
-        Log.d("dv:estoy en doc val", person.toString() + "");
-        Log.d("dv:input antes if", is_input + "");
-        Log.d("dv:rut:", rut + "");
-        Log.d("dv:rut:", rut + "");
-        Log.d("dv:selectSpinner:", selectedSpinnerLanded + "");
-        Log.d("dv:if:", !selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'")) + "");
         if (!person.isEmpty()) {
             if (is_input) {
                 if (!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))) {
@@ -686,7 +751,7 @@ public class MainActivity extends AppCompatActivity
             if (!is_input) {
                 if (!selectedSpinnerLanded.equals(db.selectFirst("select destination from manifest where id_people='" + rut + "'"))) {
                     TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
-                    valid = false;
+                    //valid = false;
                 } else
                     valid = true;
             }
@@ -704,7 +769,9 @@ public class MainActivity extends AppCompatActivity
             mp3Dennied.start();
             TextViewRut.setText(rut);
             //is_input = false;
-            TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
+            if (db.selectFirst("select id from manifest where id_people='" + rut + "'").isEmpty()) {
+                TextViewStatus.setText("NO ESTA EN EL MANIFIESTO");
+            }
             imageview.setImageResource(R.drawable.img_false);
             record.setPermitted(0);
         }
@@ -716,12 +783,47 @@ public class MainActivity extends AppCompatActivity
 
         if (array[1] != null) record.setPerson_name(array[1]);
         else record.setPerson_name("");
-        if (is_input && valid) record.setInput(1);
-        else record.setInput(2);
-        if (!valid)
+
+        String validator = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
+        if (valid) {
+            if (is_input)
+                db.updatePeopleManifest(rut, 1);
+            else
+                db.updatePeopleManifest(rut, 2);
+            record.setInput(Integer.parseInt(db.selectFirst("select is_inside from manifest where id_people='" + rut + "'")));
+        } else {
             record.setInput(-1);
-        //if (is_input) record.setInput(1);
-        //else record.setInput(2);
+        }
+        if (person.isEmpty())
+            record.setInput(-1);
+        /*if (valid) {
+            String validator = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
+            if (is_input) {
+                db.updatePeopleManifest(rut, 1);
+                record.setInput(1);
+            } else {
+                db.updatePeopleManifest(rut, 2);
+                record.setInput(2);
+            }
+
+            if (!validator.isEmpty()) {
+                //record.setInput(-1);//this case is when the person is in database but is_inside>0
+                if (Integer.parseInt(validator) > 0) {
+                    //db.updatePeopleManifest(rut, record.getInput());
+                    if ((Integer.parseInt(validator) == 1) || (Integer.parseInt(validator) == 2))
+                        record.setInput(Integer.parseInt(validator));
+                    else
+                        record.setInput(-1);
+                } else {
+                    record.setInput(Integer.parseInt(validator));
+                }
+            } else if (validator.isEmpty())
+                record.setInput(-1);
+        } else {
+            record.setInput(-1);
+        }*/
+
+
         record.setDatetime(getCurrentDateTime());
         record.setSync(0);
         record.setOrigin(array[2]);
@@ -733,7 +835,6 @@ public class MainActivity extends AppCompatActivity
         record.setManifest_landed(getStatusFromManifest(4));
         record.setManifest_pending(getStatusFromManifest(2));
         db.add_record(record);
-        db.updatePeopleManifest(rut, record.getInput());
         db.close();
 
         /***************** Client socket ****************************************/
@@ -757,7 +858,7 @@ public class MainActivity extends AppCompatActivity
         t.start();
         /************************************************************************/
 
-        new RegisterTask(record, AxxezoAPI + "/records").execute();
+        new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void makeToast(String msg) {
@@ -791,7 +892,7 @@ public class MainActivity extends AppCompatActivity
             record.setManifest_pending(getStatusFromManifest(2));
             record.setTicket(Integer.parseInt(arr[16]));
 
-            new RegisterTask(record, AxxezoAPI + "/records").execute();
+            new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
 
@@ -906,6 +1007,15 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected String doInBackground(Void... params) {
             return POST(newRecord, url);
+        }
+    }
+
+    public class UpdateManifest extends AsyncTask<Void, Void, Integer> {
+
+
+        @Override
+        protected Integer doInBackground(Void... params) {
+            return updateManifest();
         }
     }
 

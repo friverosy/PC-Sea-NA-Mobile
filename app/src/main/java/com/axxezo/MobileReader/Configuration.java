@@ -113,8 +113,8 @@ public class Configuration extends AppCompatActivity {
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
-                    //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    //startActivity(intent);
+                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    startActivity(intent);
                     //wifiState(true);
                 } else {
                     Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
@@ -648,15 +648,6 @@ public class Configuration extends AppCompatActivity {
 
         return returntime;
     }
-
-    public String getCurrentTime() {
-        Calendar cal = Calendar.getInstance();
-        Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("HH:mm");
-        String localTime = date.format(currentLocalTime);
-        return localTime;
-    }
-
     public String getToken_navieraAustral() {
         return token_navieraAustral;
     }
