@@ -58,6 +58,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.SQLException;
 import android.device.ScanManager;
 import android.graphics.Color;
 import android.media.AudioManager;
@@ -96,6 +97,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -112,6 +114,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 
 import static com.axxezo.MobileReader.R.id.status;
 
@@ -175,8 +178,8 @@ public class MainActivity extends AppCompatActivity
         log = new log_app();
         selectedSpinnerLanded = "";
 
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        //AxxezoAPI = "http://192.168.1.126:3000/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -406,10 +409,10 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
-    public String getCurrentDateTime() {
+    public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'");
+        DateFormat date = new SimpleDateFormat(format);
         String localTime = date.format(currentLocalTime);
         return localTime;
     }
@@ -427,7 +430,7 @@ public class MainActivity extends AppCompatActivity
     protected void onDestroy() {
         // TODO Auto-generated method stub
         super.onDestroy();
-        s.ServerKill();
+      //  s.ServerKill();
     }
 
     @Override
@@ -439,7 +442,7 @@ public class MainActivity extends AppCompatActivity
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
-        s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
+      //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
     @Override
@@ -447,38 +450,19 @@ public class MainActivity extends AppCompatActivity
         // TODO Auto-generated method stub
         super.onResume();
         initScan();
-        //UpdateDb();
-        //updateManifest();
-        //asyncUpdateManifestinTime();
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
-        Thread t = new Thread(new Runnable() {
+        /*Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 s.run();
             }
         });
-        t.start();
+        t.start();*/
     }
 
     private void asyncUpdateManifestinTime() {
-           /* Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    while (true) {
-                        DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                        try {
-                            new UpdateManifest().execute();
-                            Thread.sleep(20000); // 5 Min = 300000
-                        } catch (Exception e) {
-                            //writeLog("ERROR", e.toString());
-                        }
-                        db.close();
-                    }
-                }
-            };
-            new Thread(runnable).start();*/
         final Handler handler = new Handler();
         Timer timer = new Timer();
 
@@ -497,7 +481,7 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        timer.schedule(task, 0, 300000);  // interval of one minute
+        timer.schedule(task, 0, 30000);  // 5 min=300000
     }
 
     private int updateManifest() {
@@ -507,6 +491,7 @@ public class MainActivity extends AppCompatActivity
         int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
         Log.e("count before", count_before + "");
         Log.e("manifest", "estoy actualizando manifest!!");
+        int total_temp=0;
         try {
             ArrayList<String> select_from_manifest = db.select("select * from config", "|");
             String[] manifest_config = null;
@@ -521,13 +506,17 @@ public class MainActivity extends AppCompatActivity
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
             Log.e("count after", count_after + "");
             if (count_before != count_after) {
-                int total = count_before - count_after;
-                Toast.makeText(getApplication(), "se han actualizado " + total + " en el manifiesto", Toast.LENGTH_SHORT).show();
-                TextViewManifestUpdate.setTextColor(Color.WHITE);
-                TextViewManifestUpdate.setText("Ultima Actualizacion " + getCurrentDateTime());
+                int total = count_after - count_before;
+                total_temp=total;
             }
             //Thread.sleep(3000);
-        } catch (Exception e) {
+        } catch (android.database.SQLException e) {
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+        } catch (JSONException e) {
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+        } catch (InterruptedException e) {
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+        } catch (ExecutionException e) {
             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
         } finally {
             db.close();
@@ -537,7 +526,7 @@ public class MainActivity extends AppCompatActivity
 
         db.close();
         //wifiState(true);
-        return 0;
+        return total_temp;
     }
 
     public void reset() {
@@ -555,28 +544,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void UpdateDb() {
-     /*   Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                    try {
-                        Log.e("update db","update db");
-                        if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
-                            OfflineRecordsSynchronizer();
-                        db.close();
-                        Thread.sleep(10000); // 5 Min = 300000
-                    } catch (Exception e) {
-                        //writeLog("ERROR", e.toString());
-                    }
-                    db.close();
-                }
-            }
-        };
-        new Thread(runnable).start();*/
         final Handler handler = new Handler();
         Timer timer = new Timer();
         final DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+        final log_app log = new log_app();
 
         TimerTask task = new TimerTask() {
             @Override
@@ -588,15 +559,14 @@ public class MainActivity extends AppCompatActivity
                             if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                                 OfflineRecordsSynchronizer();
                             db.close();
-                        } catch (Exception e) {
-                            // error, do something
+                        } catch (android.database.SQLException e) {
+                            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateDB" + e.getMessage());
                         }
                     }
                 });
             }
         };
-
-        timer.schedule(task, 0, 360000);  // interval of one minute
+        timer.schedule(task, 0, 10000);  // 360000= 6 minutes,
     }
 
     public String getCurrentDate() {
@@ -611,7 +581,6 @@ public class MainActivity extends AppCompatActivity
         boolean valid = false;
         String person = null;
         Record record = new Record(); // Object to be sended to API Axxezo.
-        final Record record_send = new Record();
         DatabaseHelper db = new DatabaseHelper(this);
         rut = rut.trim();
 
@@ -654,6 +623,7 @@ public class MainActivity extends AppCompatActivity
             imageview.setImageResource(R.drawable.img_true);
             //array = person.split(";");
             TextViewFullname.setText(array[1]);
+            TextViewRut.setText(rut);
             record.setPermitted(1);
         } else {
             mp3Dennied.start();
@@ -667,16 +637,20 @@ public class MainActivity extends AppCompatActivity
             record.setPermitted(0);
         }
 
+
         record.setPerson_document(rut);
         record.setPerson_name(TextViewFullname.getText().toString());
 
         if (!array[0].equals("")) record.setPerson_name(array[1]);
         else record.setPerson_name("");
         if (is_input && valid) record.setInput(1);
-        else record.setInput(2);
+        else if(!is_input) {
+            record.setInput(-1);
+            TextViewStatus.setText("DESEMBARCO CON TICKET NO CORRESPONDE");
+        }
         if (!valid)
             record.setInput(-1);
-        record.setDatetime(getCurrentDateTime());
+        record.setDatetime(getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss.S'Z'"));
         record.setSync(0);
         if (!array[0].equals("")) {
             record.setPort_id(array[4]);
@@ -691,6 +665,11 @@ public class MainActivity extends AppCompatActivity
             record.setOrigin(manifest_config[0]);
             record.setDestination(manifest_config[1]);
         }
+        if (!valid)
+            if (!TextViewStatus.getText().toString().isEmpty())
+                record.setReason(TextViewStatus.getText().toString());
+            else
+                record.setReason("");
         db.add_record(record);
         if (valid)
             if (is_input)
@@ -796,35 +775,14 @@ public class MainActivity extends AppCompatActivity
         }
         if (person.isEmpty())
             record.setInput(-1);
-        /*if (valid) {
-            String validator = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
-            if (is_input) {
-                db.updatePeopleManifest(rut, 1);
-                record.setInput(1);
-            } else {
-                db.updatePeopleManifest(rut, 2);
-                record.setInput(2);
-            }
 
-            if (!validator.isEmpty()) {
-                //record.setInput(-1);//this case is when the person is in database but is_inside>0
-                if (Integer.parseInt(validator) > 0) {
-                    //db.updatePeopleManifest(rut, record.getInput());
-                    if ((Integer.parseInt(validator) == 1) || (Integer.parseInt(validator) == 2))
-                        record.setInput(Integer.parseInt(validator));
-                    else
-                        record.setInput(-1);
-                } else {
-                    record.setInput(Integer.parseInt(validator));
-                }
-            } else if (validator.isEmpty())
-                record.setInput(-1);
-        } else {
-            record.setInput(-1);
-        }*/
+        if (!valid)
+            if (!TextViewStatus.getText().toString().isEmpty())
+                record.setReason(TextViewStatus.getText().toString());
+            else
+                record.setReason("");
 
-
-        record.setDatetime(getCurrentDateTime());
+        record.setDatetime(getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss.S'Z'"));
         record.setSync(0);
         record.setOrigin(array[2]);
         record.setDestination(array[3]);
@@ -869,28 +827,34 @@ public class MainActivity extends AppCompatActivity
         DatabaseHelper db = new DatabaseHelper(this);
         List records = db.get_desynchronized_records();
         db.close();
+        log_app log=new log_app();
 
         String[] arr;
         for (int i = 0; i <= records.size() - 1; i++) {
             Record record = new Record();
             arr = records.get(i).toString().split(";");
-            record.setId(Integer.parseInt(arr[0]));
-            record.setDatetime(arr[1]);
-            record.setPerson_document(arr[2]);
-            record.setPerson_name(arr[3]);
-            record.setOrigin(arr[4]);
-            record.setDestination(arr[5]);
-            record.setPort_id(arr[6]);
-            record.setShip_id(arr[7]);
-            record.setSailing_hour(arr[8]);
-            record.setInput(Integer.parseInt(arr[9]));
-            record.setSync(Integer.parseInt(arr[10]));
-            record.setPermitted(Integer.parseInt(arr[11]));
-            record.setManifest_total(getStatusFromManifest(1));
-            record.setManifest_embarked(getStatusFromManifest(3));
-            record.setManifest_landed(getStatusFromManifest(4));
-            record.setManifest_pending(getStatusFromManifest(2));
-            record.setTicket(Integer.parseInt(arr[16]));
+            try {
+                record.setId(Integer.parseInt(arr[0]));
+                record.setDatetime(arr[1]);
+                record.setPerson_document(arr[2]);
+                record.setPerson_name(arr[3]);
+                record.setOrigin(arr[4]);
+                record.setDestination(arr[5]);
+                record.setPort_id(arr[6]);
+                record.setShip_id(arr[7]);
+                record.setSailing_hour(arr[8]);
+                record.setInput(Integer.parseInt(arr[9]));
+                record.setSync(Integer.parseInt(arr[10]));
+                record.setPermitted(Integer.parseInt(arr[11]));
+                record.setManifest_total(getStatusFromManifest(1));
+                record.setManifest_embarked(getStatusFromManifest(3));
+                record.setManifest_landed(getStatusFromManifest(4));
+                record.setManifest_pending(getStatusFromManifest(2));
+                record.setTicket(Integer.parseInt(arr[16]));
+                record.setReason(arr[17]);
+            }catch (android.database.SQLException e){
+                log.writeLog(this,"MainActivity","ERROR",e.getMessage());
+            }
 
             new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
@@ -916,6 +880,7 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("state", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
             jsonObject.accumulate("boletus", record.getTicket());
+            jsonObject.accumulate("reason", record.getReason());
 
             jsonObjectCount.accumulate("total", record.getManifest_total());
             jsonObjectCount.accumulate("embarkeds", record.getManifest_embarked());
@@ -1011,11 +976,20 @@ public class MainActivity extends AppCompatActivity
     }
 
     public class UpdateManifest extends AsyncTask<Void, Void, Integer> {
+        private int update_manifest_count;
 
 
         @Override
         protected Integer doInBackground(Void... params) {
-            return updateManifest();
+            return update_manifest_count=updateManifest();
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            if(integer>0) {
+                TextViewManifestUpdate.setTextColor(Color.WHITE);
+                TextViewManifestUpdate.setText("Manifiesto: " + getCurrentDateTime("dd-MM-yyyy HH:mm"));
+            }
         }
     }
 

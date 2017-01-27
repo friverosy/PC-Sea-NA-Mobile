@@ -119,6 +119,8 @@ public class Configuration extends AppCompatActivity {
                 } else {
                     Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
                     loadButton.setProgress(-1);
+                    MainActivity main=new MainActivity();
+
                 }
             }
         });

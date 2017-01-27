@@ -14,6 +14,7 @@ public class Record {
     String port_id;
     String ship_id;
     String sailing_hour;
+    String reason;
     int ticket;
     int manifest_total;
     int manifest_landed;
@@ -176,5 +177,13 @@ public class Record {
 
     public void setTicket(int ticket) {
         this.ticket = ticket;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

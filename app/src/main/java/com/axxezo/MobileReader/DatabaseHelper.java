@@ -80,6 +80,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_COUNT_LANDED = "count_landed";
     private static final String RECORD_COUNT_PENDING = "count_pending";
     private static final String RECORD_TICKET = "ticket";
+    private static final String RECORD_REASON = "reason";
 
     //hours
     private static final String HOUR_ID = "id";
@@ -94,7 +95,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_COUNT_TOTAL, RECORD_COUNT_EMBARKED, RECORD_COUNT_LANDED, RECORD_COUNT_PENDING, RECORD_TICKET};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_COUNT_TOTAL, RECORD_COUNT_EMBARKED, RECORD_COUNT_LANDED, RECORD_COUNT_PENDING, RECORD_TICKET,RECORD_REASON};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -154,7 +155,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_COUNT_EMBARKED + " INTEGER," +
             RECORD_COUNT_LANDED + " INTEGER," +
             RECORD_COUNT_PENDING + " INTEGER," +
-            RECORD_TICKET + " TEXT);";
+            RECORD_TICKET + " TEXT, " +
+            RECORD_REASON + " TEXT); ";
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
             HOUR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -424,6 +426,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_COUNT_LANDED, record.getManifest_landed());
         values.put(RECORD_COUNT_PENDING, record.getManifest_pending());
         values.put(RECORD_TICKET, record.getTicket());
+        values.put(RECORD_REASON,record.getReason());
 
         // 3. insert
         try {
@@ -480,7 +483,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 cursor.getInt(13) + ";" +   //MANIFEST EMBARKED
                                 cursor.getInt(14) + ";" +   //MANIFEST LANDED
                                 cursor.getInt(15) + ";" +   //MANIFEST PENDING
-                                cursor.getInt(16) + ";"  //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
+                                cursor.getInt(16) + ";" +     //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
+                                cursor.getString(17)+";"
                 );
                 cursor.moveToNext();
             }
