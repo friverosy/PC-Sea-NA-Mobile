@@ -64,15 +64,16 @@
             android:textSize="26sp"
             android:textStyle="bold" />
 
-        <TextView
+        <EditText
             android:id="@+id/rut"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:inputType="textPersonName"
-            android:text="Nº Documento"
-            android:textAlignment="center"
+            android:hint="Nº Documento"
+            android:textColorHint="@android:color/white"
             android:textColor="@android:color/white"
+            android:textAlignment="center"
             android:textSize="18sp"
             android:textStyle="bold" />
 

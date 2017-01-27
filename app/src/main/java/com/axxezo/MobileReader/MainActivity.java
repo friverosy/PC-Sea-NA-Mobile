@@ -56,6 +56,7 @@ package com.axxezo.MobileReader;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.SQLException;
@@ -75,7 +76,9 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -84,6 +87,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Switch;
@@ -127,7 +131,7 @@ public class MainActivity extends AppCompatActivity
     private static String token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
     private static String token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
     private TextView TextViewFullname;
-    private TextView TextViewRut;
+    private EditText TextViewRut;
     private TextView TextViewStatus;
     private TextView TextViewManifestUpdate;
     private ImageView imageview;
@@ -149,6 +153,7 @@ public class MainActivity extends AppCompatActivity
     private Spinner comboLanded;
     private String selectedSpinnerLanded;
     private log_app log;
+    private boolean clickFAB = false;
 
     String SERVERIP = "192.168.1.120";
 
@@ -166,7 +171,7 @@ public class MainActivity extends AppCompatActivity
         mInstance = this;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         TextViewFullname = (TextView) findViewById(R.id.fullname);
-        TextViewRut = (TextView) findViewById(R.id.rut);
+        TextViewRut = (EditText) findViewById(R.id.rut);
         TextViewStatus = (TextView) findViewById(status);
         TextViewManifestUpdate = (TextView) findViewById(R.id.textView_lastManifestUpdate);
         comboLanded = (Spinner) findViewById(R.id.spinner_setLanded);
@@ -178,8 +183,8 @@ public class MainActivity extends AppCompatActivity
         log = new log_app();
         selectedSpinnerLanded = "";
 
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        AxxezoAPI = "http://192.168.1.126:3000/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        //AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -188,8 +193,11 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 DatabaseHelper db = new DatabaseHelper(getApplicationContext());
                 String text = "Ruta: " + db.selectFirst("select routes.name from routes inner join config on routes.id=config.route_id");
-                Snackbar.make(view, text, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+               /* Snackbar.make(view, text, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();*/
+                //createSimpleDialog("").show();
+                if (!TextViewRut.getText().toString().trim().isEmpty())
+                    documentValidator(TextViewRut.getText().toString().trim());
                 db.close();
             }
         });
@@ -405,7 +413,7 @@ public class MainActivity extends AppCompatActivity
                 barcodeStr = barcodeStr.replace("K", "");
                 documentValidator(barcodeStr);
             }
-            Log.i("Cooked Barcode", barcodeStr);
+           // Log.i("Cooked Barcode", barcodeStr);
         }
     };
 
@@ -430,7 +438,7 @@ public class MainActivity extends AppCompatActivity
     protected void onDestroy() {
         // TODO Auto-generated method stub
         super.onDestroy();
-      //  s.ServerKill();
+        //  s.ServerKill();
     }
 
     @Override
@@ -442,7 +450,7 @@ public class MainActivity extends AppCompatActivity
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
-      //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
+        //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
     @Override
@@ -481,7 +489,7 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        timer.schedule(task, 0, 30000);  // 5 min=300000
+        timer.schedule(task, 0,300000);  // 5 min=300000
     }
 
     private int updateManifest() {
@@ -489,9 +497,9 @@ public class MainActivity extends AppCompatActivity
         DatabaseHelper db = new DatabaseHelper(getApplicationContext());
         log_app log = new log_app();
         int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-        Log.e("count before", count_before + "");
-        Log.e("manifest", "estoy actualizando manifest!!");
-        int total_temp=0;
+        //Log.e("count before", count_before + "");
+        //Log.e("manifest", "estoy actualizando manifest!!");
+        int total_temp = 0;
         try {
             ArrayList<String> select_from_manifest = db.select("select * from config", "|");
             String[] manifest_config = null;
@@ -504,10 +512,10 @@ public class MainActivity extends AppCompatActivity
             }
 
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-            Log.e("count after", count_after + "");
+            //Log.e("count after", count_after + "");
             if (count_before != count_after) {
                 int total = count_after - count_before;
-                total_temp=total;
+                total_temp = total;
             }
             //Thread.sleep(3000);
         } catch (android.database.SQLException e) {
@@ -555,7 +563,7 @@ public class MainActivity extends AppCompatActivity
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            Log.e("update db", "update db");
+                          //  Log.e("update db", "update db");
                             if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                                 OfflineRecordsSynchronizer();
                             db.close();
@@ -566,7 +574,7 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         };
-        timer.schedule(task, 0, 10000);  // 360000= 6 minutes,
+        timer.schedule(task, 0,360000);  // 360000= 6 minutes,
     }
 
     public String getCurrentDate() {
@@ -644,7 +652,7 @@ public class MainActivity extends AppCompatActivity
         if (!array[0].equals("")) record.setPerson_name(array[1]);
         else record.setPerson_name("");
         if (is_input && valid) record.setInput(1);
-        else if(!is_input) {
+        else if (!is_input) {
             record.setInput(-1);
             TextViewStatus.setText("DESEMBARCO CON TICKET NO CORRESPONDE");
         }
@@ -735,8 +743,8 @@ public class MainActivity extends AppCompatActivity
                     valid = true;
             }
         }
-        Log.d("dv:input despues if", is_input + "");
-        Log.d("dv:valid?=", valid + "");
+        //Log.d("dv:input despues if", is_input + "");
+        //Log.d("dv:valid?=", valid + "");
         if (valid) {
             mp3Permitted.start();
             imageview.setImageResource(R.drawable.img_true);
@@ -827,7 +835,7 @@ public class MainActivity extends AppCompatActivity
         DatabaseHelper db = new DatabaseHelper(this);
         List records = db.get_desynchronized_records();
         db.close();
-        log_app log=new log_app();
+        log_app log = new log_app();
 
         String[] arr;
         for (int i = 0; i <= records.size() - 1; i++) {
@@ -852,8 +860,8 @@ public class MainActivity extends AppCompatActivity
                 record.setManifest_pending(getStatusFromManifest(2));
                 record.setTicket(Integer.parseInt(arr[16]));
                 record.setReason(arr[17]);
-            }catch (android.database.SQLException e){
-                log.writeLog(this,"MainActivity","ERROR",e.getMessage());
+            } catch (android.database.SQLException e) {
+                log.writeLog(this, "MainActivity", "ERROR", e.getMessage());
             }
 
             new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -925,7 +933,7 @@ public class MainActivity extends AppCompatActivity
                         if (inputStream != null) {
                             result = convertInputStreamToString(inputStream);
                             if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                                Log.d("json POSTED", json);
+                                //Log.d("json POSTED", json);
                                 // if has sync=0 its becouse its an offline record to be will synchronized.
                                 if (record.getSync() == 0) {
                                     DatabaseHelper db = new DatabaseHelper(this);
@@ -981,12 +989,12 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected Integer doInBackground(Void... params) {
-            return update_manifest_count=updateManifest();
+            return update_manifest_count = updateManifest();
         }
 
         @Override
         protected void onPostExecute(Integer integer) {
-            if(integer>0) {
+            if (integer > 0) {
                 TextViewManifestUpdate.setTextColor(Color.WHITE);
                 TextViewManifestUpdate.setText("Manifiesto: " + getCurrentDateTime("dd-MM-yyyy HH:mm"));
             }
@@ -998,7 +1006,7 @@ public class MainActivity extends AppCompatActivity
         //String date must be in format yyyy-MM-dd
         //String hour must be in format HH-dd
         URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
-        Log.d("url manifest", url.toString());
+        //Log.d("url manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -1132,4 +1140,39 @@ public class MainActivity extends AppCompatActivity
         wifiManager.setWifiEnabled(bool);
     }
 
+    public void manualRegistration() {
+        DatabaseHelper db = new DatabaseHelper(this);
+        String rut = TextViewRut.getText().toString();
+        //1.- is in manifest ?
+        String contentManifest = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
+        if (!contentManifest.isEmpty()) {
+            Toast.makeText(this, "Persona No se encuentra en Manifiesto", Toast.LENGTH_SHORT).show();
+        } else if (Integer.parseInt(contentManifest) == 0) {
+            dialogManualRegistration("ALERTA", "Persona no registra embarque ni desembarque \nSeleccione una opcion", "Embarcar", "Desembarcar");
+        }
+
+    }
+
+    public AlertDialog dialogManualRegistration(String title, String message, String ButtonTrue, String ButtonCancel) {
+        //  AlertDialog.Builder builder = new AlertDialog.Builder((new ContextThemeWrapper(this, R.style.myDialog)));
+        AlertDialog.Builder builder = new AlertDialog.Builder((new ContextThemeWrapper(this, R.style.myDialog)));
+
+        builder.setTitle("Titulo")
+                .setMessage("El Mensaje para el usuario")
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        })
+                .setNegativeButton("CANCELAR",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        });
+        return builder.create();
+    }
 }
