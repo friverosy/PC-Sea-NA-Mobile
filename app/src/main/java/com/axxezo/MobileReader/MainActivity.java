@@ -736,7 +736,7 @@ public class MainActivity extends AppCompatActivity
         */
         /*****************************************************************************/
 
-        new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+       // new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
     }
 
@@ -862,7 +862,7 @@ public class MainActivity extends AppCompatActivity
         t.start();
         /************************************************************************/
 
-        new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      //  new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void makeToast(String msg) {
@@ -917,6 +917,7 @@ public class MainActivity extends AppCompatActivity
         String json = "";
         String jsonCount = "";
         JSONObject jsonObject = new JSONObject();
+        Log.e("actualizo","POST ASYNCTASK RUNNING"+getCurrentDateTime("hh:MM:ss"));
         JSONObject jsonObjectCount = new JSONObject();
         try {
             if (record.getDatetime() != null)
