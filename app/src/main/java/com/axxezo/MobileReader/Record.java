@@ -23,6 +23,12 @@ public class Record {
     int input;
     int sync;
     int permitted;
+    int config_route_id;
+    String config_port_name;
+    String config_ship_name;
+    String config_hour;
+    String config_date;
+
 
     //Constructors
     public Record(){
@@ -185,5 +191,45 @@ public class Record {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public int getConfig_route_id() {
+        return config_route_id;
+    }
+
+    public void setConfig_route_id(int config_route_id) {
+        this.config_route_id = config_route_id;
+    }
+
+    public String getConfig_port_name() {
+        return config_port_name;
+    }
+
+    public void setConfig_port_name(String config_port_name) {
+        this.config_port_name = config_port_name;
+    }
+
+    public String getConfig_ship_name() {
+        return config_ship_name;
+    }
+
+    public void setConfig_ship_name(String config_ship_name) {
+        this.config_ship_name = config_ship_name;
+    }
+
+    public String getConfig_hour() {
+        return config_hour;
+    }
+
+    public void setConfig_hour(String config_hour) {
+        this.config_hour = config_hour;
+    }
+
+    public String getConfig_date() {
+        return config_date;
+    }
+
+    public void setConfig_date(String config_date) {
+        this.config_date = config_date;
     }
 }

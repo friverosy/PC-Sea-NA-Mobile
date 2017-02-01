@@ -81,6 +81,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_COUNT_PENDING = "count_pending";
     private static final String RECORD_TICKET = "ticket";
     private static final String RECORD_REASON = "reason";
+    private static final String RECORD_CONFIG_ROUTE = "config_route";
+    private static final String RECORD_CONFIG_PORT = "config_port";
+    private static final String RECORD_CONFIG_SHIP = "config_ship";
+    private static final String RECORD_CONFIG_HOUR = "config_hour";
+    private static final String RECORD_CONFIG_DATE = "config_date";
 
     //hours
     private static final String HOUR_ID = "id";
@@ -95,7 +100,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_COUNT_TOTAL, RECORD_COUNT_EMBARKED, RECORD_COUNT_LANDED, RECORD_COUNT_PENDING, RECORD_TICKET,RECORD_REASON};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_COUNT_TOTAL, RECORD_COUNT_EMBARKED, RECORD_COUNT_LANDED, RECORD_COUNT_PENDING, RECORD_TICKET, RECORD_REASON, RECORD_CONFIG_ROUTE, RECORD_CONFIG_PORT, RECORD_CONFIG_SHIP, RECORD_CONFIG_HOUR, RECORD_CONFIG_DATE};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -156,7 +161,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_COUNT_LANDED + " INTEGER," +
             RECORD_COUNT_PENDING + " INTEGER," +
             RECORD_TICKET + " TEXT, " +
-            RECORD_REASON + " TEXT); ";
+            RECORD_REASON + " TEXT, " +
+            RECORD_CONFIG_ROUTE + " INTEGER, " +
+            RECORD_CONFIG_PORT + " TEXT, " +
+            RECORD_CONFIG_SHIP + " TEXT, " +
+            RECORD_CONFIG_DATE + " TEXT, " +
+            RECORD_CONFIG_HOUR + " TEXT); ";
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
             HOUR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -272,7 +282,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             ContentValues values = new ContentValues();
                             Ships port = new Ships(jsonArray.getJSONObject(i).getInt("id_transporte"), jsonArray.getJSONObject(i).getString("nombre_transporte"));
                             values.put(SHIP_ID, port.getID());
-                            values.put(SHIP_NAME, port.getName().trim());
+                            values.put(SHIP_NAME, port.getName().trim().toUpperCase());
                             db.insert(TABLE_SHIPS, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -426,7 +436,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_COUNT_LANDED, record.getManifest_landed());
         values.put(RECORD_COUNT_PENDING, record.getManifest_pending());
         values.put(RECORD_TICKET, record.getTicket());
-        values.put(RECORD_REASON,record.getReason());
+        values.put(RECORD_REASON, record.getReason());
+        values.put(RECORD_CONFIG_ROUTE, record.getConfig_route_id());
+        values.put(RECORD_CONFIG_PORT, record.getConfig_port_name());
+        values.put(RECORD_CONFIG_SHIP, record.getConfig_ship_name());
+        values.put(RECORD_CONFIG_DATE, record.getConfig_date());
+        values.put(RECORD_CONFIG_HOUR, record.getConfig_hour());
 
         // 3. insert
         try {
@@ -484,7 +499,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 cursor.getInt(14) + ";" +   //MANIFEST LANDED
                                 cursor.getInt(15) + ";" +   //MANIFEST PENDING
                                 cursor.getInt(16) + ";" +     //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
-                                cursor.getString(17)+";"
+                                cursor.getString(17) + ";" +   //REASON
+                                cursor.getString(18) + ";" +  //CONFIG_ROUTE
+                                cursor.getString(19) + ";" + //CONFIG_PORT
+                                cursor.getString(20) + ";" + //CONFIG_SHIP
+                                cursor.getString(21) + ";" +//CONFIG_HOUR
+                                cursor.getString(22) + ";"    //CONFIG_DATE
                 );
                 cursor.moveToNext();
             }
@@ -529,7 +549,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         log_app log = new log_app();
         try {
             db.beginTransaction();
-            db.execSQL("update manifest set is_inside="+input+" where id_people='"+rut+"'");
+            db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut + "'");
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());

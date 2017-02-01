@@ -113,6 +113,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -147,6 +148,7 @@ public class MainActivity extends AppCompatActivity
     MediaPlayer mp3Error;
     private static String AxxezoAPI;
     private static String ImaginexAPI;
+    private static String manifestEndPointPOST;
     private boolean is_input = true;
     private Switch mySwitch;
     private static MainActivity mInstance;
@@ -183,9 +185,10 @@ public class MainActivity extends AppCompatActivity
         log = new log_app();
         selectedSpinnerLanded = "";
 
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        //AxxezoAPI = "http://192.168.1.126:3000/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        AxxezoAPI = "http://192.168.1.117:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
+        // manifestEndPointPOST = "http://0.0.0.0:3000/api/states";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -413,7 +416,7 @@ public class MainActivity extends AppCompatActivity
                 barcodeStr = barcodeStr.replace("K", "");
                 documentValidator(barcodeStr);
             }
-           // Log.i("Cooked Barcode", barcodeStr);
+            // Log.i("Cooked Barcode", barcodeStr);
         }
     };
 
@@ -489,7 +492,7 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        timer.schedule(task, 0,300000);  // 5 min=300000
+        timer.schedule(task, 0, 300000);  // 5 min=300000
     }
 
     private int updateManifest() {
@@ -563,7 +566,7 @@ public class MainActivity extends AppCompatActivity
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                          //  Log.e("update db", "update db");
+                            //  Log.e("update db", "update db");
                             if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
                                 OfflineRecordsSynchronizer();
                             db.close();
@@ -574,7 +577,7 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         };
-        timer.schedule(task, 0,360000);  // 360000= 6 minutes,
+        timer.schedule(task, 0, 5000);  // 360000= 6 minutes,
     }
 
     public String getCurrentDate() {
@@ -632,6 +635,7 @@ public class MainActivity extends AppCompatActivity
             //array = person.split(";");
             TextViewFullname.setText(array[1]);
             TextViewRut.setText(rut);
+            TextViewStatus.setText("");
             record.setPermitted(1);
         } else {
             mp3Dennied.start();
@@ -676,8 +680,21 @@ public class MainActivity extends AppCompatActivity
         if (!valid)
             if (!TextViewStatus.getText().toString().isEmpty())
                 record.setReason(TextViewStatus.getText().toString());
-            else
-                record.setReason("");
+        //section to send to records config routes person
+        if (valid) {
+            ArrayList<String> select_from_config = db.select("select (select route_id from config where port_id='" + port + "'),(select name from ports where id_api='" + port + "'),(select name from ships where id=(select ship_id from config where port_id='" + port + "'))," +
+                    "(select date from config where port_id='" + port + "'),(select hour from config where port_id='" + port + "')", "|");
+            // select_from_config = db.select("select route_id,port_id,ship_id,hour,date from config where port_id=(select id_api from ports where name=(select origin from manifest where id_people='" + rut.trim() + "'" + "))", "|");
+            String[] manifest_config_get = null;
+            if (select_from_config.size() > 0) {
+                manifest_config_get = select_from_config.get(0).split("\\|");
+                record.setConfig_route_id(Integer.parseInt(manifest_config_get[0] == null ? "-1" : manifest_config_get[0]));//return -1 if qr route not exist
+                record.setConfig_port_name(manifest_config_get[1]);
+                record.setConfig_ship_name(manifest_config_get[2]);
+                record.setConfig_hour(manifest_config_get[3]);
+                record.setConfig_date(manifest_config_get[4]);
+            }
+        }
         db.add_record(record);
         if (valid)
             if (is_input)
@@ -691,9 +708,12 @@ public class MainActivity extends AppCompatActivity
             } else
                 db.updatePeopleManifest(rut, 0);
         }
+
+
         db.close();
 
         /********************** CLient socket ******************************/
+        /*
         JSONObject json_to_send = new JSONObject();
 
         try {
@@ -713,10 +733,11 @@ public class MainActivity extends AppCompatActivity
             }
         });
         t.start();
+        */
         /*****************************************************************************/
 
         new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        ;
+
     }
 
     public void documentValidator(String rut) {
@@ -751,6 +772,7 @@ public class MainActivity extends AppCompatActivity
             array = person.split(";");
             TextViewFullname.setText(array[1]);
             TextViewRut.setText(array[0]);
+            TextViewStatus.setText("");
             record.setPermitted(1);
         } else {
             mp3Dennied.start();
@@ -787,9 +809,24 @@ public class MainActivity extends AppCompatActivity
         if (!valid)
             if (!TextViewStatus.getText().toString().isEmpty())
                 record.setReason(TextViewStatus.getText().toString());
-            else
-                record.setReason("");
+            //else
+              //  record.setReason("");
 
+        //section to send to records config routes person
+        /*if (valid) {
+            ArrayList<String> select_from_config = db.select("select route_id,port_id.ship_id,hour,date from config where port_id='" + port + "'", "|");
+            if (select_from_config.isEmpty())
+                select_from_config = db.select("select route_id,port_id,ship_id,hour,date from config where port_id=(select id_api from ports where name=(select origin from manifest where id_people='" + rut.trim() + "'" + "))", "|");
+            String[] manifest_config_get = null;
+            if (select_from_config.size() > 0) {
+                manifest_config_get = select_from_config.get(0).split("\\|");
+                record.setConfig_route_id(Integer.parseInt(manifest_config[0]));
+                record.setConfig_port_id(Integer.parseInt(manifest_config[1]));
+                record.setConfig_ship_id(Integer.parseInt(manifest_config[2]));
+                record.setConfig_hour(manifest_config[3]);
+                record.setConfig_date(manifest_config[4]);
+            }
+        }*/
         record.setDatetime(getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss.S'Z'"));
         record.setSync(0);
         record.setOrigin(array[2]);
@@ -800,6 +837,7 @@ public class MainActivity extends AppCompatActivity
         record.setManifest_embarked(getStatusFromManifest(3));
         record.setManifest_landed(getStatusFromManifest(4));
         record.setManifest_pending(getStatusFromManifest(2));
+
         db.add_record(record);
         db.close();
 
@@ -860,6 +898,11 @@ public class MainActivity extends AppCompatActivity
                 record.setManifest_pending(getStatusFromManifest(2));
                 record.setTicket(Integer.parseInt(arr[16]));
                 record.setReason(arr[17]);
+                record.setConfig_route_id(Integer.parseInt(arr[18]));
+                record.setConfig_port_name(arr[19]);
+                record.setConfig_ship_name(arr[20]);
+                record.setConfig_date(arr[22]);
+                record.setConfig_hour(arr[21]);
             } catch (android.database.SQLException e) {
                 log.writeLog(this, "MainActivity", "ERROR", e.getMessage());
             }
@@ -876,23 +919,43 @@ public class MainActivity extends AppCompatActivity
         JSONObject jsonObject = new JSONObject();
         JSONObject jsonObjectCount = new JSONObject();
         try {
-
-            jsonObject.accumulate("datetime", record.getDatetime());
-            jsonObject.accumulate("doc", record.getPerson_document());
-            jsonObject.accumulate("name", record.getPerson_name());
-            jsonObject.accumulate("origen", record.getOrigin());
-            jsonObject.accumulate("destination", record.getDestination());
-            jsonObject.accumulate("port", record.getPort_id());//puerto de registro
-            jsonObject.accumulate("ship", record.getShip_id());
-            jsonObject.accumulate("sailing_hour", record.getSailing_hour());
+            if (record.getDatetime() != null)
+                jsonObject.accumulate("datetime", record.getDatetime());
+            if (record.getPerson_document() != null)
+                jsonObject.accumulate("doc", record.getPerson_document());
+            if (record.getPerson_name() != null)
+                jsonObject.accumulate("name", record.getPerson_name());
+            if (record.getOrigin() != null)
+                jsonObject.accumulate("origen", record.getOrigin());
+            if (record.getDestination() != null)
+                jsonObject.accumulate("destination", record.getDestination());
+            if (record.getPort_id() != null)
+                jsonObject.accumulate("port", record.getPort_id());//puerto de registro
+            if (record.getShip_id() != null)
+                jsonObject.accumulate("ship", record.getShip_id());
+            if (record.getSailing_hour() != null)
+                jsonObject.accumulate("sailing_hour", record.getSailing_hour());
             jsonObject.accumulate("state", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
-            jsonObject.accumulate("boletus", record.getTicket());
-            jsonObject.accumulate("reason", record.getReason());
-
+            if (record.getTicket() != 0)
+                jsonObject.accumulate("boletus", record.getTicket());
+            if (record.getReason() != null)
+                jsonObject.accumulate("reason", record.getReason());
+            //preguntar si es valido acumular el resto
+            if (record.getConfig_route_id() != 0)
+                jsonObject.accumulate("config_route", record.getConfig_route_id());
+            if (record.getConfig_port_name() != null)
+                jsonObject.accumulate("config_port", record.getConfig_port_name());
+            if (record.getConfig_ship_name() != null)
+                jsonObject.accumulate("config_ship", record.getConfig_ship_name());
+            if (record.getConfig_date() != null)
+                jsonObject.accumulate("config_date", record.getConfig_date());
+            if (record.getConfig_hour() != null)
+                jsonObject.accumulate("config_hour", record.getConfig_hour());
             jsonObjectCount.accumulate("total", record.getManifest_total());
             jsonObjectCount.accumulate("embarkeds", record.getManifest_embarked());
             jsonObjectCount.accumulate("landed", record.getManifest_landed());
+
             //jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
 
             ArrayList<JSONObject> temp = new ArrayList<>();
@@ -908,7 +971,8 @@ public class MainActivity extends AppCompatActivity
                     url = AxxezoAPI + "/manifests/update?[where][total][gte]=0";
                 }
                 HttpPost httpPost = new HttpPost(url);
-                if (temp.get(i).length() <= 14 && record.getId() != 0) { // 9 element on json
+                //record.getId() != 0
+                if (temp.get(i).length() <= 22) { // 9 element on json
                     json = temp.get(i).toString();
 
                     // 5. set json to StringEntity
@@ -933,7 +997,7 @@ public class MainActivity extends AppCompatActivity
                         if (inputStream != null) {
                             result = convertInputStreamToString(inputStream);
                             if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                                //Log.d("json POSTED", json);
+                                Log.d("json POSTED", json);
                                 // if has sync=0 its becouse its an offline record to be will synchronized.
                                 if (record.getSync() == 0) {
                                     DatabaseHelper db = new DatabaseHelper(this);
