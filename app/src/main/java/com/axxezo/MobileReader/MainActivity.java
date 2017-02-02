@@ -69,6 +69,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -92,11 +93,16 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -181,8 +187,8 @@ public class MainActivity extends AppCompatActivity
         log = new log_app();
         selectedSpinnerLanded = "";
 
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        AxxezoAPI = "http://192.168.1.117:3000/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        //AxxezoAPI = "http://192.168.1.117:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
         manifestEndPointGET = "";
 
@@ -244,6 +250,7 @@ public class MainActivity extends AppCompatActivity
         UpdateDb();
         //updateManifest();
         asyncUpdateManifestinTime();
+        asyncUpdateManifestState();
         db.close();
 
     }
@@ -491,6 +498,27 @@ public class MainActivity extends AppCompatActivity
         timer.schedule(task, 0, 300000);  // 5 min=300000
     }
 
+    private void asyncUpdateManifestState() {
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
+
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        } catch (Exception e) {
+                            // error, do something
+                        }
+                    }
+                });
+            }
+        };
+        timer.schedule(task, 0, 180000);  // 3min =180000
+    }
+
     private int updateManifest() {
         // wifiState(false);
         DatabaseHelper db = new DatabaseHelper(getApplicationContext());
@@ -506,7 +534,7 @@ public class MainActivity extends AppCompatActivity
             for (int i = 0; i < select_from_manifest.size(); i++) {
                 if (select_from_manifest.size() > 0) {
                     manifest_config = select_from_manifest.get(i).split("\\|");
-                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest",Integer.parseInt(manifest_config[2]));
+                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest", Integer.parseInt(manifest_config[2]));
                 }
             }
 
@@ -573,7 +601,7 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         };
-        timer.schedule(task, 0, 5000);  // 360000= 6 minutes,
+        timer.schedule(task, 0, 50000);  // 360000= 6 minutes,
     }
 
     public String getCurrentDate() {
@@ -732,7 +760,7 @@ public class MainActivity extends AppCompatActivity
         */
         /*****************************************************************************/
 
-       // new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        // new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
     }
 
@@ -805,13 +833,13 @@ public class MainActivity extends AppCompatActivity
         if (!valid)
             if (!TextViewStatus.getText().toString().isEmpty())
                 record.setReason(TextViewStatus.getText().toString());
-            //else
-              //  record.setReason("");
+        //else
+        //  record.setReason("");
 
         //section to send to records config routes person
         if (valid) {
-            ArrayList<String> select_from_config = db.select("select (select route_id from config where port_id=(select port from manifest where id_people='"+rut+"')),(select name from ports where id_api=(select port from manifest where id_people='"+rut+"')),(select name from ships where id=(select ship_id from config where port_id=(select port from manifest where id_people='"+rut+"')))," +
-                    "(select date from config where port_id=(select port from manifest where id_people='"+rut+"')),(select hour from config where port_id=(select port from manifest where id_people='"+rut+"'))", "|");
+            ArrayList<String> select_from_config = db.select("select (select route_id from config where port_id=(select port from manifest where id_people='" + rut + "')),(select name from ports where id_api=(select port from manifest where id_people='" + rut + "')),(select name from ships where id=(select ship_id from config where port_id=(select port from manifest where id_people='" + rut + "')))," +
+                    "(select date from config where port_id=(select port from manifest where id_people='" + rut + "')),(select hour from config where port_id=(select port from manifest where id_people='" + rut + "'))", "|");
             // select_from_config = db.select("select route_id,port_id,ship_id,hour,date from config where port_id=(select id_api from ports where name=(select origin from manifest where id_people='" + rut.trim() + "'" + "))", "|");
             String[] manifest_config_get = null;
             if (select_from_config.size() > 0) {
@@ -858,7 +886,7 @@ public class MainActivity extends AppCompatActivity
         t.start();
         /************************************************************************/
 
-      //  new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        //  new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void makeToast(String msg) {
@@ -913,7 +941,7 @@ public class MainActivity extends AppCompatActivity
         String json = "";
         String jsonCount = "";
         JSONObject jsonObject = new JSONObject();
-        Log.e("actualizo","POST ASYNCTASK RUNNING"+getCurrentDateTime("hh:MM:ss"));
+        Log.e("actualizo", "POST ASYNCTASK RUNNING" + getCurrentDateTime("hh:MM:ss"));
         JSONObject jsonObjectCount = new JSONObject();
         try {
             if (record.getDatetime() != null)
@@ -965,7 +993,7 @@ public class MainActivity extends AppCompatActivity
                 HttpClient httpclient = new DefaultHttpClient();
                 // 2. make POST request to the given URL
                 if (i == 1) {
-                    url = AxxezoAPI + "/manifests/update?[where][total][gte]=0";
+                    url = AxxezoAPI + "/manifests";
                 }
                 HttpPost httpPost = new HttpPost(url);
                 //record.getId() != 0
@@ -993,6 +1021,7 @@ public class MainActivity extends AppCompatActivity
                         // 10. convert inputstream to string
                         if (inputStream != null) {
                             result = convertInputStreamToString(inputStream);
+                            Log.d("response record", result);
                             if (httpResponse.getStatusLine().getStatusCode() == 200) {
                                 Log.d("json POSTED", json);
                                 // if has sync=0 its becouse its an offline record to be will synchronized.
@@ -1059,6 +1088,15 @@ public class MainActivity extends AppCompatActivity
                 TextViewManifestUpdate.setTextColor(Color.WHITE);
                 TextViewManifestUpdate.setText("Manifiesto: " + getCurrentDateTime("dd-MM-yyyy HH:mm"));
             }
+        }
+    }
+
+    public class AsyncUpdateStateManifest extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            GETandUpdateStateInManifest();
+            return null;
         }
     }
 
@@ -1236,4 +1274,87 @@ public class MainActivity extends AppCompatActivity
                         });
         return builder.create();
     }
+
+    public void GETandUpdateStateInManifest() {
+        Log.e("updating state", "MANIFEST STATE");
+        //String url="http://192.168.1.117:3000/api/states/getState?doc=15792726&route=2&port=PUERTO%20MONTT&ship=JACAF&date=2017-01-19&hour=23:00";
+        String url = "http://192.168.1.117:3000/api/states/getState?";
+        DatabaseHelper db = new DatabaseHelper(this);
+
+        // get list manifest id_people and port
+
+        ArrayList<String> select_dni_from_manifest = db.select("select id_people from manifest", "|");
+        if (!select_dni_from_manifest.isEmpty()) {
+            String[] get_manifest_row = null;
+            int i = 0;
+            while (i < select_dni_from_manifest.size()) {
+                //Log.e("for i=", i + "");
+                get_manifest_row = select_dni_from_manifest.get(i).split("\\|");
+                if (get_manifest_row.length > 0) {// is not empty
+                    ArrayList<String> get_config_per_rut = db.select("select (select route_id from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ports where id_api=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ships where id=(select ship_id from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "')))," +
+                            "(select date from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select hour from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "'))", "|");
+                    String[] get_config_per_row = get_config_per_rut.get(0).split("\\|");
+                    if (get_config_per_row.length > 0) {
+                        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
+                        nameValuePairs.add(new BasicNameValuePair("doc", get_manifest_row[0]));
+                        nameValuePairs.add(new BasicNameValuePair("route", get_config_per_row[0]));
+                        nameValuePairs.add(new BasicNameValuePair("port", get_config_per_row[1]));
+                        nameValuePairs.add(new BasicNameValuePair("ship", get_config_per_row[2]));
+                        nameValuePairs.add(new BasicNameValuePair("date", get_config_per_row[3]));
+                        nameValuePairs.add(new BasicNameValuePair("hour", get_config_per_row[4]));
+
+                        //finally send get request
+                        String result = "";
+                        InputStream inputStream;
+                        HttpClient httpclient = new DefaultHttpClient();
+                        String paramsString = URLEncodedUtils.format(nameValuePairs, "UTF-8");
+                        HttpGet httpGet = new HttpGet(url + paramsString);
+                        HttpResponse httpResponse = null;
+                        try {
+                            httpResponse = httpclient.execute(httpGet);
+                            inputStream = httpResponse.getEntity().getContent();
+                            if (inputStream != null) {
+                                try {
+                                    result = convertInputStreamToString(inputStream);
+                                    JSONObject objectJson = new JSONObject(result);
+                                    if (!objectJson.getString("doc").isEmpty()&&objectJson.getInt("state")!=-1)
+                                        db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim() + "'");
+                                    //is_inside_from_manifest = Integer.parseInt(db.selectFirst("select is_inside from manifest where id_people='" + objectJson.getString("doc").trim() + "'"));
+                                    /* seven combinations
+                                    * 0 --- 0
+                                    * 0 --- 1
+                                    * 1 --- 0
+                                    * 1 --- 1
+                                    * 1 --- 2
+                                    * 2 --- 1
+                                    * 2 --- 2
+                                     */
+                                    //case  1,0 1,2 covered
+                                    // if (is_inside_from_manifest < objectJson.getInt("state"))
+
+                                    //else if (is_inside_from_manifest > objectJson.getInt("state"))
+                                    //    db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim() + "'");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                result = String.valueOf(httpResponse.getStatusLine().getStatusCode());
+                            }
+                            i++;
+                            inputStream.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            Log.e("status", "OFFLINE");
+                            i = select_dni_from_manifest.size();
+                        }
+
+
+                    }
+                }
+            }
+        }
+
+    }
+
+
 }

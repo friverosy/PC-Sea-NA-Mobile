@@ -20,6 +20,10 @@ import android.widget.Toast;
 
 import com.dd.CircularProgressButton;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,7 +59,9 @@ public class Configuration extends AppCompatActivity {
     private String token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
     private String token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
     private CircularProgressButton loadButton;
+    private String AxxezoAPI;
     private int manifest_load_ports;
+    private String status;
     Thread thread;
 
     @Override
@@ -76,6 +82,10 @@ public class Configuration extends AppCompatActivity {
         loadButton = (CircularProgressButton) findViewById(R.id.button_loadManifest);
         manifest_load_ports = -1;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        status = "";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        //AxxezoAPI = "http://192.168.1.117:3000/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -88,7 +98,7 @@ public class Configuration extends AppCompatActivity {
         });*/
         //inserts in db
         try {
-            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes",-1);
+            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes", -1);
             db.close();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -98,13 +108,14 @@ public class Configuration extends AppCompatActivity {
             e.printStackTrace();
         }
         loadComboboxRoutes();
-
+        final resetEndPoint reset= new resetEndPoint();
         //button
         loadButton.setIndeterminateProgressMode(false);
         loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //simulateSuccessProgress(loadButton);
+
                 if ((combobox_transports != null && combobox_transports.getSelectedItem() != null && !combobox_transports.getSelectedItem().equals("")) && (combobox_hours != null &&
                         combobox_hours.getSelectedItem() != null && !combobox_hours.getSelectedItem().equals("")) &&
                         (combobox != null && combobox.getSelectedItem() != null) && !combobox.getSelectedItem().equals("")) {
@@ -113,13 +124,15 @@ public class Configuration extends AppCompatActivity {
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
+                    reset.execute();
+                    if (status.equals("200"))
+                        Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT);
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                     startActivity(intent);
                     //wifiState(true);
                 } else {
                     Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
                     loadButton.setProgress(-1);
-                    MainActivity main=new MainActivity();
 
                 }
             }
@@ -146,7 +159,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerRoute = idElementSelected;
                         Log.i("id LogApp Routes", "----" + selectionSpinnerRoute);
                         try {
-                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "ports",-1);
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "ports", -1);
                             loadComboboxPorts();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -173,7 +186,7 @@ public class Configuration extends AppCompatActivity {
             manifest_is_inside = select_from_manifest.get(0).split("\\|");
             selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
             try {
-                db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships",-1);
+                db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships", -1);
                 loadComboboxShips();
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -208,7 +221,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerTransports = idElementSelected;
                         Log.i("id LogApp Ships", "----" + selectionSpinnerTransports);
                         try {
-                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0), selectionSpinnerTransports).execute().get(), "hours",-1);
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0), selectionSpinnerTransports).execute().get(), "hours", -1);
                             loadComboboxHours();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -322,7 +335,7 @@ public class Configuration extends AppCompatActivity {
                             }
                         }
                     }
-                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest",selectionSpinnerPorts);
+                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest", selectionSpinnerPorts);
                     db.insert("insert into config(route_id,port_id,ship_id,hour,date) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
                             selectionSpinnerTransports + "','" + hours + "','" + currentDatetime + "')");
                     //finally, boolean true in port
@@ -650,6 +663,7 @@ public class Configuration extends AppCompatActivity {
 
         return returntime;
     }
+
     public String getToken_navieraAustral() {
         return token_navieraAustral;
     }
@@ -662,4 +676,35 @@ public class Configuration extends AppCompatActivity {
         WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(bool);
     }
+
+    public String GETReset() {
+        String url = AxxezoAPI+"/states/removeAll";
+        String result = "";
+        InputStream inputStream;
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet(url);
+        HttpResponse httpResponse;
+        try {
+            httpResponse = httpclient.execute(httpGet);
+            result = httpResponse.getStatusLine().toString();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private class resetEndPoint extends AsyncTask<String, String, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            return status = GETReset();
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            status = s;
+        }
+    }
+
 }
