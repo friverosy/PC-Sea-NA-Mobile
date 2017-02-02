@@ -21,6 +21,7 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
+
     //context
     private Context context;
 
@@ -40,6 +41,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String MANIFEST_ORIGIN = "origin";
     private static final String MANIFEST_DESTINATION = "destination";
     private static final String MANIFEST_ISINSIDE = "is_inside";
+    private static final String MANIFEST_PORT = "port";
 
 
     //people
@@ -98,6 +100,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String CONFIG_HOUR = "hour";
     private static final String CONFIG_DATE = "date";
 
+
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
     private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_ID, RECORD_SHIP_ID, RECORD_SAILING_HOUR, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_COUNT_TOTAL, RECORD_COUNT_EMBARKED, RECORD_COUNT_LANDED, RECORD_COUNT_PENDING, RECORD_TICKET, RECORD_REASON, RECORD_CONFIG_ROUTE, RECORD_CONFIG_PORT, RECORD_CONFIG_SHIP, RECORD_CONFIG_HOUR, RECORD_CONFIG_DATE};
@@ -127,7 +130,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             MANIFEST_PEOPLE_ID + " TEXT NOT NULL UNIQUE, " +
             MANIFEST_ORIGIN + " TEXT, " +
             MANIFEST_DESTINATION + " TEXT," +
-            MANIFEST_ISINSIDE + " INTEGER DEFAULT 0); ";
+            MANIFEST_ISINSIDE + " INTEGER DEFAULT 0, " +
+            MANIFEST_PORT + " INTEGER); ";
 
     String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
@@ -165,8 +169,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_CONFIG_ROUTE + " INTEGER, " +
             RECORD_CONFIG_PORT + " TEXT, " +
             RECORD_CONFIG_SHIP + " TEXT, " +
-            RECORD_CONFIG_DATE + " TEXT, " +
-            RECORD_CONFIG_HOUR + " TEXT); ";
+            RECORD_CONFIG_HOUR + " TEXT, " +
+            RECORD_CONFIG_DATE + " TEXT); ";
+
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
             HOUR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -210,7 +215,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
      * CRUD operations (create "add", read "get", update, delete)
      */
 
-    public void insertJSON(String json, String table) throws JSONException {
+    public void insertJSON(String json, String table, int port_config) throws JSONException {
         SQLiteDatabase db = this.getWritableDatabase();
         log_app log = new log_app();
         JSONObject objectJson;
@@ -334,7 +339,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             ContentValues valuesManifest = new ContentValues();
 
                             People people = new People(jsonArray.getJSONObject(i).getString("codigo_pasajero").trim(), jsonArray.getJSONObject(i).getString("nombre_pasajero"), jsonArray.getJSONObject(i).getString("nacionalidad"), 0);
-                            navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("origen"), jsonArray.getJSONObject(i).getString("destino"), 0);
+                            navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("origen"), jsonArray.getJSONObject(i).getString("destino"), 0, port_config);
 
                             String doc;
                             doc = people.getDocument();
@@ -343,8 +348,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
                             db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
                                     doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
-                            db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                            db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_PORT + ") VALUES('" +
+                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getPort() + "')");
                         }
                         db.setTransactionSuccessful();
                     } catch (JSONException e) {

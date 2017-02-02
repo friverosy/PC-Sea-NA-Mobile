@@ -59,7 +59,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.SQLException;
 import android.device.ScanManager;
 import android.graphics.Color;
 import android.media.AudioManager;
@@ -72,7 +71,6 @@ import android.os.Handler;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -101,7 +99,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -113,7 +110,6 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -148,7 +144,7 @@ public class MainActivity extends AppCompatActivity
     MediaPlayer mp3Error;
     private static String AxxezoAPI;
     private static String ImaginexAPI;
-    private static String manifestEndPointPOST;
+    private static String manifestEndPointGET;
     private boolean is_input = true;
     private Switch mySwitch;
     private static MainActivity mInstance;
@@ -188,7 +184,7 @@ public class MainActivity extends AppCompatActivity
         //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
         AxxezoAPI = "http://192.168.1.117:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
-        // manifestEndPointPOST = "http://0.0.0.0:3000/api/states";
+        manifestEndPointGET = "";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -510,7 +506,7 @@ public class MainActivity extends AppCompatActivity
             for (int i = 0; i < select_from_manifest.size(); i++) {
                 if (select_from_manifest.size() > 0) {
                     manifest_config = select_from_manifest.get(i).split("\\|");
-                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest");
+                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest",Integer.parseInt(manifest_config[2]));
                 }
             }
 
@@ -813,20 +809,20 @@ public class MainActivity extends AppCompatActivity
               //  record.setReason("");
 
         //section to send to records config routes person
-        /*if (valid) {
-            ArrayList<String> select_from_config = db.select("select route_id,port_id.ship_id,hour,date from config where port_id='" + port + "'", "|");
-            if (select_from_config.isEmpty())
-                select_from_config = db.select("select route_id,port_id,ship_id,hour,date from config where port_id=(select id_api from ports where name=(select origin from manifest where id_people='" + rut.trim() + "'" + "))", "|");
+        if (valid) {
+            ArrayList<String> select_from_config = db.select("select (select route_id from config where port_id=(select port from manifest where id_people='"+rut+"')),(select name from ports where id_api=(select port from manifest where id_people='"+rut+"')),(select name from ships where id=(select ship_id from config where port_id=(select port from manifest where id_people='"+rut+"')))," +
+                    "(select date from config where port_id=(select port from manifest where id_people='"+rut+"')),(select hour from config where port_id=(select port from manifest where id_people='"+rut+"'))", "|");
+            // select_from_config = db.select("select route_id,port_id,ship_id,hour,date from config where port_id=(select id_api from ports where name=(select origin from manifest where id_people='" + rut.trim() + "'" + "))", "|");
             String[] manifest_config_get = null;
             if (select_from_config.size() > 0) {
                 manifest_config_get = select_from_config.get(0).split("\\|");
-                record.setConfig_route_id(Integer.parseInt(manifest_config[0]));
-                record.setConfig_port_id(Integer.parseInt(manifest_config[1]));
-                record.setConfig_ship_id(Integer.parseInt(manifest_config[2]));
-                record.setConfig_hour(manifest_config[3]);
-                record.setConfig_date(manifest_config[4]);
+                record.setConfig_route_id(Integer.parseInt(manifest_config_get[0] == null ? "-1" : manifest_config_get[0]));//return -1 if qr route not exist
+                record.setConfig_port_name(manifest_config_get[1]);
+                record.setConfig_ship_name(manifest_config_get[2]);
+                record.setConfig_hour(manifest_config_get[3]);
+                record.setConfig_date(manifest_config_get[4]);
             }
-        }*/
+        }
         record.setDatetime(getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss.S'Z'"));
         record.setSync(0);
         record.setOrigin(array[2]);
@@ -901,8 +897,8 @@ public class MainActivity extends AppCompatActivity
                 record.setConfig_route_id(Integer.parseInt(arr[18]));
                 record.setConfig_port_name(arr[19]);
                 record.setConfig_ship_name(arr[20]);
-                record.setConfig_date(arr[22]);
-                record.setConfig_hour(arr[21]);
+                record.setConfig_date(arr[21]);
+                record.setConfig_hour(arr[22]);
             } catch (android.database.SQLException e) {
                 log.writeLog(this, "MainActivity", "ERROR", e.getMessage());
             }

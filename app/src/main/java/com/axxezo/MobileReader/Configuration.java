@@ -88,7 +88,7 @@ public class Configuration extends AppCompatActivity {
         });*/
         //inserts in db
         try {
-            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes");
+            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes",-1);
             db.close();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -146,7 +146,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerRoute = idElementSelected;
                         Log.i("id LogApp Routes", "----" + selectionSpinnerRoute);
                         try {
-                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "ports");
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "ports",-1);
                             loadComboboxPorts();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -173,7 +173,7 @@ public class Configuration extends AppCompatActivity {
             manifest_is_inside = select_from_manifest.get(0).split("\\|");
             selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
             try {
-                db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships");
+                db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get(), "ships",-1);
                 loadComboboxShips();
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -208,7 +208,7 @@ public class Configuration extends AppCompatActivity {
                         selectionSpinnerTransports = idElementSelected;
                         Log.i("id LogApp Ships", "----" + selectionSpinnerTransports);
                         try {
-                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0), selectionSpinnerTransports).execute().get(), "hours");
+                            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0), selectionSpinnerTransports).execute().get(), "hours",-1);
                             loadComboboxHours();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -322,7 +322,7 @@ public class Configuration extends AppCompatActivity {
                             }
                         }
                     }
-                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest");
+                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get(), "manifest",selectionSpinnerPorts);
                     db.insert("insert into config(route_id,port_id,ship_id,hour,date) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
                             selectionSpinnerTransports + "','" + hours + "','" + currentDatetime + "')");
                     //finally, boolean true in port
