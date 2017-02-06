@@ -3,7 +3,6 @@ package com.axxezo.MobileReader;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
@@ -12,6 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -345,9 +345,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             doc = people.getDocument();
                             if (people.getDocument().contains("-"))
                                 doc = doc.substring(0, doc.length() - 2);
-
+                            String name= removeAccent(people.getName());
                             db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                                    doc + "','" + people.getName() + "','" + people.getNationality() + "'," + people.getAge() + ")");
+                                    doc + "','" + name + "','" + people.getNationality() + "'," + people.getAge() + ")");
                             db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_PORT + ") VALUES('" +
                                     doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getPort() + "')");
                         }
@@ -384,6 +384,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.close();
         }
         return firstElement;
+    }
+    public String removeAccent(String str) {
+        String  texto = Normalizer.normalize(str, Normalizer.Form.NFD);
+        texto = texto.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+        texto = texto.replaceAll("[|?*<\":>+\\[\\]/'`¨´]", "");
+        return texto;
     }
 
     //cris

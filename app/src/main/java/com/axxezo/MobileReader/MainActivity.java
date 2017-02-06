@@ -495,7 +495,7 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        timer.schedule(task, 0, 300000);  // 5 min=300000
+        timer.schedule(task, 0, 360000);  // 5 min=300000 // 6 min =360000
     }
 
     private void asyncUpdateManifestState() {
@@ -516,7 +516,7 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         };
-        timer.schedule(task, 0, 180000);  // 3min =180000
+        timer.schedule(task, 0, 240000);  // 3min =180000 //4 min = 240000;
     }
 
     private int updateManifest() {
@@ -601,7 +601,7 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         };
-        timer.schedule(task, 0, 50000);  // 360000= 6 minutes,
+        timer.schedule(task, 0, 420000);  // 360000= 6 minutes, 7 minutes=420000
     }
 
     public String getCurrentDate() {
@@ -1278,7 +1278,7 @@ public class MainActivity extends AppCompatActivity
     public void GETandUpdateStateInManifest() {
         Log.e("updating state", "MANIFEST STATE");
         //String url="http://192.168.1.117:3000/api/states/getState?doc=15792726&route=2&port=PUERTO%20MONTT&ship=JACAF&date=2017-01-19&hour=23:00";
-        String url = "http://192.168.1.117:3000/api/states/getState?";
+        String url = AxxezoAPI+"/states/getState?";
         DatabaseHelper db = new DatabaseHelper(this);
 
         // get list manifest id_people and port

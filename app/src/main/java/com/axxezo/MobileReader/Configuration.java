@@ -124,7 +124,7 @@ public class Configuration extends AppCompatActivity {
                     loadManifest();
                     loadButton.setProgress(100);
                     loadButton.setClickable(false);
-                    reset.execute();
+                 //   reset.execute();
                     if (status.equals("200"))
                         Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT);
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
