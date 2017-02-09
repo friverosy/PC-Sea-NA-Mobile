@@ -22,6 +22,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
 
+
     //context
     private Context context;
 
@@ -35,13 +36,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_CONFIG = "CONFIG";
     private static final String TABLE_MANIFEST = "MANIFEST";
 
-    //table columns
+    //table manifest
     private static final String MANIFEST_ID = "id";
     private static final String MANIFEST_PEOPLE_ID = "id_people";
     private static final String MANIFEST_ORIGIN = "origin";
     private static final String MANIFEST_DESTINATION = "destination";
     private static final String MANIFEST_ISINSIDE = "is_inside";
     private static final String MANIFEST_PORT = "port";
+    private static final String MANIFEST_BOLETUS ="boletus" ;
 
 
     //people
@@ -131,7 +133,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             MANIFEST_ORIGIN + " TEXT, " +
             MANIFEST_DESTINATION + " TEXT," +
             MANIFEST_ISINSIDE + " INTEGER DEFAULT 0, " +
-            MANIFEST_PORT + " INTEGER); ";
+            MANIFEST_PORT + " INTEGER, " +
+            MANIFEST_BOLETUS + " TEXT); ";
 
     String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
@@ -342,10 +345,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("origen"), jsonArray.getJSONObject(i).getString("destino"), 0, port_config);
 
                             String doc;
-                            doc = people.getDocument();
+                            doc = people.getDocument().toUpperCase();
                             if (people.getDocument().contains("-"))
                                 doc = doc.substring(0, doc.length() - 2);
-                            String name= removeAccent(people.getName());
+                            String name = removeAccent(people.getName());
                             db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
                                     doc + "','" + name + "','" + people.getNationality() + "'," + people.getAge() + ")");
                             db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_PORT + ") VALUES('" +
@@ -385,8 +388,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         return firstElement;
     }
+
     public String removeAccent(String str) {
-        String  texto = Normalizer.normalize(str, Normalizer.Form.NFD);
+        String texto = Normalizer.normalize(str, Normalizer.Form.NFD);
         texto = texto.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
         texto = texto.replaceAll("[|?*<\":>+\\[\\]/'`¨´]", "");
         return texto;
@@ -402,7 +406,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String row = "";
         try {
             cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination,(select name from ports where id_api=(select port_id from config))," +
-                    "(select name from ships where id=(select ship_id from config)) from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+                    "(select name from ships where id=(select ship_id from config)),m.boletus from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
                 int i = 0;

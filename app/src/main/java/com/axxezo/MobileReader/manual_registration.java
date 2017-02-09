@@ -92,13 +92,16 @@ public class manual_registration extends AppCompatActivity {
                     name.setError("falta ingresar Nombre");
                 }
                 if (ticket_no.getText() != null && dni.getText() != null && name.getText() != null) {
-                    db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
-                    db.insert("insert into manifest(id_people,origin,destination) values('" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "')");
+                   // String origin =selected_origin;
+                    String port=db.selectFirst("select id_api from ports where name='"+selected_origin+"'");
+                    db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase()+"')");
+                    db.insert("insert into manifest(id_people,origin,destination,port,boletus) values('" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim()+"','"+port+"','"+Integer.parseInt(ticket_no.getText().toString())+"')");
                    // db.insert("insert into records(datetime,person_document,origin,destination,ticket,sync) values('" + getCurrentDateTime() + "','" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + ticket_no.getText().toString().toUpperCase() +"','"+0+"')");
                     Toast.makeText(getApplicationContext(),"Persona Ingresada Exitosamente",Toast.LENGTH_LONG).show();
                     Record record=new Record();
                     record.setDatetime(getCurrentDateTime("yyy-MM-dd HH:mm:ss.S"));
                     record.setPerson_document(dni.getText().toString().toUpperCase());
+                    record.setPerson_name(name.getText().toString().toUpperCase());
                     record.setOrigin(origin.getSelectedItem().toString().trim());
                     record.setDestination(destination.getSelectedItem().toString().trim());
                     record.setTicket(Integer.parseInt(ticket_no.getText().toString()));
