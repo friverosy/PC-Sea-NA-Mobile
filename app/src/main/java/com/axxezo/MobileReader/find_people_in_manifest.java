@@ -155,16 +155,17 @@ public class find_people_in_manifest extends AppCompatActivity {
                 }
 
             } else if (barcodeType == 17) { // PDF417
+
                 barcodeStr = barcodeStr.substring(0, 9);
                 barcodeStr = barcodeStr.replace(" ", "");
                 if (barcodeStr.endsWith("K")) {
-                    barcodeStr=barcodeStr.replace("K","0");
+                    barcodeStr = barcodeStr.replace("K", "0");
                 }
 
                 // Define length of character.
-                if (Integer.parseInt(barcodeStr) > 400000000 && flag == 0) {
+                if (Integer.parseInt(barcodeStr) < 10000000) {
                     barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 2);
-                } else if (flag == 0) {
+                } else {
                     barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 1);
                 }
 
@@ -178,9 +179,6 @@ public class find_people_in_manifest extends AppCompatActivity {
                     ex.printStackTrace();
                     find_people.setText("");
                 }
-                barcodeStr = barcodeStr.replace("k", "");
-                barcodeStr = barcodeStr.replace("K", "");
-                find_people.setText(barcodeStr);
                 findInManifest(barcodeStr);
             }
 
