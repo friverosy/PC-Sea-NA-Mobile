@@ -62,6 +62,7 @@ public class Configuration extends AppCompatActivity {
     private String AxxezoAPI;
     private int manifest_load_ports;
     private String status;
+    private boolean onclick = false;
     Thread thread;
 
     @Override
@@ -83,9 +84,9 @@ public class Configuration extends AppCompatActivity {
         manifest_load_ports = -1;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         status = "";
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        //AxxezoAPI = "http://192.168.1.117:3000/api";
         AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        //AxxezoAPI = "http://192.168.1.126:3000/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -108,23 +109,22 @@ public class Configuration extends AppCompatActivity {
             e.printStackTrace();
         }
         loadComboboxRoutes();
-        final resetEndPoint reset= new resetEndPoint();
+        final resetEndPoint reset = new resetEndPoint();
         //button
-        loadButton.setIndeterminateProgressMode(false);
+        loadButton.setIndeterminateProgressMode(true);
         loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //simulateSuccessProgress(loadButton);
-
+                onclick = true;
                 if ((combobox_transports != null && combobox_transports.getSelectedItem() != null && !combobox_transports.getSelectedItem().equals("")) && (combobox_hours != null &&
                         combobox_hours.getSelectedItem() != null && !combobox_hours.getSelectedItem().equals("")) &&
                         (combobox != null && combobox.getSelectedItem() != null) && !combobox.getSelectedItem().equals("")) {
-                    loadButton.setProgress(10);
                     mVibrator.vibrate(100);
                     loadManifest();
-                    loadButton.setProgress(100);
+
                     loadButton.setClickable(false);
-                 //   reset.execute();
+                    reset.execute();
                     if (status.equals("200"))
                         Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT);
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -151,7 +151,6 @@ public class Configuration extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 loadButton.setClickable(true);
-                loadButton.setProgress(0);
                 if (combobox.getSelectedItemPosition() != 0) {
                     String nameElement = combobox.getSelectedItem().toString();
                     int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ROUTES where name=" + "'" + nameElement + "'"));
@@ -213,7 +212,7 @@ public class Configuration extends AppCompatActivity {
         combobox_transports.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                loadButton.setProgress(0);
+                //loadButton.setProgress(0);
                 if (combobox_transports.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_transports.getSelectedItem().toString();
                     int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ships where name=" + "'" + nameElement + "'"));
@@ -251,7 +250,7 @@ public class Configuration extends AppCompatActivity {
         combobox_hours.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                loadButton.setProgress(0);
+                //  loadButton.setProgress(0);
                 if (combobox_hours.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_hours.getSelectedItem().toString();
                     db.insert("delete from hours");
@@ -420,7 +419,6 @@ public class Configuration extends AppCompatActivity {
             getInformation = "";
             flag = 4;
         }
-
         @Override
         protected String doInBackground(String... strings) {
             try {
@@ -453,6 +451,8 @@ public class Configuration extends AppCompatActivity {
         }
 
         protected void onPostExecute(String result) {
+            if (onclick)
+                loadButton.setProgress(100);
         }
     }
 
@@ -678,7 +678,7 @@ public class Configuration extends AppCompatActivity {
     }
 
     public String GETReset() {
-        String url = AxxezoAPI+"/states/removeAll";
+        String url = AxxezoAPI + "/states/removeAll";
         String result = "";
         InputStream inputStream;
         HttpClient httpclient = new DefaultHttpClient();

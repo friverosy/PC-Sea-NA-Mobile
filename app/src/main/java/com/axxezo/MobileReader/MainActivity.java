@@ -188,7 +188,7 @@ public class MainActivity extends AppCompatActivity
         selectedSpinnerLanded = "";
 
         AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        //AxxezoAPI = "http://192.168.1.117:3000/api";
+        //AxxezoAPI = "http://192.168.1.126:3000/api";
         ImaginexAPI = "http://ticket.bsale.cl/control_api";
         manifestEndPointGET = "";
 
@@ -392,17 +392,27 @@ public class MainActivity extends AppCompatActivity
                 }
 
             } else if (barcodeType == 17) { // PDF417
-                barcodeStr = barcodeStr.substring(0, 9);
-                barcodeStr = barcodeStr.replace(" ", "");
-                if (barcodeStr.endsWith("K")) {
-                    barcodeStr = barcodeStr.replace("K", "0");
-                }
-
-                // Define length of character.
-                if (Integer.parseInt(barcodeStr) < 10000000) {
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 2);
-                } else {
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 1);
+                // 1.- validate if the rut is > 10 millions
+                String rutValidator = barcodeStr.substring(0, 8);
+                rutValidator = rutValidator.replace(" ", "");
+                rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                char dv = barcodeStr.substring(8, 9).charAt(0);
+                boolean isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
+                if (isvalid)
+                    barcodeStr = rutValidator;
+                else { //try validate rut size below 10.000.000
+                    rutValidator = barcodeStr.substring(0, 7);
+                    rutValidator = rutValidator.replace(" ", "");
+                    rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                    dv = barcodeStr.substring(7, 8).charAt(0);
+                    isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
+                    if (isvalid)
+                        barcodeStr = rutValidator;
+                    else {
+                        log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
+                        barcodeStr = "";
+                        TextViewStatus.setText("RUT INVALIDO");
+                    }
                 }
 
                 // Get name from DNI.
@@ -415,8 +425,6 @@ public class MainActivity extends AppCompatActivity
                     ex.printStackTrace();
                     TextViewFullname.setText("");
                 }
-                barcodeStr = barcodeStr.replace("k", "");
-                barcodeStr = barcodeStr.replace("K", "");
                 documentValidator(barcodeStr);
             }
             // Log.i("Cooked Barcode", barcodeStr);
@@ -429,6 +437,15 @@ public class MainActivity extends AppCompatActivity
         DateFormat date = new SimpleDateFormat(format);
         String localTime = date.format(currentLocalTime);
         return localTime;
+    }
+
+    public boolean ValidarRut(int rut, char dv) {
+        dv = dv == 'k' ? dv = 'K' : dv;
+        int m = 0, s = 1;
+        for (; rut != 0; rut /= 10) {
+            s = (s + rut % 10 * (9 - m++ % 6)) % 11;
+        }
+        return dv == (char) (s != 0 ? s + 47 : 75);
     }
 
     private void initScan() {
@@ -617,7 +634,7 @@ public class MainActivity extends AppCompatActivity
         String person = null;
         Record record = new Record(); // Object to be sended to API Axxezo.
         DatabaseHelper db = new DatabaseHelper(this);
-        rut = rut.trim();
+        rut = rut.trim().toUpperCase();
 
         if (date.equals(getCurrentDate()))
             if (hour.equals(db.selectFirst("select hours.name from hours inner join config on hours.name=config.hour")))
@@ -766,6 +783,7 @@ public class MainActivity extends AppCompatActivity
 
     public void documentValidator(String rut) {
         String person;
+        rut = rut.toUpperCase();
         DatabaseHelper db = new DatabaseHelper(this);
         //schema validate person string=m.id_people,p.name where m is manifest and p is people
         person = db.validatePerson(rut);
@@ -817,6 +835,9 @@ public class MainActivity extends AppCompatActivity
         if (array[1] != null) record.setPerson_name(array[1]);
         else record.setPerson_name("");
 
+        /*if (array[6]!=null&&!array[6].equals("null")) record.setTicket(Integer.parseInt(array[6]));
+        else record.setTicket(0);*/
+
         String validator = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
         if (valid) {
             if (is_input)
@@ -865,7 +886,9 @@ public class MainActivity extends AppCompatActivity
         db.add_record(record);
         db.close();
 
+
         /***************** Client socket ****************************************/
+        /*
         JSONObject json_to_send = new JSONObject();
 
         try {
@@ -883,8 +906,9 @@ public class MainActivity extends AppCompatActivity
                 f.run();
             }
         });
-        t.start();
+        t.start();*/
         /************************************************************************/
+
 
         //  new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
@@ -1278,8 +1302,9 @@ public class MainActivity extends AppCompatActivity
     public void GETandUpdateStateInManifest() {
         Log.e("updating state", "MANIFEST STATE");
         //String url="http://192.168.1.117:3000/api/states/getState?doc=15792726&route=2&port=PUERTO%20MONTT&ship=JACAF&date=2017-01-19&hour=23:00";
-        String url = AxxezoAPI+"/states/getState?";
+        String url = AxxezoAPI + "/states/getState?";
         DatabaseHelper db = new DatabaseHelper(this);
+        log_app log = new log_app();
 
         // get list manifest id_people and port
 
@@ -1317,8 +1342,10 @@ public class MainActivity extends AppCompatActivity
                                 try {
                                     result = convertInputStreamToString(inputStream);
                                     JSONObject objectJson = new JSONObject(result);
-                                    if (!objectJson.getString("doc").isEmpty()&&objectJson.getInt("state")!=-1)
-                                        db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim() + "'");
+                                    if (!objectJson.getString("doc").isEmpty() && objectJson.getInt("state") != -1)
+                                        db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim().toUpperCase() + "'");
+
+
                                     //is_inside_from_manifest = Integer.parseInt(db.selectFirst("select is_inside from manifest where id_people='" + objectJson.getString("doc").trim() + "'"));
                                     /* seven combinations
                                     * 0 --- 0
@@ -1343,7 +1370,7 @@ public class MainActivity extends AppCompatActivity
                             i++;
                             inputStream.close();
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            log.writeLog(getApplicationContext(),"Main line:1373","ERROR",e.getMessage());
                             Log.e("status", "OFFLINE");
                             i = select_dni_from_manifest.size();
                         }
