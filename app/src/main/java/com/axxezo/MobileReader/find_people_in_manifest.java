@@ -46,6 +46,7 @@ public class find_people_in_manifest extends AppCompatActivity {
     MediaPlayer mp3Permitted;
     MediaPlayer mp3Error;
     private DatabaseHelper db;
+    log_app log = new log_app();
 
 
     @Override
@@ -155,18 +156,26 @@ public class find_people_in_manifest extends AppCompatActivity {
                 }
 
             } else if (barcodeType == 17) { // PDF417
-
-                barcodeStr = barcodeStr.substring(0, 9);
-                barcodeStr = barcodeStr.replace(" ", "");
-                if (barcodeStr.endsWith("K")) {
-                    barcodeStr = barcodeStr.replace("K", "0");
-                }
-
-                // Define length of character.
-                if (Integer.parseInt(barcodeStr) < 10000000) {
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 2);
-                } else {
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 1);
+                // 1.- validate if the rut is > 10 millions
+                String rutValidator = barcodeStr.substring(0, 8);
+                rutValidator = rutValidator.replace(" ", "");
+                rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                char dv = barcodeStr.substring(8, 9).charAt(0);
+                boolean isValid = rutValidator(Integer.parseInt(rutValidator), dv);
+                if (isValid)
+                    barcodeStr = rutValidator;
+                else { //try validate rut size below 10.000.000
+                    rutValidator = barcodeStr.substring(0, 7);
+                    rutValidator = rutValidator.replace(" ", "");
+                    rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                    dv = barcodeStr.substring(7, 8).charAt(0);
+                    isValid = rutValidator(Integer.parseInt(rutValidator), dv);
+                    if (isValid)
+                        barcodeStr = rutValidator;
+                    else {
+                        log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
+                        barcodeStr = "";
+                    }
                 }
 
                 // Get name from DNI.
@@ -185,6 +194,15 @@ public class find_people_in_manifest extends AppCompatActivity {
             Log.i("Cooked Barcode", barcodeStr);
         }
     };
+
+    public boolean rutValidator(int rut, char dv) {
+        dv = dv == 'k' ? dv = 'K' : dv;
+        int m = 0, s = 1;
+        for (; rut != 0; rut /= 10) {
+            s = (s + rut % 10 * (9 - m++ % 6)) % 11;
+        }
+        return dv == (char) (s != 0 ? s + 47 : 75);
+    }
 
     public void reset(String content) {
         try {
