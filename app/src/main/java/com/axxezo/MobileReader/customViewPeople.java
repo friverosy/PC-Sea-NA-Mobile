@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -23,7 +25,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
     public customViewPeople(ArrayList<Cards> mDataSet) {
         this.mDataSet = mDataSet;
-        this.filteredmDataSet=mDataSet;
+        this.filteredmDataSet = mDataSet;
     }
 
 
@@ -67,13 +69,13 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
     @Override
     public Filter getFilter() {
-        if(cardsfilter == null)
+        if (cardsfilter == null)
             cardsfilter = new cardsFilter();
         return cardsfilter;
     }
 
     public Cards getItem(int position) {
-    return mDataSet.get(position);
+        return mDataSet.get(position);
     }
 
     public static class UserViewHolder extends RecyclerView.ViewHolder {
@@ -89,7 +91,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             people_Name = (TextView) itemView.findViewById(R.id.people_name);
             people_destination = (TextView) itemView.findViewById(R.id.people_destination);
             icon_entry = (TextView) itemView.findViewById(R.id.icon_entry);
-            spinner_destination=(Spinner) itemView.findViewById(R.id.spinner_destination);
+            spinner_destination = (Spinner) itemView.findViewById(R.id.spinner_destination);
 
 
         }
@@ -106,6 +108,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
                 "mDataSet=" + mDataSet +
                 '}';
     }
+
     private class cardsFilter extends Filter {
         private customViewPeople adapter;
 
@@ -116,13 +119,35 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             if (constraint.length() == 0) {
                 filterList.addAll(filteredmDataSet);
             } else {
-                final String filterPattern = constraint.toString().trim();
-
-                for (final Cards cards : filteredmDataSet) {
-                    if (cards.getOrigin().contains(filterPattern)) {
-                        filterList.add(cards);
+                final String[] parts = constraint.toString().split("\\,");
+                String filterPatternOrigin = "";
+                String filterPatternDestination = "";
+                if (parts[0].equals("< TODOS >") || parts[1].equals("< TODOS >")) {
+                    filterPatternOrigin = parts[0].trim();
+                    filterPatternDestination = parts[1].trim();
+                    if (parts[0].equals("< TODOS >") && parts[1].equals("< TODOS >"))
+                        filterList.addAll(filteredmDataSet);
+                    else
+                        for (final Cards cards : filteredmDataSet) {
+                            if (parts[0].equals("< TODOS >")) {
+                                if (cards.getDestination().contains(filterPatternDestination))
+                                    filterList.add(cards);
+                            } else if (parts[1].equals("< TODOS >"))
+                                if (cards.getOrigin().contains(filterPatternOrigin))
+                                    filterList.add(cards);
+                        }
+                }
+                if (!parts[0].isEmpty() || !parts[1].isEmpty()) {
+                    filterPatternOrigin = parts[0].trim();
+                    filterPatternDestination = parts[1].trim();
+                    Log.e("error", "origin:" + parts[0] + " destination" + parts[1]);
+                    for (final Cards cards : filteredmDataSet) {
+                        if (cards.getOrigin().contains(filterPatternOrigin) && cards.getDestination().contains(filterPatternDestination)) {
+                            filterList.add(cards);
+                        }
                     }
                 }
+                //Log.e("LIST","list size: "+filterList.size());
             }
             results.values = filterList;
             return results;
@@ -130,7 +155,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
         @Override
         protected void publishResults(CharSequence constraint, FilterResults results) {
-            mDataSet=((ArrayList<Cards>) results.values);
+            mDataSet = ((ArrayList<Cards>) results.values);
             notifyDataSetChanged();
         }
     }

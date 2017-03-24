@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/content_last_records_list"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.axxezo.MobileReader.lastRecordsList"
     tools:showIn="@layout/activity_last_records_list">
@@ -19,26 +19,41 @@
     <TextView
         android:layout_width="100dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="23dp"
         android:ems="10"
         android:text="Origen"
         android:textAlignment="center"
-        android:textSize="24sp"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="58dp"
+        android:ems="10"
+        android:text="Destino"
+        android:textAlignment="center"
+        android:textSize="20sp"
         android:textStyle="bold" />
 
+    <Spinner
+        android:id="@+id/spinner_origin"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="140dp"
+        android:layout_marginTop="20dp" />
     <Spinner
         android:id="@+id/spinner_destination"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="140dp"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="55dp" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab_lastRecords"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="238dp"
-        android:layout_marginTop="380dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
         app:srcCompat="@android:drawable/ic_dialog_info" />
 
     <ListView

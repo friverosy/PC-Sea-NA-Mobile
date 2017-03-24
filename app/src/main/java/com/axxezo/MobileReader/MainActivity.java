@@ -525,7 +525,7 @@ public class MainActivity extends AppCompatActivity
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                           // new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         } catch (Exception e) {
                             // error, do something
                         }
@@ -534,6 +534,11 @@ public class MainActivity extends AppCompatActivity
             }
         };
         timer.schedule(task, 0, 240000);  // 3min =180000 //4 min = 240000;
+    }
+
+    private void dummyChangeStates(){
+
+
     }
 
     private int updateManifest() {

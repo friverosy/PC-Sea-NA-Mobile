@@ -84,8 +84,8 @@ public class Configuration extends AppCompatActivity {
         manifest_load_ports = -1;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         status = "";
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        //AxxezoAPI = "http://192.168.1.126:3000/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        AxxezoAPI = "http://192.168.1.117:3000/api";
         //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
 
 
