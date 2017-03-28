@@ -22,4 +22,9 @@
     <string name="manifiest">Manifiesto</string>
     <string name="find">Buscar</string>
     <string name="manual_registration">Registro Manual</string>
+    <string-array name="states_array">
+        <item>Sin Registro</item>
+        <item>Embarcado</item>
+        <item>Desembarcado</item>
+    </string-array>
 </resources>

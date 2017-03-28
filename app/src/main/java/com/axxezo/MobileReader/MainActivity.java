@@ -127,7 +127,7 @@ import static com.axxezo.MobileReader.R.id.status;
 
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener{
 
 
     private String URL = "http://ticket.bsale.cl/control_api";

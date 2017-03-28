@@ -7,4 +7,5 @@
     <color name="colorFAB">#4ba7ff</color>
     <color name="colorGreen">#5fbf5f</color>
     <color name="colorGreenDark">#50A350</color>
+    <color name="colorCardTextView">#E0F2F7</color>
 </resources>

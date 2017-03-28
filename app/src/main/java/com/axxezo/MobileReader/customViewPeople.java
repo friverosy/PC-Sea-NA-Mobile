@@ -1,13 +1,19 @@
 package com.axxezo.MobileReader;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Filter;
 import android.widget.Filterable;
@@ -18,14 +24,20 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import static android.R.attr.minHeight;
+
 public class customViewPeople extends RecyclerView.Adapter<customViewPeople.UserViewHolder> implements Filterable {
     private ArrayList<Cards> mDataSet;
     private ArrayList<Cards> filteredmDataSet;
+    private ArrayList<Integer> positions;
     private cardsFilter cardsfilter;
 
     public customViewPeople(ArrayList<Cards> mDataSet) {
         this.mDataSet = mDataSet;
         this.filteredmDataSet = mDataSet;
+        for(int i=0;i<this.mDataSet.size();i++){
+            positions.add(mDataSet.get(i).getIsInside());
+        }
     }
 
 
@@ -37,28 +49,57 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     }
 
     @Override
-    public void onBindViewHolder(UserViewHolder holder, int position) {
-        holder.people_Name.setText(mDataSet.get(position).getName());
+    public void onBindViewHolder(final UserViewHolder holder, int position) {
+        holder.people_Name.setText(mDataSet.get(position).getName().trim());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
-        holder.people_destination.setText(mDataSet.get(position).getDestination());
+//        holder.people_destination.setText(mDataSet.get(position).getDestination());
+        holder.textViewExpand.setText(mDataSet.get(position).getName() + "\n" + mDataSet.get(position).getDocument() + "\n" + mDataSet.get(position).getDestination() + "\n");
+        holder.textViewExpand.setBackgroundColor(Color.parseColor("#E6E6E6"));
 
+        //set random values to inside
+        int random= (int) ((Math.random() * 2) + 1);
+        mDataSet.get(position).setIsInside(random);
         switch (mDataSet.get(position).getIsInside()) {
             case 0:
                 holder.icon_entry.setText("");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_blank));
+                holder.spinner_state.setSelection(0);
                 break;
             case 1:
                 holder.icon_entry.setText("E");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_embarked));
+                holder.spinner_state.setSelection(1);
                 break;
             case 2:
                 holder.icon_entry.setText("D");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_landed));
+                holder.spinner_state.setSelection(2);
                 break;
-
-            //  holder.icon_entry.setText("");
-            // holder.icon_entry.setText("" + mDataSet.get(position).getUser_name().charAt(0));
         }
+        holder.spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+               /* if(positions.get(holder.getAdapterPosition()) ==mDataSet.get(position).getIsInside()) {
+                    AlertDialog alertDialog = new AlertDialog.Builder(holder.itemView.getContext()).create();
+                    alertDialog.setTitle("Alert");
+                    alertDialog.setMessage("Alert message to be shown");
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            });
+                    alertDialog.show();
+                    Log.e("posicion", position + "");
+                }*/
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
     }
 
     @Override
@@ -81,17 +122,22 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     public static class UserViewHolder extends RecyclerView.ViewHolder {
         CardView cardView;
         TextView people_DNI, people_Name, people_destination;
+        ExpandableTextView textViewExpand;
         TextView icon_entry;
         Spinner spinner_destination;
+        Spinner spinner_state;
 
-        UserViewHolder(View itemView) {
+        UserViewHolder(final View itemView) {
             super(itemView);
             cardView = (CardView) itemView.findViewById(R.id.user_layout);
             people_DNI = (TextView) itemView.findViewById(R.id.people_DNI);
             people_Name = (TextView) itemView.findViewById(R.id.people_name);
-            people_destination = (TextView) itemView.findViewById(R.id.people_destination);
+            //people_destination = (TextView) itemView.findViewById(R.id.people_destination);
             icon_entry = (TextView) itemView.findViewById(R.id.icon_entry);
             spinner_destination = (Spinner) itemView.findViewById(R.id.spinner_destination);
+            textViewExpand = (ExpandableTextView) itemView.findViewById(R.id.textView_expand);
+            spinner_state = (Spinner) itemView.findViewById(R.id.spinner_state);
+
 
 
         }

@@ -14,7 +14,8 @@
         android:id="@+id/peopleList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="80dp" />
+        android:background="@color/cpb_grey"
+        android:layout_marginTop="90dp" />
 
     <TextView
         android:layout_width="100dp"
