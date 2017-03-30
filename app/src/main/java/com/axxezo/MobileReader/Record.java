@@ -11,23 +11,12 @@ public class Record {
     String person_name;
     String origin;
     String destination;
-    String port_id;
-    String ship_id;
-    String sailing_hour;
+    String port_registry;
     String reason;
     int ticket;
-    int manifest_total;
-    int manifest_landed;
-    int manifest_embarked;
-    int manifest_pending;
     int input;
     int sync;
     int permitted;
-    int config_route_id;
-    String config_port_name;
-    String config_ship_name;
-    String config_hour;
-    String config_date;
 
 
     //Constructors
@@ -35,16 +24,14 @@ public class Record {
 
     }
 
-    public Record(Integer id, String person_document, String person_name, String origin,String destination, String port_id, String ship_id, String sailing_hour, Integer input, Integer sync, Integer permitted){
+    public Record(Integer id, String person_document, String person_name, String origin, String destination, String port_registry, Integer input, Integer sync, Integer permitted){
 
         this.id = id;
         this.person_document = person_document;
         this.person_name = person_name;
         this.origin=origin;
         this.destination=destination;
-        this.port_id = port_id;
-        this.ship_id = ship_id;
-        this.sailing_hour = sailing_hour;
+        this.port_registry = port_registry;
         this.input = input;
         this.sync = sync;
         this.permitted = permitted;
@@ -82,28 +69,12 @@ public class Record {
         this.person_name = person_name;
     }
 
-    public String getPort_id() {
-        return port_id;
+    public String getPort_registry() {
+        return port_registry;
     }
 
-    public void setPort_id(String port_id) {
-        this.port_id = port_id;
-    }
-
-    public String getShip_id() {
-        return ship_id;
-    }
-
-    public void setShip_id(String ship_id) {
-        this.ship_id = ship_id;
-    }
-
-    public String getSailing_hour() {
-        return sailing_hour;
-    }
-
-    public void setSailing_hour(String sailing_hour) {
-        this.sailing_hour = sailing_hour;
+    public void setPort_registry(String port_registry) {
+        this.port_registry = port_registry;
     }
 
     public int getInput() {
@@ -145,37 +116,6 @@ public class Record {
     public void setDestination(String destination) {
         this.destination = destination;
     }
-    public int getManifest_pending() {
-        return manifest_pending;
-    }
-
-    public void setManifest_pending(int manifest_pending) {
-        this.manifest_pending = manifest_pending;
-    }
-
-    public int getManifest_total() {
-        return manifest_total;
-    }
-
-    public void setManifest_total(int manifest_total) {
-        this.manifest_total = manifest_total;
-    }
-
-    public int getManifest_landed() {
-        return manifest_landed;
-    }
-
-    public void setManifest_landed(int manifest_landed) {
-        this.manifest_landed = manifest_landed;
-    }
-
-    public int getManifest_embarked() {
-        return manifest_embarked;
-    }
-
-    public void setManifest_embarked(int manifest_embarked) {
-        this.manifest_embarked = manifest_embarked;
-    }
 
     public int getTicket() {
         return ticket;
@@ -191,45 +131,5 @@ public class Record {
 
     public void setReason(String reason) {
         this.reason = reason;
-    }
-
-    public int getConfig_route_id() {
-        return config_route_id;
-    }
-
-    public void setConfig_route_id(int config_route_id) {
-        this.config_route_id = config_route_id;
-    }
-
-    public String getConfig_port_name() {
-        return config_port_name;
-    }
-
-    public void setConfig_port_name(String config_port_name) {
-        this.config_port_name = config_port_name;
-    }
-
-    public String getConfig_ship_name() {
-        return config_ship_name;
-    }
-
-    public void setConfig_ship_name(String config_ship_name) {
-        this.config_ship_name = config_ship_name;
-    }
-
-    public String getConfig_hour() {
-        return config_hour;
-    }
-
-    public void setConfig_hour(String config_hour) {
-        this.config_hour = config_hour;
-    }
-
-    public String getConfig_date() {
-        return config_date;
-    }
-
-    public void setConfig_date(String config_date) {
-        this.config_date = config_date;
     }
 }

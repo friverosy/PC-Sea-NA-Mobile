@@ -61,15 +61,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.device.ScanManager;
 import android.graphics.Color;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.SoundPool;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
-import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -93,14 +90,11 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
@@ -110,6 +104,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -122,12 +117,19 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import static com.axxezo.MobileReader.R.id.status;
 
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener{
+        implements NavigationView.OnNavigationItemSelectedListener {
 
 
     private String URL = "http://ticket.bsale.cl/control_api";
@@ -141,29 +143,19 @@ public class MainActivity extends AppCompatActivity
     private final static String SCAN_ACTION = "urovo.rcv.message";//扫描结束action
     private Vibrator mVibrator;
     private ScanManager mScanManager;
-    private SoundPool soundpool = null;
-    private int soundid;
     private String barcodeStr;
     private boolean isScaning = false;
     MediaPlayer mp3Dennied;
     MediaPlayer mp3Permitted;
     MediaPlayer mp3Error;
     private static String AxxezoAPI;
-    private static String ImaginexAPI;
-    private static String manifestEndPointGET;
     private boolean is_input = true;
     private Switch mySwitch;
-    private static MainActivity mInstance;
     private Spinner comboLanded;
     private String selectedSpinnerLanded;
     private log_app log;
-    private boolean clickFAB = false;
-
-    String SERVERIP = "192.168.1.120";
-
-    Server s = new Server(this);
-
-    private int manifestUpdate = 1;//in minutes
+    private RegisterTask Asynctask_sendRecord;
+    private int timer_sendRecordsAPI;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -172,7 +164,6 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mInstance = this;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         TextViewFullname = (TextView) findViewById(R.id.fullname);
         TextViewRut = (EditText) findViewById(R.id.rut);
@@ -186,24 +177,23 @@ public class MainActivity extends AppCompatActivity
         mySwitch = (Switch) findViewById(R.id.mySwitch);
         log = new log_app();
         selectedSpinnerLanded = "";
+        timer_sendRecordsAPI=420000;
 
         AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
         //AxxezoAPI = "http://192.168.1.126:3000/api";
-        ImaginexAPI = "http://ticket.bsale.cl/control_api";
-        manifestEndPointGET = "";
+
+        //enable WAL mode in DB
+        DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+        db.setWriteAheadLoggingEnabled(true);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+                DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
                 String text = "Ruta: " + db.selectFirst("select routes.name from routes inner join config on routes.id=config.route_id");
-               /* Snackbar.make(view, text, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();*/
-                //createSimpleDialog("").show();
                 if (!TextViewRut.getText().toString().trim().isEmpty())
                     documentValidator(TextViewRut.getText().toString().trim());
-                db.close();
             }
         });
 
@@ -229,16 +219,12 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
-        DatabaseHelper db = new DatabaseHelper(this);
         final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc", ""));
         comboLanded.setAdapter(adapter);
         comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                /*if(adapter.isEmpty()){
-                    adapter.add("<Seleccione Principal en menu lateral para recargar");
-                }*/
                 selectedSpinnerLanded = comboLanded.getSelectedItem().toString();
             }
 
@@ -247,11 +233,11 @@ public class MainActivity extends AppCompatActivity
 
             }
         });
-        UpdateDb();
+
+        //sendRecordstoAPI();
         //updateManifest();
-        asyncUpdateManifestinTime();
-        asyncUpdateManifestState();
-        db.close();
+        //asyncUpdateManifestinTime();
+        //asyncUpdateManifestState();
 
     }
 
@@ -344,90 +330,90 @@ public class MainActivity extends AppCompatActivity
         public void onReceive(Context context, Intent intent) {
 
             // TODO Auto-generated method stub
-            if (mp3Error.isPlaying()) mp3Error.stop();
-            if (mp3Dennied.isPlaying()) mp3Dennied.stop();
-            if (mp3Permitted.isPlaying()) mp3Permitted.stop();
+            try {
+                new LoadSound(4).execute();
+                isScaning = false;
+                mVibrator.vibrate(100);
+                reset();
 
-            isScaning = false;
-            //soundpool.play(soundid, 1, 1, 0, 0, 1);
+                byte[] barcode = intent.getByteArrayExtra("barocode");
+                int barocodelen = intent.getIntExtra("length", 0);
+                byte barcodeType = intent.getByteExtra("barcodeType", (byte) 0);
+                barcodeStr = new String(barcode, 0, barocodelen);
+                String rawCode = barcodeStr;
 
-            mVibrator.vibrate(100);
-            reset();
+                int flag = 0; // 0 for end without k, 1 with k
+                Person person = new Person();
 
-            byte[] barcode = intent.getByteArrayExtra("barocode");
-            int barocodelen = intent.getIntExtra("length", 0);
-            byte barcodeType = intent.getByteExtra("barcodeType", (byte) 0);
-            barcodeStr = new String(barcode, 0, barocodelen);
-            String rawCode = barcodeStr;
+                if (barcodeType == 28) { // QR code
+                    if (barcodeStr.contains("client_code")) {
+                        try { // Its a ticket
+                            JSONObject json = new JSONObject(barcodeStr);
+                            String doc = json.getString("client_code");
 
-            int flag = 0; // 0 for end without k, 1 with k
-            Person person = new Person();
-
-            if (barcodeType == 28) { // QR code
-                if (barcodeStr.contains("client_code")) {
-                    try { // Its a ticket
-                        JSONObject json = new JSONObject(barcodeStr);
-                        String doc = json.getString("client_code");
-
-                        if (doc.contains("-")) {
-                            doc = doc.substring(0, doc.indexOf("-"));
+                            if (doc.contains("-")) {
+                                doc = doc.substring(0, doc.indexOf("-"));
+                            }
+                            person.setDocument(doc);
+                            barcodeStr = doc;
+                            ticketValidator(doc, json.getString("route"), json.getString("port"), json.getString("date"), json.getString("hour"), json.getString("transport"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
-
-                        person.setDocument(doc);
-                        barcodeStr = doc;
-                        ticketValidator(doc, json.getString("route"), json.getString("port"), json.getString("date"), json.getString("hour"), json.getString("transport"));
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                    } else if (rawCode.equals("CONFIG-AXX-6rVLydzn651RsZZ3dqWk")) {//configuration QR
+                        Intent loadLog = new Intent(getApplicationContext(), log_show.class);
+                        startActivity(loadLog);
+                    } else { // Its a DNI Card.
+                        barcodeStr = barcodeStr.substring(
+                                barcodeStr.indexOf("RUN=") + 4,
+                                barcodeStr.indexOf("&type"));
+                        // Remove DV.
+                        barcodeStr = barcodeStr.substring(0, barcodeStr.indexOf("-"));
+                        documentValidator(barcodeStr);
                     }
-                } else if (rawCode.equals("qvs5yhK80arZE6PDVoNp")) {//configuration QR
-                    Intent loadLog = new Intent(getApplicationContext(), log_show.class);
-                    startActivity(loadLog);
-                } else { // Its a DNI Card.
-                    barcodeStr = barcodeStr.substring(
-                            barcodeStr.indexOf("RUN=") + 4,
-                            barcodeStr.indexOf("&type"));
-                    // Remove DV.
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.indexOf("-"));
-                    documentValidator(barcodeStr);
-                }
 
-            } else if (barcodeType == 17) { // PDF417
-                // 1.- validate if the rut is > 10 millions
-                String rutValidator = barcodeStr.substring(0, 8);
-                rutValidator = rutValidator.replace(" ", "");
-                rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                char dv = barcodeStr.substring(8, 9).charAt(0);
-                boolean isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
-                if (isvalid)
-                    barcodeStr = rutValidator;
-                else { //try validate rut size below 10.000.000
-                    rutValidator = barcodeStr.substring(0, 7);
+                } else if (barcodeType == 17) { // PDF417
+                    // 1.- validate if the rut is > 10 millions
+                    String rutValidator = barcodeStr.substring(0, 8);
                     rutValidator = rutValidator.replace(" ", "");
                     rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                    dv = barcodeStr.substring(7, 8).charAt(0);
-                    isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
+                    char dv = barcodeStr.substring(8, 9).charAt(0);
+                    boolean isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
                     if (isvalid)
                         barcodeStr = rutValidator;
-                    else {
-                        log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
-                        barcodeStr = "";
-                        TextViewStatus.setText("RUT INVALIDO");
+                    else { //try validate rut size below 10.000.000
+                        rutValidator = barcodeStr.substring(0, 7);
+                        rutValidator = rutValidator.replace(" ", "");
+                        rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                        dv = barcodeStr.substring(7, 8).charAt(0);
+                        isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
+                        if (isvalid)
+                            barcodeStr = rutValidator;
+                        else {
+                            log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
+                            barcodeStr = "";
+                            TextViewStatus.setText("RUT INVALIDO");
+                        }
                     }
-                }
 
-                // Get name from DNI.
-                String[] array = rawCode.split("\\s+"); // Split by whitespace.
-                try {
-                    TextViewFullname.setText(array[1].substring(0, array[1].indexOf("CHL")));
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    TextViewFullname.setText(array[2].substring(0, array[2].indexOf("CHL")));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    TextViewFullname.setText("");
+                    // Get name from DNI.
+                    String[] array = rawCode.split("\\s+"); // Split by whitespace.
+                    try {
+                        TextViewFullname.setText(array[1].substring(0, array[1].indexOf("CHL")));
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        TextViewFullname.setText(array[2].substring(0, array[2].indexOf("CHL")));
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        TextViewFullname.setText("");
+                    }
+                    documentValidator(barcodeStr);
                 }
-                documentValidator(barcodeStr);
+            } catch (NullPointerException e) {
+                log.writeLog(getApplicationContext(), "Main:line 408", "ERROR", e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.writeLog(getApplicationContext(), "Main:line 411", "ERROR", e.getMessage());
             }
-            // Log.i("Cooked Barcode", barcodeStr);
         }
     };
 
@@ -452,9 +438,7 @@ public class MainActivity extends AppCompatActivity
         // TODO Auto-generated method stub
         mScanManager = new ScanManager();
         mScanManager.openScanner();
-
         mScanManager.switchOutputMode(0);
-        soundpool = new SoundPool(1, AudioManager.STREAM_NOTIFICATION, 100); // MODE_RINGTONE
     }
 
     @Override
@@ -484,13 +468,6 @@ public class MainActivity extends AppCompatActivity
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
-        /*Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                s.run();
-            }
-        });
-        t.start();*/
     }
 
     private void asyncUpdateManifestinTime() {
@@ -525,7 +502,7 @@ public class MainActivity extends AppCompatActivity
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                           // new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            // new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         } catch (Exception e) {
                             // error, do something
                         }
@@ -536,18 +513,10 @@ public class MainActivity extends AppCompatActivity
         timer.schedule(task, 0, 240000);  // 3min =180000 //4 min = 240000;
     }
 
-    private void dummyChangeStates(){
-
-
-    }
-
     private int updateManifest() {
-        // wifiState(false);
-        DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         log_app log = new log_app();
         int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-        //Log.e("count before", count_before + "");
-        //Log.e("manifest", "estoy actualizando manifest!!");
         int total_temp = 0;
         try {
             ArrayList<String> select_from_manifest = db.select("select * from config", "|");
@@ -559,7 +528,6 @@ public class MainActivity extends AppCompatActivity
                     db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest", Integer.parseInt(manifest_config[2]));
                 }
             }
-
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
             //Log.e("count after", count_after + "");
             if (count_before != count_after) {
@@ -575,14 +543,7 @@ public class MainActivity extends AppCompatActivity
             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
         } catch (ExecutionException e) {
             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
-        } finally {
-            db.close();
-            //handler.postDelayed(this, 100000); // 5 Min = 300000 7 min=450000
         }
-
-
-        db.close();
-        //wifiState(true);
         return total_temp;
     }
 
@@ -600,10 +561,10 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void UpdateDb() {
+    public void sendRecordstoAPI() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
-        final DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+        final DatabaseHelper db = DatabaseHelper.getInstance(this);
         final log_app log = new log_app();
 
         TimerTask task = new TimerTask() {
@@ -612,10 +573,11 @@ public class MainActivity extends AppCompatActivity
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            //  Log.e("update db", "update db");
-                            if (Integer.parseInt(db.selectFirst("select count(id) from records where sync=0").trim()) >= 1)
+                            if (Asynctask_sendRecord == null ) {
                                 OfflineRecordsSynchronizer();
-                            db.close();
+                            }
+                            if (db.record_desync_count() > 0&& Asynctask_sendRecord.getStatus()!= AsyncTask.Status.RUNNING)
+                                OfflineRecordsSynchronizer();
                         } catch (android.database.SQLException e) {
                             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateDB" + e.getMessage());
                         }
@@ -623,7 +585,7 @@ public class MainActivity extends AppCompatActivity
                 });
             }
         };
-        timer.schedule(task, 0, 420000);  // 360000= 6 minutes, 7 minutes=420000
+        timer.schedule(task, 0,timer_sendRecordsAPI);  // 360000= 6 minutes, 7 minutes=420000
     }
 
     public String getCurrentDate() {
@@ -638,7 +600,7 @@ public class MainActivity extends AppCompatActivity
         boolean valid = false;
         String person = null;
         Record record = new Record(); // Object to be sended to API Axxezo.
-        DatabaseHelper db = new DatabaseHelper(this);
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         rut = rut.trim().toUpperCase();
 
         if (date.equals(getCurrentDate()))
@@ -676,7 +638,7 @@ public class MainActivity extends AppCompatActivity
         else
             array = db.validatePerson(rut).split(";");
         if (valid) {
-            mp3Permitted.start();
+            new LoadSound(2).execute();
             imageview.setImageResource(R.drawable.img_true);
             //array = person.split(";");
             TextViewFullname.setText(array[1]);
@@ -684,7 +646,7 @@ public class MainActivity extends AppCompatActivity
             TextViewStatus.setText("");
             record.setPermitted(1);
         } else {
-            mp3Dennied.start();
+            new LoadSound(3).execute();
             imageview.setImageResource(R.drawable.img_false);
             TextViewRut.setText(rut);
             if (!array[0].equals(""))
@@ -711,10 +673,8 @@ public class MainActivity extends AppCompatActivity
         record.setDatetime(getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss.S'Z'"));
         record.setSync(0);
         if (!array[0].equals("")) {
-            record.setPort_id(array[4]);
-            record.setShip_id(array[5]);
+            record.setPort_registry(array[4]);
         }
-        record.setSailing_hour(hour);
         //add information that isn`t content in qr code
         ArrayList<String> select_from_manifest = db.select("select origin,destination from manifest where id_people='" + rut + "'", "|");
         String[] manifest_config = null;
@@ -726,21 +686,6 @@ public class MainActivity extends AppCompatActivity
         if (!valid)
             if (!TextViewStatus.getText().toString().isEmpty())
                 record.setReason(TextViewStatus.getText().toString());
-        //section to send to records config routes person
-        if (valid) {
-            ArrayList<String> select_from_config = db.select("select (select route_id from config where port_id='" + port + "'),(select name from ports where id_api='" + port + "'),(select name from ships where id=(select ship_id from config where port_id='" + port + "'))," +
-                    "(select date from config where port_id='" + port + "'),(select hour from config where port_id='" + port + "')", "|");
-            // select_from_config = db.select("select route_id,port_id,ship_id,hour,date from config where port_id=(select id_api from ports where name=(select origin from manifest where id_people='" + rut.trim() + "'" + "))", "|");
-            String[] manifest_config_get = null;
-            if (select_from_config.size() > 0) {
-                manifest_config_get = select_from_config.get(0).split("\\|");
-                record.setConfig_route_id(Integer.parseInt(manifest_config_get[0] == null ? "-1" : manifest_config_get[0]));//return -1 if qr route not exist
-                record.setConfig_port_name(manifest_config_get[1]);
-                record.setConfig_ship_name(manifest_config_get[2]);
-                record.setConfig_hour(manifest_config_get[3]);
-                record.setConfig_date(manifest_config_get[4]);
-            }
-        }
         db.add_record(record);
         if (valid)
             if (is_input)
@@ -754,42 +699,12 @@ public class MainActivity extends AppCompatActivity
             } else
                 db.updatePeopleManifest(rut, 0);
         }
-
-
-        db.close();
-
-        /********************** CLient socket ******************************/
-        /*
-        JSONObject json_to_send = new JSONObject();
-
-        try {
-            json_to_send.accumulate("document", record.getPerson_document());
-            json_to_send.accumulate("status", is_input ? 1 : 2);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        final String temp_string_1 = json_to_send.toString();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-                Client f = new Client(temp_string_1, SERVERIP, 8080);
-                f.run();
-            }
-        });
-        t.start();
-        */
-        /*****************************************************************************/
-
-        // new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-
     }
 
     public void documentValidator(String rut) {
         String person;
         rut = rut.toUpperCase();
-        DatabaseHelper db = new DatabaseHelper(this);
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         //schema validate person string=m.id_people,p.name where m is manifest and p is people
         person = db.validatePerson(rut);
         String[] array = new String[20];
@@ -811,10 +726,8 @@ public class MainActivity extends AppCompatActivity
                     valid = true;
             }
         }
-        //Log.d("dv:input despues if", is_input + "");
-        //Log.d("dv:valid?=", valid + "");
         if (valid) {
-            mp3Permitted.start();
+            new LoadSound(2).execute();
             imageview.setImageResource(R.drawable.img_true);
             array = person.split(";");
             TextViewFullname.setText(array[1]);
@@ -822,7 +735,7 @@ public class MainActivity extends AppCompatActivity
             TextViewStatus.setText("");
             record.setPermitted(1);
         } else {
-            mp3Dennied.start();
+            new LoadSound(3).execute();
             TextViewRut.setText(rut);
             //is_input = false;
             if (db.selectFirst("select id from manifest where id_people='" + rut + "'").isEmpty()) {
@@ -859,63 +772,13 @@ public class MainActivity extends AppCompatActivity
         if (!valid)
             if (!TextViewStatus.getText().toString().isEmpty())
                 record.setReason(TextViewStatus.getText().toString());
-        //else
-        //  record.setReason("");
 
-        //section to send to records config routes person
-        if (valid) {
-            ArrayList<String> select_from_config = db.select("select (select route_id from config where port_id=(select port from manifest where id_people='" + rut + "')),(select name from ports where id_api=(select port from manifest where id_people='" + rut + "')),(select name from ships where id=(select ship_id from config where port_id=(select port from manifest where id_people='" + rut + "')))," +
-                    "(select date from config where port_id=(select port from manifest where id_people='" + rut + "')),(select hour from config where port_id=(select port from manifest where id_people='" + rut + "'))", "|");
-            // select_from_config = db.select("select route_id,port_id,ship_id,hour,date from config where port_id=(select id_api from ports where name=(select origin from manifest where id_people='" + rut.trim() + "'" + "))", "|");
-            String[] manifest_config_get = null;
-            if (select_from_config.size() > 0) {
-                manifest_config_get = select_from_config.get(0).split("\\|");
-                record.setConfig_route_id(Integer.parseInt(manifest_config_get[0] == null ? "-1" : manifest_config_get[0]));//return -1 if qr route not exist
-                record.setConfig_port_name(manifest_config_get[1]);
-                record.setConfig_ship_name(manifest_config_get[2]);
-                record.setConfig_hour(manifest_config_get[3]);
-                record.setConfig_date(manifest_config_get[4]);
-            }
-        }
         record.setDatetime(getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss.S'Z'"));
         record.setSync(0);
         record.setOrigin(array[2]);
         record.setDestination(array[3]);
-        record.setPort_id(selectedSpinnerLanded);
-        record.setShip_id(array[5]);
-        record.setManifest_total(getStatusFromManifest(1));
-        record.setManifest_embarked(getStatusFromManifest(3));
-        record.setManifest_landed(getStatusFromManifest(4));
-        record.setManifest_pending(getStatusFromManifest(2));
-
+        record.setPort_registry(selectedSpinnerLanded);
         db.add_record(record);
-        db.close();
-
-
-        /***************** Client socket ****************************************/
-        /*
-        JSONObject json_to_send = new JSONObject();
-
-        try {
-            json_to_send.put("document", record.getPerson_document());
-            json_to_send.put("input", record.getInput());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        final String temp_string_2 = json_to_send.toString();
-
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Client f = new Client(temp_string_2, SERVERIP, 8080);
-                f.run();
-            }
-        });
-        t.start();*/
-        /************************************************************************/
-
-
-        //  new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void makeToast(String msg) {
@@ -923,55 +786,19 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void OfflineRecordsSynchronizer() {
-        DatabaseHelper db = new DatabaseHelper(this);
-        List records = db.get_desynchronized_records();
-        db.close();
-        log_app log = new log_app();
-
-        String[] arr;
-        for (int i = 0; i <= records.size() - 1; i++) {
-            Record record = new Record();
-            arr = records.get(i).toString().split(";");
-            try {
-                record.setId(Integer.parseInt(arr[0]));
-                record.setDatetime(arr[1]);
-                record.setPerson_document(arr[2]);
-                record.setPerson_name(arr[3]);
-                record.setOrigin(arr[4]);
-                record.setDestination(arr[5]);
-                record.setPort_id(arr[6]);
-                record.setShip_id(arr[7]);
-                record.setSailing_hour(arr[8]);
-                record.setInput(Integer.parseInt(arr[9]));
-                record.setSync(Integer.parseInt(arr[10]));
-                record.setPermitted(Integer.parseInt(arr[11]));
-                record.setManifest_total(getStatusFromManifest(1));
-                record.setManifest_embarked(getStatusFromManifest(3));
-                record.setManifest_landed(getStatusFromManifest(4));
-                record.setManifest_pending(getStatusFromManifest(2));
-                record.setTicket(Integer.parseInt(arr[16]));
-                record.setReason(arr[17]);
-                record.setConfig_route_id(Integer.parseInt(arr[18]));
-                record.setConfig_port_name(arr[19]);
-                record.setConfig_ship_name(arr[20]);
-                record.setConfig_date(arr[21]);
-                record.setConfig_hour(arr[22]);
-            } catch (android.database.SQLException e) {
-                log.writeLog(this, "MainActivity", "ERROR", e.getMessage());
-            }
-
-            new RegisterTask(record, AxxezoAPI + "/records").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        }
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        List<Record> records = db.get_desynchronized_records();
+        Asynctask_sendRecord = new RegisterTask(records, AxxezoAPI + "/records");
+        Asynctask_sendRecord.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    public String POST(Record record, String url) {
-        InputStream inputStream;
+    public String POST(Record record, String url, OkHttpClient client) {
         String result = "";
         String json = "";
-        String jsonCount = "";
         JSONObject jsonObject = new JSONObject();
-        Log.e("actualizo", "POST ASYNCTASK RUNNING" + getCurrentDateTime("hh:MM:ss"));
-        JSONObject jsonObjectCount = new JSONObject();
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        final MediaType JSON
+                = MediaType.parse("application/json; charset=utf-8");
         try {
             if (record.getDatetime() != null)
                 jsonObject.accumulate("datetime", record.getDatetime());
@@ -983,103 +810,70 @@ public class MainActivity extends AppCompatActivity
                 jsonObject.accumulate("origen", record.getOrigin());
             if (record.getDestination() != null)
                 jsonObject.accumulate("destination", record.getDestination());
-            if (record.getPort_id() != null)
-                jsonObject.accumulate("port", record.getPort_id());//puerto de registro
-            if (record.getShip_id() != null)
-                jsonObject.accumulate("ship", record.getShip_id());
-            if (record.getSailing_hour() != null)
-                jsonObject.accumulate("sailing_hour", record.getSailing_hour());
+            if (record.getPort_registry() != null)
+                jsonObject.accumulate("port", record.getPort_registry());//puerto de registro
             jsonObject.accumulate("state", record.getInput());
             jsonObject.accumulate("permitted", record.getPermitted());
             if (record.getTicket() != 0)
                 jsonObject.accumulate("boletus", record.getTicket());
             if (record.getReason() != null)
                 jsonObject.accumulate("reason", record.getReason());
-            //preguntar si es valido acumular el resto
-            if (record.getConfig_route_id() != 0)
-                jsonObject.accumulate("config_route", record.getConfig_route_id());
-            if (record.getConfig_port_name() != null)
-                jsonObject.accumulate("config_port", record.getConfig_port_name());
-            if (record.getConfig_ship_name() != null)
-                jsonObject.accumulate("config_ship", record.getConfig_ship_name());
-            if (record.getConfig_date() != null)
-                jsonObject.accumulate("config_date", record.getConfig_date());
-            if (record.getConfig_hour() != null)
-                jsonObject.accumulate("config_hour", record.getConfig_hour());
-            jsonObjectCount.accumulate("total", record.getManifest_total());
-            jsonObjectCount.accumulate("embarkeds", record.getManifest_embarked());
-            jsonObjectCount.accumulate("landed", record.getManifest_landed());
 
-            //jsonObjectCount.accumulate("manifest_pending", record.getManifest_pending());
 
-            ArrayList<JSONObject> temp = new ArrayList<>();
-            temp.add(jsonObject);
-            temp.add(jsonObjectCount);
+            if (jsonObject.length() <= 22) { // 9 element on json
+                json = jsonObject.toString();
 
-            // 4. convert JSONObject to JSON to String
-            for (int i = 0; i < temp.size(); i++) {
-                // 1. create HttpClient
-                HttpClient httpclient = new DefaultHttpClient();
-                // 2. make POST request to the given URL
-                if (i == 1) {
-                    url = AxxezoAPI + "/manifests";
-                }
-                HttpPost httpPost = new HttpPost(url);
-                //record.getId() != 0
-                if (temp.get(i).length() <= 22) { // 9 element on json
-                    json = temp.get(i).toString();
+                RequestBody body = RequestBody.create(JSON, json);
 
-                    // 5. set json to StringEntity
-                    StringEntity se = new StringEntity(json);
+                // create object okhttp
+                Request request = new Request.Builder()
+                        .url(url)
+                        .addHeader("Accept", "application/json")
+                        .addHeader("Content-type", "application/json")
+                        .post(body)
+                        .build();
 
-                    // 6. set httpPost Entity
-                    httpPost.setEntity(se);
+                if (!AxxezoAPI.equals("http://:0")) {
 
-                    // 7. Set some headers to inform server about the type of the content
-                    httpPost.setHeader("Accept", "application/json");
-                    httpPost.setHeader("Content-type", "application/json");
+                    //POST using okhttp
+                    Response response = client.newCall(request).execute();
+                    String tmp = response.body().string();
+                    log.writeLog(getApplicationContext(), "Main:line 1037", "DEBUG", "response " + response.code() + " name " + record.getPerson_name());
 
-                    // 8. Execute POST request to the given URL
-
-                    if (!AxxezoAPI.equals("http://:0")) {
-                        HttpResponse httpResponse = httpclient.execute(httpPost);
-                        //LogApp.e("status code",httpResponse.getStatusLine().getStatusCode()+"");
-                        // 9. receive response as inputStream
-                        inputStream = httpResponse.getEntity().getContent();
-
-                        // 10. convert inputstream to string
-                        if (inputStream != null) {
-                            result = convertInputStreamToString(inputStream);
-                            Log.d("response record", result);
-                            if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                                Log.d("json POSTED", json);
-                                // if has sync=0 its becouse its an offline record to be will synchronized.
-                                if (record.getSync() == 0) {
-                                    DatabaseHelper db = new DatabaseHelper(this);
-                                    db.update_record(record.getId());
-                                    db.close();
-                                }
+                    // 10. convert inputstream to string
+                    if (tmp != null) {
+                        if (response.isSuccessful()) {
+                            Log.d("json POSTED", json);
+                            // if has sync=0 its becouse its an offline record to be will synchronized.
+                            if (record.getSync() == 0) {
+                                db.update_record(record.getId());
                             }
-                        } else {
-                            result = String.valueOf(httpResponse.getStatusLine().getStatusCode());
+                        } else if (response.code() == 422) {
+                            //return 422 when the record is sync but his state in db isn`t change
+                            db.update_record(record.getId());
                         }
-                        //result its the json to sent
-                        if (result.startsWith("http://"))
-                            result = "204"; //no content
                     } else {
-                        mp3Error.start();
-                        //Toast.makeText(MainActivity.this, "Configure datos del servidor primero", Toast.LENGTH_LONG).show();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                makeToast("Configure datos del servidor primero");
-                            }
-                        });
+                        result = String.valueOf(response.code());
                     }
+                    //result its the json to sent
+                    if (result.startsWith("http://"))
+                        result = "204"; //no content
+                } else {
+                    new LoadSound(1).execute();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            makeToast("Configure datos del servidor primero");
+                        }
+                    });
                 }
             }
-        } catch (Exception e) {
-            Log.d("---", "offline " + e.getMessage().toString());
+        } catch (UnsupportedEncodingException e) {
+            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
+        } catch (JSONException e) {
+            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
+        } catch (IOException e) {
+            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
         }
 
         // 11. return result
@@ -1087,18 +881,27 @@ public class MainActivity extends AppCompatActivity
     }
 
     public class RegisterTask extends AsyncTask<Void, Void, String> {
-
-        private Record newRecord;
         private String url;
+        private List<Record> newRecord;
 
-        RegisterTask(Record newRecord, String url) {
+        RegisterTask(List<Record> newRecord, String url) {
             this.newRecord = newRecord;
             this.url = url;
         }
 
         @Override
         protected String doInBackground(Void... params) {
-            return POST(newRecord, url);
+            String postReturn = "";
+            final OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(1, TimeUnit.SECONDS)
+                    .writeTimeout(0, TimeUnit.SECONDS)
+                    .readTimeout(0, TimeUnit.SECONDS)
+                    .build();
+            for (int i = 0; i < newRecord.size(); i++) {
+                Record record = newRecord.get(i);
+                POST(record, url, client);
+            }
+            return postReturn;
         }
     }
 
@@ -1181,7 +984,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public int getStatusFromManifest(int position) {
-        DatabaseHelper db = new DatabaseHelper(this);
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         int manifestCount = -1;
         int PendingCount = -1;
         int EmbarkedCount = -1;
@@ -1211,7 +1014,6 @@ public class MainActivity extends AppCompatActivity
                 count = LandedCount;
                 break;
         }
-        db.close();
         return count;
     }
 
@@ -1269,7 +1071,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void manualRegistration() {
-        DatabaseHelper db = new DatabaseHelper(this);
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         String rut = TextViewRut.getText().toString();
         //1.- is in manifest ?
         String contentManifest = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
@@ -1308,7 +1110,7 @@ public class MainActivity extends AppCompatActivity
         Log.e("updating state", "MANIFEST STATE");
         //String url="http://192.168.1.117:3000/api/states/getState?doc=15792726&route=2&port=PUERTO%20MONTT&ship=JACAF&date=2017-01-19&hour=23:00";
         String url = AxxezoAPI + "/states/getState?";
-        DatabaseHelper db = new DatabaseHelper(this);
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         log_app log = new log_app();
 
         // get list manifest id_people and port
@@ -1321,8 +1123,8 @@ public class MainActivity extends AppCompatActivity
                 //Log.e("for i=", i + "");
                 get_manifest_row = select_dni_from_manifest.get(i).split("\\|");
                 if (get_manifest_row.length > 0) {// is not empty
-                    ArrayList<String> get_config_per_rut = db.select("select (select route_id from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ports where id_api=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ships where id=(select ship_id from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "')))," +
-                            "(select date from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select hour from config where port_id=(select port from manifest where id_people='" + get_manifest_row[0] + "'))", "|");
+                    ArrayList<String> get_config_per_rut = db.select("select (select route_id from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ports where id_api=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ships where id=(select ship_id from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')))," +
+                            "(select date from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select hour from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "'))", "|");
                     String[] get_config_per_row = get_config_per_rut.get(0).split("\\|");
                     if (get_config_per_row.length > 0) {
                         List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
@@ -1375,7 +1177,7 @@ public class MainActivity extends AppCompatActivity
                             i++;
                             inputStream.close();
                         } catch (IOException e) {
-                            log.writeLog(getApplicationContext(),"Main line:1373","ERROR",e.getMessage());
+                            log.writeLog(getApplicationContext(), "Main line:1373", "ERROR", e.getMessage());
                             Log.e("status", "OFFLINE");
                             i = select_dni_from_manifest.size();
                         }
@@ -1386,6 +1188,50 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
+    }
+
+    private class LoadSound extends AsyncTask<Void, Void, Void> {
+        private int typeSound = -1;
+
+        /*  Asyntask to play sounds in background
+         *  1 Error
+         *  2 Permitted
+         *  3 Denied
+         *  4 stop all
+         */
+        private LoadSound(int typeSound) {
+            this.typeSound = typeSound;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            switch (typeSound) {
+                case 1:
+                    if (mp3Error.isPlaying()) mp3Error.pause();
+                    mp3Error.seekTo(0);
+                    mp3Error.start();
+                    break;
+                case 2:
+                    if (mp3Permitted.isPlaying()) mp3Permitted.pause();
+                    mp3Permitted.seekTo(0);
+                    mp3Permitted.start();
+                    break;
+                case 3:
+                    if (mp3Dennied.isPlaying()) mp3Dennied.pause();
+                    mp3Dennied.seekTo(0);
+                    mp3Dennied.start();
+                    break;
+                case 4:
+                    if (mp3Error.isPlaying()) mp3Error.pause();
+                    mp3Error.seekTo(0);
+                    if (mp3Dennied.isPlaying()) mp3Dennied.pause();
+                    mp3Dennied.seekTo(0);
+                    if (mp3Permitted.isPlaying()) mp3Permitted.pause();
+                    mp3Permitted.seekTo(0);
+                    break;
+            }
+            return null;
+        }
     }
 
 

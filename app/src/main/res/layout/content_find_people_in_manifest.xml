@@ -33,7 +33,7 @@
         android:layout_marginTop="20dp"
         android:ems="10"
         android:fontFamily="serif"
-        android:hint="Escanee o Ingrese aqui su busqueda"
+        android:hint="Escanee cédula ó ingrese RUT"
         android:inputType="textPersonName"
         android:textAlignment="center"
         android:textAllCaps="false"

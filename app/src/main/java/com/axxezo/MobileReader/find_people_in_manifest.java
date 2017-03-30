@@ -254,7 +254,7 @@ public class find_people_in_manifest extends AppCompatActivity {
         // TODO Auto-generated method stub
         super.onResume();
         initScan();
-        // UpdateDb();
+        // sendRecordstoAPI();
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);

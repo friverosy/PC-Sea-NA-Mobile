@@ -14,7 +14,7 @@ public class navieraManifest{
     private String origin;
     private String destination;
     private int isInside;
-    private int port;
+    //private int port;
 
     /*
     isInside;
@@ -23,12 +23,11 @@ public class navieraManifest{
     2 to  landed(desembarcado)
      */
 
-    public navieraManifest(String people_id, String origin, String destination, int isInside, int port) {
+    public navieraManifest(String people_id, String origin, String destination, int isInside) {
         this.people_id = people_id;
         this.origin = origin;
         this.destination = destination;
         this.isInside = isInside;
-        this.port=port;
     }
 
     public String getPeople_id() {
@@ -63,13 +62,6 @@ public class navieraManifest{
         this.isInside = isInside;
     }
 
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
 
     @Override
     public String toString() {
