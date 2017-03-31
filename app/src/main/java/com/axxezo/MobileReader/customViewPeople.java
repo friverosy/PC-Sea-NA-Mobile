@@ -57,8 +57,8 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         holder.textViewExpand.setBackgroundColor(Color.parseColor("#E6E6E6"));
 
         //set random values to inside
-        int random= (int) ((Math.random() * 2) + 1);
-        mDataSet.get(position).setIsInside(random);
+        //int random= (int) ((Math.random() * 2) + 1);
+        //mDataSet.get(position).setIsInside(random);
         switch (mDataSet.get(position).getIsInside()) {
             case 0:
                 holder.icon_entry.setText("");

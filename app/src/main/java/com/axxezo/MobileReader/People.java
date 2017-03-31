@@ -10,6 +10,9 @@ public class People {
     private String nationality;
     private int age;
 
+    public People() {
+        //default constructor
+    }
     public People(String document, String name, String nationality, int age) {
         this.document = document;
         this.name = name;

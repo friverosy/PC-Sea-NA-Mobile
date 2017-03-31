@@ -13,6 +13,7 @@ import org.json.JSONObject;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,6 +21,7 @@ import java.util.List;
  */
 
 public class DatabaseHelper extends SQLiteOpenHelper {
+
 
 
     //context
@@ -98,6 +100,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //Config
     private static final String CONFIG_ROUTE_ID = "route_id";
     private static final String CONFIG_DATE = "date";
+    private static final String CONFIG_ROUTE_NAME ="route_name";
 
 
     //set table colums
@@ -156,7 +159,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_ORIGIN + " INTEGER, " +
             RECORD_DESTINATION + " INTEGER, " +
             RECORD_PORT_REGISTRY + " TEXT, " +
-            RECORD_IS_INPUT + " INTEGER, " +
+            RECORD_IS_INPUT + " INTEGER, " +  //input of switch in main 1 embark, 2 landed
             RECORD_SYNC + " INTEGER, " +
             RECORD_IS_PERMITTED + " INTEGER," +
             RECORD_TICKET + " TEXT, " +
@@ -169,6 +172,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     String CREATE_CONFIG_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_CONFIG + " ( " +
             "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
             CONFIG_ROUTE_ID + " INTEGER, " +
+            CONFIG_ROUTE_NAME + " INTEGER, " +
             CONFIG_DATE + " TEXT);";
 
     public DatabaseHelper(Context context) {
@@ -178,8 +182,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        db.enableWriteAheadLogging();
         //first create the tables
-        db.execSQL("PRAGMA journal_mode = WAL");
         db.execSQL(CREATE_PEOPLE_TABLE);
         db.execSQL(CREATE_ROUTES_TABLE);
         db.execSQL(CREATE_PORTS_TABLE);
@@ -202,7 +206,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
      * CRUD operations (create "add", read "get", update, delete)
      */
 
-    public void insertJSON(String json, String table, int port_config) throws JSONException {
+    public void insertJSON(String json, String table) throws JSONException {
         SQLiteDatabase db = getWritableDatabase();
         log_app log = new log_app();
         JSONObject objectJson;
@@ -218,7 +222,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
-                            Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("id_itinerario"), jsonArray.getJSONObject(i).getString("nombre_ruta"),
+                            Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("id_itinerario"), jsonArray.getJSONObject(i).getString("nombre_ruta").toUpperCase(),
                                     jsonArray.getJSONObject(i).getString("zarpe"));
                             values.put(ROUTE_ID, routes.getID());
                             values.put(ROUTE_NAME, routes.getName().trim());
@@ -246,8 +250,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                         db.beginTransactionNonExclusive();
                         for (int i = 0; i < jsonArray.length(); i++) {
-                            ContentValues valuesPerson = new ContentValues();
-                            ContentValues valuesManifest = new ContentValues();
 
                             People people = new People(jsonArray.getJSONObject(i).getString("codigo_pasajero").trim(), jsonArray.getJSONObject(i).getString("nombre_pasajero").toUpperCase(), jsonArray.getJSONObject(i).getString("nacionalidad").toUpperCase(), 0);
                             navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("origen").toUpperCase(), jsonArray.getJSONObject(i).getString("destino").toUpperCase(), 0);
@@ -256,15 +258,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             doc = people.getDocument().toUpperCase();
                             if (people.getDocument().contains("-"))
                                 doc = doc.substring(0, doc.length() - 2);
-                            String name = removeAccent(people.getName());
+                            String name = removeAccent(people.getName().toUpperCase());
                             db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                                    doc + "','" + name + "','" + people.getNationality() + "'," + people.getAge() + ")");
+                                    doc + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ")");
                             db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE +  ") VALUES('" +
-                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                                    doc + "','" + manifest.getOrigin().toUpperCase() + "','" + manifest.getDestination().toUpperCase() + "','" + manifest.getIsInside() + "')");
                         }
+                        // finnaly insert fill config table
                         db.setTransactionSuccessful();
                     } catch (JSONException e) {
                         log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                    } catch (android.database.SQLException e) {
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                    } finally {
+                        db.endTransaction();
+                    }
+                } else
+                    Log.i("error", "Json empty!");
+                break;
+            case "ports":
+                if (!json.isEmpty()) {
+                    objectJson = new JSONObject(json);
+                    jsonArray = objectJson.getJSONArray("puertos");
+                    try {
+                        db.beginTransactionNonExclusive();
+                        db.execSQL("delete from ports");
+
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            ContentValues values = new ContentValues();
+                            Ports port = new Ports(jsonArray.getJSONObject(i).getInt("id_ubicacion"), jsonArray.getJSONObject(i).getString("nombre_ubicacion"));
+                            values.put(PORT_ID_API, port.getId());
+                            values.put(PORT_NAME, port.getName().trim().toUpperCase());
+                            db.insert(TABLE_PORTS, // table
+                                    null, //nullColumnHack
+                                    values); // key/value -> keys = column names/ values = column values
+                        }
+                        db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
                         log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
@@ -302,32 +331,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     //cris
-    public String validatePerson(String rut) {
+    public Cursor validatePerson(String rut) {
         //return the person data if this person is in manifest table
-        ArrayList<String> list = new ArrayList<String>();
         SQLiteDatabase db = this.getWritableDatabase();
         log_app log = new log_app();
         Cursor cursor = null;
         String row = "";
         try {
-            cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination,(select name from ports where id_api=(select port_registry from config))," +
-                    "(select name from ships where id=(select ship_id from config)),m.boletus from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+            cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination," +
+                    "m.boletus from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
-            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-                int i = 0;
-                while (i < cursor.getColumnCount()) {
-                    row = row + cursor.getString(i) + ";";
-                    i++;
-                }
-                list.add(row);
-            }
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-        } finally {
-            if (cursor != null)
-                cursor.close();
         }
-        return row;
+        return cursor;
     }
 
     public void add_record(Record record) {
@@ -388,18 +405,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             while (!cursor.isAfterLast()) {
                 Record record = new Record();
-                record.setId(cursor.getInt(0));                 //ID
-                record.setDatetime(cursor.getString(1));        //DATETIME
-                record.setPerson_document(cursor.getString(2)); //PERSON_DOCUMENT
-                record.setPerson_name(cursor.getString(3));     //PERSON_NAME
-                record.setOrigin(cursor.getString(4));          //ORIGIN
-                record.setDestination(cursor.getString(5));     //DESTINATION
-                record.setPort_registry(cursor.getString(6));   //PORT_REGISTER
-                record.setInput(cursor.getInt(7));              //INPUT
-                record.setSync(cursor.getInt(8));              //SYNC
-                record.setPermitted(cursor.getInt(9));         //PERMITTED
-                record.setTicket(cursor.getInt(10));            //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
-                record.setReason(cursor.getString(11));         //REASON
+                record.setId(cursor.getInt(0));                     //ID
+                record.setDatetime(cursor.getString(1));            //DATETIME
+                record.setPerson_document(cursor.getString(2));     //PERSON_DOCUMENT
+                record.setPerson_name(cursor.getString(3));         //PERSON_NAME
+                record.setOrigin(cursor.getString(4));              //ORIGIN
+                record.setDestination(cursor.getString(5));         //DESTINATION
+                record.setPort_registry(cursor.getString(6));       //PORT_REGISTER
+                record.setInput(cursor.getInt(7));                  //INPUT
+                record.setSync(cursor.getInt(8));                   //SYNC
+                record.setPermitted(cursor.getInt(9));              //PERMITTED
+                record.setTicket(cursor.getInt(10));                //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
+                record.setReason(cursor.getString(11));             //REASON
 
                 records.add(record);
                 cursor.moveToNext();

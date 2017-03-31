@@ -126,7 +126,7 @@ public class find_people_in_manifest extends AppCompatActivity {
             Log.d("---", rawCode);
 
             int flag = 0; // 0 for end without k, 1 with k
-            Person person = new Person();
+            People person = new People();
 
             if (barcodeType == 28) { // QR code
                 if (barcodeStr.contains("client_code")) {
@@ -144,7 +144,7 @@ public class find_people_in_manifest extends AppCompatActivity {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                } else {
+                } else if(rawCode.startsWith("https://")) {
                     // Its a DNI Card.
                     barcodeStr = barcodeStr.substring(
                             barcodeStr.indexOf("RUN=") + 4,

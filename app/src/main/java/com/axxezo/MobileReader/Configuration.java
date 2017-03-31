@@ -79,7 +79,7 @@ public class Configuration extends AppCompatActivity {
         //inserts in db
         try {
             DatabaseHelper db = DatabaseHelper.getInstance(this);
-            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes", -1);
+            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes");
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -98,7 +98,6 @@ public class Configuration extends AppCompatActivity {
                 onclick = true;
                 if ((combobox_route != null && combobox_route.getSelectedItem() != null) && !combobox_route.getSelectedItem().equals("")) {
                     mVibrator.vibrate(100);
-
                     loadManifest();
                     loadButton.setClickable(false);
                     reset.execute();
@@ -155,8 +154,10 @@ public class Configuration extends AppCompatActivity {
 
         try {
 
-            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(),"manifest",-1);
-            //db.insert("insert into config(route_id,port_registry,ship_id,hour,date) values ('" + selectionSpinnerRoute + "','" + selectionSpinnerPorts + "','" +
+            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(),"manifest");
+            db.insert("insert into config(route_id,route_name,date) values ( (select id from routes where id='"+selectionSpinnerRoute+"')" +
+                    ",(select name from routes where id='"+selectionSpinnerRoute+"'),(select sailing_date from routes where id='"+selectionSpinnerRoute+"'));");
+            db.insertJSON(new getAPIInformation(URL,selectionSpinnerRoute).execute().get(),"ports"); //insert ports of route selected
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -199,6 +200,12 @@ public class Configuration extends AppCompatActivity {
             getInformation = "";
             flag = 1;
         }
+        getAPIInformation(String URL,Integer id_itinerary) {//ports
+            this.URL = URL;
+            this.route=id_itinerary;
+            getInformation = "";
+            flag = 2;
+        }
 
 
         @Override
@@ -210,6 +217,9 @@ public class Configuration extends AppCompatActivity {
                         break;
                     case 1:
                         getInformation = getManifest(URL, token, route);
+                        break;
+                    case 2:
+                        getInformation = getPorts(URL,route);
                         break;
                 }
 
@@ -307,6 +317,38 @@ public class Configuration extends AppCompatActivity {
             content = "204"; // No content
         }
         Log.d("Manifes Server response", content);
+        return content;
+    }
+    public String getPorts(String Url,int ID_route) throws IOException {
+        URL url = new URL(Url + "/itinerary_ports?itinerary="+ID_route);
+        Log.d("get ports", url.toString());
+        String content = "";
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("TOKEN", token_navieraAustral);
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(2000);
+            conn.connect();
+
+            int connStatus = conn.getResponseCode();
+            InputStream getData = conn.getInputStream();
+            if (connStatus != 200) {
+                content = String.valueOf(getData);
+            } else
+                content = convertInputStreamToString(getData);
+        } catch (MalformedURLException me) {
+
+        } catch (IOException ioe) {
+
+        }
+        if (conn != null) {
+            conn.disconnect();
+        }
+        if (content.length() <= 2) { //[]
+            content = "204"; // No content
+        }
+        Log.d("Ports Server response", content);
         return content;
     }
 

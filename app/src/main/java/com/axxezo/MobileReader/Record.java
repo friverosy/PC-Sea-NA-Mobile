@@ -1,5 +1,7 @@
 package com.axxezo.MobileReader;
 
+import java.util.Date;
+
 /**
  * Created by Cristtopher Quintana on 12-08-16.
  */

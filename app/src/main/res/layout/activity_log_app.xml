@@ -30,6 +30,15 @@
             android:layout_height="match_parent"
             android:layout_marginTop="11dp" />
     </ScrollView>
+    <Button
+        android:text="CLR"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/textView_title_app_log"
+        android:layout_alignBaseline="@+id/textView_title_app_log"
+        android:layout_marginBottom="439dp"
+        android:id="@+id/button_clear_log" />
 
 
 </RelativeLayout>
