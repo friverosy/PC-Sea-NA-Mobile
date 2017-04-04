@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
@@ -23,10 +24,10 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
 
-
     //context
     private Context context;
     private static DatabaseHelper sInstance;
+    private SQLiteDatabase db;
 
     //create a unique instance of DB
 
@@ -100,7 +101,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //Config
     private static final String CONFIG_ROUTE_ID = "route_id";
     private static final String CONFIG_DATE = "date";
-    private static final String CONFIG_ROUTE_NAME ="route_name";
+    private static final String CONFIG_ROUTE_NAME = "route_name";
 
 
     //set table colums
@@ -111,7 +112,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
     private static final String[] TRANSPORTS_COLUMNS = {SHIP_ID, SHIP_NAME};
     private static final String[] HOURS_COLUMNS = {HOUR_ID, HOUR_NAME};
-    private static final String[] CONFIG_COLUMNS = {CONFIG_ROUTE_ID,CONFIG_DATE};
+    private static final String[] CONFIG_COLUMNS = {CONFIG_ROUTE_ID, CONFIG_DATE};
 
     // Database Version
     private static final int DATABASE_VERSION = 1;
@@ -261,7 +262,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             String name = removeAccent(people.getName().toUpperCase());
                             db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
                                     doc + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ")");
-                            db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE +  ") VALUES('" +
+                            db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
                                     doc + "','" + manifest.getOrigin().toUpperCase() + "','" + manifest.getDestination().toUpperCase() + "','" + manifest.getIsInside() + "')");
                         }
                         // finnaly insert fill config table
@@ -381,6 +382,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.endTransaction();
         }
     }
+
     public List<Record> get_desynchronized_records() {
         log_app log = new log_app();
         Cursor cursor = null;
@@ -423,9 +425,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-        } finally {
-            if (cursor != null)
-                cursor.close();
         }
         // 5. return
         return records;
@@ -469,30 +468,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public ArrayList<String> select(String select, String split) {
-        ArrayList<String> list = new ArrayList<String>();
+    public Cursor select(String select) {
         SQLiteDatabase db = this.getWritableDatabase();
         log_app log = new log_app();
         Cursor cursor = null;
         try {
             cursor = db.rawQuery(select, null);
             cursor.moveToFirst();
-            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-                int i = 0;
-                String row = "";
-                while (i < cursor.getColumnCount()) {
-                    row = row + cursor.getString(i) + split;
-                    i++;
-                }
-                list.add(row);
-            }
+            //cursor.moveToFirst();
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-        } finally {
-            if (cursor != null)
-                cursor.close();
         }
-        return list;
+        return cursor;
     }
 
     public void insert(String insert) {
@@ -510,37 +497,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-    public ArrayList<String> getComboboxList(String table) {
+    public ArrayList<String> selectAsList(String qry) {
         SQLiteDatabase db = this.getWritableDatabase();
         ArrayList<String> list = new ArrayList<String>();
         log_app log = new log_app();
         Cursor cursor = null;
         try {
-            cursor = db.rawQuery("SELECT * from " + table + ";", null);
+            cursor = db.rawQuery(qry, null);
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-                if (cursor.isFirst()) {
-                    switch (table) {
-                        case "routes":
-                            list.add("< Elija una ruta >");
-                            break;
-                        case "ships":
-                            list.add("< Elija una nave >");
-                            break;
-                        case "hours":
-                            list.add("< Elija una hora >");
-                            break;
-                    }
-                }
-                list.add(cursor.getString(1));
+                list.add(cursor.getString(0));
             }
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-        } finally {
-            if (cursor != null)
-                cursor.close();
         }
         return list;
     }
+
     public int record_desync_count() {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " + TABLE_RECORDS +

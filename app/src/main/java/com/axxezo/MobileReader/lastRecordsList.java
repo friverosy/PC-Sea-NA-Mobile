@@ -2,7 +2,6 @@ package com.axxezo.MobileReader;
 
 import android.app.ListActivity;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -20,8 +19,6 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class lastRecordsList extends ListActivity implements AdapterView.OnItemSelectedListener {
-    private SQLiteDatabase newDB;
-    private DatabaseHelper db;
     private RecyclerView recyclerView;
     private LinearLayoutManager layoutManager;
     private ArrayList<Cards> users;
@@ -53,26 +50,23 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         //adapter.getFilter().filter();
         combo_origin = (Spinner) findViewById(R.id.spinner_origin);
         combo_destination = (Spinner) findViewById(R.id.spinner_destination);
-        //combo_origin.setOnItemSelectedListener(this);
-        db = new DatabaseHelper(this);
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
 
         //fill origin combobox
-        ArrayList<String> select_origin_manifest = db.select("select distinct origin from manifest", "");
-        ArrayList<String> listOrigin = new ArrayList();
-        listOrigin.addAll(select_origin_manifest);
-        listOrigin.add(0, "< TODOS >");
-        spinner_adapter_origin = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOrigin);
+        ArrayList<String> listOriginAndDestination = db.selectAsList("select distinct origin from manifest union select distinct destination from manifest");
+        if (listOriginAndDestination != null)
+            if (listOriginAndDestination.isEmpty())
+                listOriginAndDestination.add("");
+            else
+                listOriginAndDestination.add(0, "< TODOS >");
+        spinner_adapter_origin = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_origin.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_origin.setAdapter(spinner_adapter_origin);
         spinner_origin_selected = combo_origin.getItemAtPosition(0).toString();
         combo_origin.setOnItemSelectedListener(this);
 
-        //fill destination combobox
-        ArrayList<String> select_destination_manifest = db.select("select distinct destination from manifest", "");
-        ArrayList<String> listDestination = new ArrayList();
-        listDestination.addAll(select_destination_manifest);
-        listDestination.add(0, "< TODOS >");
-        spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listDestination);
+         //fill destination with same combinations of ports
+        spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_destination.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_destination.setAdapter(spinner_adapter_destination);
         spinner_destination_selected = combo_destination.getItemAtPosition(0).toString();
@@ -123,9 +117,8 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
 
     private void addPersonCards() {
         try {
-            DatabaseHelper dbHelper = new DatabaseHelper(this.getApplicationContext());
-            newDB = dbHelper.getReadableDatabase();
-            Cursor c = newDB.rawQuery("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document", null);
+            DatabaseHelper db = DatabaseHelper.getInstance(this);
+            Cursor c = db.select("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document");
             if (c != null) {
                 if (c.moveToFirst()) {
                     do {
@@ -139,39 +132,40 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                     } while (c.moveToNext());
                 }
             }
-            c.close();
+            if (c != null)
+                c.close();
         } catch (SQLiteException se) {
             Log.e(getClass().getSimpleName(), "Could not create or Open the database");
         }
     }
 
     public int getStatusFromManifest(int position, String origin, String destination) {
-        ArrayList<String> select_counts = null;
+        Cursor select_counts = null;
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         if (origin.equals("< TODOS >") && destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest)," +
                     "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
-                    "(select count(*) from manifest where is_inside=2)", "|");
+                    "(select count(*) from manifest where is_inside=2)");
         } else if (origin.equals("< TODOS >") && !destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest where destination='" + destination + "')," +
                     "(select count(*) from manifest where is_inside=0 and destination='" + destination + "'),(select count(*) from manifest where is_inside=1 and destination='" + destination + "')," +
-                    "(select count(*) from manifest where is_inside=2 and destination='" + destination + "')", "|");
+                    "(select count(*) from manifest where is_inside=2 and destination='" + destination + "')");
         } else if (!origin.equals("< TODOS >") && destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest where origin='" + origin + "')," +
                     "(select count(*) from manifest where is_inside=0 and origin='" + origin + "'),(select count(*) from manifest where is_inside=1 and origin='" + origin + "')," +
-                    "(select count(*) from manifest where is_inside=2 and origin='" + origin + "')", "|");
-        } else{ //last case when
-            select_counts = db.select("select (select count(*) from manifest where origin='" + origin + "' and destination='"+destination+"')," +
-                    "(select count(*) from manifest where is_inside=0 and origin='" + origin + "' and destination='"+destination+"'),(select count(*) from manifest where is_inside=1 and origin='" + origin + "' and destination='"+destination+"')," +
-                    "(select count(*) from manifest where is_inside=2 and origin='" + origin + "' and destination='"+destination+"')", "|");
+                    "(select count(*) from manifest where is_inside=2 and origin='" + origin + "')");
+        } else { //last case when
+            select_counts = db.select("select (select count(*) from manifest where origin='" + origin + "' and destination='" + destination + "')," +
+                    "(select count(*) from manifest where is_inside=0 and origin='" + origin + "' and destination='" + destination + "'),(select count(*) from manifest where is_inside=1 and origin='" + origin + "' and destination='" + destination + "')," +
+                    "(select count(*) from manifest where is_inside=2 and origin='" + origin + "' and destination='" + destination + "')");
         }
 
         int count = 0;
-        if (select_counts != null && select_counts.size() > 0) {
-            String[] binnacle_param_id = select_counts.get(0).split("\\|");
-            manifestCount = Integer.parseInt(binnacle_param_id[0]);
-            PendingCount = Integer.parseInt(binnacle_param_id[1]);
-            EmbarkedCount = Integer.parseInt(binnacle_param_id[2]);
-            LandedCount = Integer.parseInt(binnacle_param_id[3]);
+        if (select_counts != null && select_counts.getCount() > 0) {
+            manifestCount = select_counts.getInt(0);
+            PendingCount = select_counts.getInt(1);
+            EmbarkedCount = select_counts.getInt(2);
+            LandedCount = select_counts.getInt(3);
         }
         switch (position) {
             case 1:

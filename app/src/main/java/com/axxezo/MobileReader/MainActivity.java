@@ -56,14 +56,12 @@ package com.axxezo.MobileReader;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.device.ScanManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -73,9 +71,7 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -141,7 +137,7 @@ public class MainActivity extends AppCompatActivity
     private TextView TextViewStatus;
     private TextView TextViewManifestUpdate;
     private ImageView imageview;
-    private final static String SCAN_ACTION = "urovo.rcv.message";//扫描结束action
+    private final static String SCAN_ACTION = "urovo.rcv.message";//action
     private Vibrator mVibrator;
     private ScanManager mScanManager;
     private String barcodeStr;
@@ -155,8 +151,22 @@ public class MainActivity extends AppCompatActivity
     private Spinner comboLanded;
     private String selectedSpinnerLanded;
     private log_app log;
-    private RegisterTask Asynctask_sendRecord;
+
+
+    /********
+     * Timers Asyntask
+     ****/
+    private int timer_asyncUpdateManifest;
     private int timer_sendRecordsAPI;
+    private int timer_asyncUpdatePeopleState;
+
+
+    /*****
+     * Asyntask declarations.....
+     */
+    private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
+    private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,13 +188,18 @@ public class MainActivity extends AppCompatActivity
         mySwitch = (Switch) findViewById(R.id.mySwitch);
         log = new log_app();
         selectedSpinnerLanded = "";
-        timer_sendRecordsAPI = 420000;
 
+        //asign timers to Asyntask
+        timer_sendRecordsAPI = 420000;
+        timer_asyncUpdateManifest = 120000;
+        timer_asyncUpdatePeopleState = 240000;
+
+        //asign url api axxezo
         AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
         //AxxezoAPI = "http://192.168.1.126:3000/api";
 
         //enable WAL mode in DB
-        DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         db.setWriteAheadLoggingEnabled(true);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -220,8 +235,16 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+        //fill information in combobox
+        Cursor getOriginandDestination = db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc");
+        ArrayList<String> listOriginDestination = new ArrayList<String>();
+        if (getOriginandDestination != null)
+            while (!getOriginandDestination.isAfterLast()) {
+                listOriginDestination.add(getOriginandDestination.getString(0));
+                getOriginandDestination.moveToNext();
+            }
         final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc", ""));
+                android.R.layout.simple_spinner_item, listOriginDestination);
         comboLanded.setAdapter(adapter);
         comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -235,11 +258,15 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        //call in oncreate asyntask
         //sendRecordstoAPI();
-        //updateManifest();
+        //Asyntask_insertNewPeopleManifest();
         //asyncUpdateManifestinTime();
         //asyncUpdateManifestState();
-
+        // if (getOriginandDestination != null)
+        //     getOriginandDestination.close();
+        if(getOriginandDestination!=null)
+            getOriginandDestination.close();
     }
 
     @Override
@@ -325,6 +352,10 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    /**
+     * receive the information of barcod read and proccess that, once that extract dni of qr or barcode, send this to validate
+     * in method PeopleValidator
+     */
     private BroadcastReceiver mScanReceiver = new BroadcastReceiver() {
 
         @Override
@@ -421,6 +452,12 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
+    /**
+     * Return current local datetime in PDA, in format that specifies in string format
+     *
+     * @param format= how you want to receive the datetime,Ex:"dd-MM-yyyy HH:mm:SS"
+     * @return= return String with the current datetime
+     */
     public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
@@ -429,6 +466,13 @@ public class MainActivity extends AppCompatActivity
         return localTime;
     }
 
+    /**
+     * method that validate old and new chilean national identity card
+     *
+     * @param rut=number without check digit
+     * @param dv=        only check digit
+     * @return true if the dni number is correct or false if dni number doesn´t match with check digit
+     */
     public boolean ValidarRut(int rut, char dv) {
         dv = dv == 'k' ? dv = 'K' : dv;
         int m = 0, s = 1;
@@ -484,16 +528,17 @@ public class MainActivity extends AppCompatActivity
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            new UpdateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            AsyncTask_updatePeopleManifest = new asyncTask_updatePeopleManifest();
+                            AsyncTask_updatePeopleManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         } catch (Exception e) {
-                            // error, do something
+                            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
                         }
                     }
                 });
             }
         };
 
-        timer.schedule(task, 0, 360000);  // 5 min=300000 // 6 min =360000
+        timer.schedule(task, 0, timer_asyncUpdateManifest);  // 5 min=300000 // 6 min =360000
     }
 
     private void asyncUpdateManifestState() {
@@ -506,48 +551,52 @@ public class MainActivity extends AppCompatActivity
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            // new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         } catch (Exception e) {
-                            // error, do something
+                            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
                         }
                     }
                 });
             }
         };
-        timer.schedule(task, 0, 240000);  // 3min =180000 //4 min = 240000;
+        timer.schedule(task, 0, timer_asyncUpdatePeopleState);  // 3min =180000 //4 min = 240000;
     }
 
-    private int updateManifest() {
+    /**
+     * call method getUpdatePeopleManifest per each port save in DB, in each port, get new person and insert that
+     *
+     * @return integer with difference between old manifest and new manifest with people download
+     */
+    private int Asyntask_insertNewPeopleManifest() {
+        //update manifest
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         log_app log = new log_app();
         int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
         int total_temp = 0;
+        Cursor ports = null;
         try {
-            ArrayList<String> select_from_manifest = db.select("select * from config", "|");
-            String[] manifest_config = null;
-
-            for (int i = 0; i < select_from_manifest.size(); i++) {
-                if (select_from_manifest.size() > 0) {
-                    manifest_config = select_from_manifest.get(i).split("\\|");
-                    db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(manifest_config[1]), Integer.parseInt(manifest_config[2]), Integer.parseInt(manifest_config[3]), manifest_config[5], manifest_config[4]).execute().get(), "manifest");
-                }
+            //1.- to actualize manifest, i need to use endpoint and travel each port to fill the update of persons
+            ports = db.select("select id_api from ports)");
+            String id_route = db.selectFirst("select route_id from config");
+            while (!ports.isAfterLast()) {
+                db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(id_route), ports.getInt(0)).execute().get(), "manifest");
             }
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
-            //Log.e("count after", count_after + "");
             if (count_before != count_after) {
                 int total = count_after - count_before;
                 total_temp = total;
             }
-            //Thread.sleep(3000);
         } catch (android.database.SQLException e) {
-            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         } catch (JSONException e) {
-            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         } catch (InterruptedException e) {
-            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         } catch (ExecutionException e) {
-            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "updateManifest" + e.getMessage());
+            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         }
+        if (ports != null)
+            ports.close();
         return total_temp;
     }
 
@@ -565,7 +614,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void sendRecordstoAPI() {
+    public void sendRecordstoAPI() { //send records to api
         final Handler handler = new Handler();
         Timer timer = new Timer();
         final DatabaseHelper db = DatabaseHelper.getInstance(this);
@@ -592,13 +641,14 @@ public class MainActivity extends AppCompatActivity
         timer.schedule(task, 0, timer_sendRecordsAPI);  // 360000= 6 minutes, 7 minutes=420000
     }
 
-    public String getCurrentDate() {
-        Calendar cal = Calendar.getInstance();
-        Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("yyyy-MM-dd");
-        String localTime = date.format(currentLocalTime);
-        return localTime;
-    }
+    /**
+     * PeopleValidator, contains all validations of qr and pdf417 code, receive
+     *
+     * @param rut=          dni number extract in method broadcastReceivere
+     * @param id_itinerary= travel id, use to validate person in table manifest
+     * @param port=         embark person port
+     * @param type=         indicate the type of code read
+     */
     public void PeopleValidator(String rut, String id_itinerary, String port, int type) {
         boolean valid = false;
         Cursor person = null;
@@ -607,6 +657,7 @@ public class MainActivity extends AppCompatActivity
         rut = rut.trim().toUpperCase();
         if (comboLanded.getChildCount() == 0) { //1.-validations
             TextViewStatus.setText("PORFAVOR CONFIGURE EL MANIFIESTO PRIMERO");
+            new LoadSound(4).execute();
         } else {
             TextViewRut.setText(rut);
             if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
@@ -696,6 +747,10 @@ public class MainActivity extends AppCompatActivity
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
     }
 
+    /**
+     * get all register in table records where sync=0 (not synchronized) and put this in a List<Records>
+     * once done, send list to asyncronous sendRecords
+     */
     public void OfflineRecordsSynchronizer() {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         List<Record> records = db.get_desynchronized_records();
@@ -703,6 +758,14 @@ public class MainActivity extends AppCompatActivity
         Asynctask_sendRecord.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
+    /**
+     * POST method that send to api the data contains in local database
+     *
+     * @param record= contains all information of the register, like dni, name, origin, destination,etc
+     * @param url=    addres of endpoint to send data
+     * @param client= receive a client okhttp to send registers, the reason of that, is avoid to create per each record a object okhttp, and only usage one instance of this
+     * @return
+     */
     public String POST(Record record, String url, OkHttpClient client) {
         String result = "";
         String json = "";
@@ -816,13 +879,13 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public class UpdateManifest extends AsyncTask<Void, Void, Integer> {
+    public class asyncTask_updatePeopleManifest extends AsyncTask<Void, Void, Integer> {
         private int update_manifest_count;
 
 
         @Override
         protected Integer doInBackground(Void... params) {
-            return update_manifest_count = updateManifest();
+            return update_manifest_count = Asyntask_insertNewPeopleManifest();
         }
 
         @Override
@@ -838,17 +901,28 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected Void doInBackground(Void... params) {
-            GETandUpdateStateInManifest();
+            getUpdateStates();
             return null;
         }
     }
 
 
-    public String getManifest(String Url, String Token, int ID_route, int ID_port, String date, int ID_transport, String hour) throws IOException {
+    /**
+     * Add new People in manifest, according to datetime in PDA
+     * the difference between this and the getmanifest from configuration is that only update the manifest, as you can see
+     * the endpoint is different
+     *
+     * @param Url
+     * @param Token
+     * @param ID_route
+     * @param port
+     * @return content JSON to insert
+     * @throws IOException
+     */
+    public String Asyntask_insertNewPeopleManifest(String Url, String Token, int ID_route, int port) throws IOException {
         //String date must be in format yyyy-MM-dd
-        //String hour must be in format HH-dd
-        URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
-        //Log.d("url manifest", url.toString());
+        URL url = new URL(Url + "/itinerary_manifest?itinerary=" + ID_route + "&port=" + port + "&date=" + getCurrentDateTime("yyyy-MM-dd"));
+        Log.d("get manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -865,10 +939,9 @@ public class MainActivity extends AppCompatActivity
             } else
                 content = convertInputStreamToString(getData);
         } catch (MalformedURLException me) {
-            me.printStackTrace();
 
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+
         }
         if (conn != null) {
             conn.disconnect();
@@ -876,7 +949,7 @@ public class MainActivity extends AppCompatActivity
         if (content.length() <= 2) { //[]
             content = "204"; // No content
         }
-        //LogApp.i("Manifest response", content);
+        Log.d("Manifes Server response", content);
         return content;
     }
 
@@ -894,22 +967,28 @@ public class MainActivity extends AppCompatActivity
         this.finishAffinity();
     }
 
-    public int getStatusFromManifest(int position) {
+    /**
+     * return value count of DB, corresponding to embark,landed and pending
+     *
+     * @param position= 1(manifestcount),2(pendingCount),3(embarkedCount),4(landedCount)
+     * @return count=return count of selected position
+     */
+
+    public int getCountEDP(int position) {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         int manifestCount = -1;
         int PendingCount = -1;
         int EmbarkedCount = -1;
         int LandedCount = -1;
-        ArrayList<String> select_counts = db.select("select (select count(*) from manifest)," +
+        Cursor getCountsofDB = db.select("select (select count(*) from manifest)," +
                 "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
-                "(select count(*) from manifest where is_inside=2)", "|");
+                "(select count(*) from manifest where is_inside=2)");
         int count = 0;
-        if (select_counts.size() > 0) {
-            String[] binnacle_param_id = select_counts.get(0).split("\\|");
-            manifestCount = Integer.parseInt(binnacle_param_id[0]);
-            PendingCount = Integer.parseInt(binnacle_param_id[1]);
-            EmbarkedCount = Integer.parseInt(binnacle_param_id[2]);
-            LandedCount = Integer.parseInt(binnacle_param_id[3]);
+        if (getCountsofDB != null && getCountsofDB.getCount() > 0) {
+            manifestCount = getCountsofDB.getInt(0);
+            PendingCount = getCountsofDB.getInt(1);
+            EmbarkedCount = getCountsofDB.getInt(2);
+            LandedCount = getCountsofDB.getInt(3);
         }
         switch (position) {
             case 1:
@@ -925,6 +1004,8 @@ public class MainActivity extends AppCompatActivity
                 count = LandedCount;
                 break;
         }
+        if (getCountsofDB != null)
+            getCountsofDB.close();
         return count;
     }
 
@@ -932,31 +1013,25 @@ public class MainActivity extends AppCompatActivity
         private String URL;
         private String getInformation;
         private String token;
-        private String date;
-        private String hour;
         private int flag = -1;
         private int route;
         private int port;
-        private int transport;
 
-        getAPIInformation(String URL, String token, int route, int port, int transport, String date, String hour) {//manifest
+        getAPIInformation(String URL, String token, int route, int port) {//manifest
             this.URL = URL;
             this.token = token;
             this.route = route;
             this.port = port;
-            this.transport = transport;
-            this.date = date;
-            this.hour = hour;
             getInformation = "";
-            flag = 4;
+            flag = 0;
         }
 
         @Override
         protected String doInBackground(String... strings) {
             try {
                 switch (flag) {
-                    case 4:
-                        getInformation = getManifest(URL, token, route, port, date, transport, hour);
+                    case 0:
+                        getInformation = Asyntask_insertNewPeopleManifest(URL, token, route, port);
                         break;
                 }
 
@@ -976,62 +1051,19 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    public void wifiState(boolean bool) {
-        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-        wifiManager.setWifiEnabled(bool);
-    }
-
-    public void manualRegistration() {
-        DatabaseHelper db = DatabaseHelper.getInstance(this);
-        String rut = TextViewRut.getText().toString();
-        //1.- is in manifest ?
-        String contentManifest = db.selectFirst("select is_inside from manifest where id_people='" + rut + "'");
-        if (!contentManifest.isEmpty()) {
-            Toast.makeText(this, "Persona No se encuentra en Manifiesto", Toast.LENGTH_SHORT).show();
-        } else if (Integer.parseInt(contentManifest) == 0) {
-            dialogManualRegistration("ALERTA", "Persona no registra embarque ni desembarque \nSeleccione una opcion", "Embarcar", "Desembarcar");
-        }
-
-    }
-
-    public AlertDialog dialogManualRegistration(String title, String message, String ButtonTrue, String ButtonCancel) {
-        //  AlertDialog.Builder builder = new AlertDialog.Builder((new ContextThemeWrapper(this, R.style.myDialog)));
-        AlertDialog.Builder builder = new AlertDialog.Builder((new ContextThemeWrapper(this, R.style.myDialog)));
-
-        builder.setTitle("Titulo")
-                .setMessage("El Mensaje para el usuario")
-                .setPositiveButton("OK",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-
-                            }
-                        })
-                .setNegativeButton("CANCELAR",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-
-                            }
-                        });
-        return builder.create();
-    }
-
-    public void GETandUpdateStateInManifest() {
-        Log.e("updating state", "MANIFEST STATE");
-        //String url="http://192.168.1.117:3000/api/states/getState?doc=15792726&route=2&port=PUERTO%20MONTT&ship=JACAF&date=2017-01-19&hour=23:00";
-        String url = AxxezoAPI + "/states/getState?";
+    /**
+     * download a jsonarray that contains people last state, then, compare this with the state in db local, this method sync the state of persons in PDAs
+     */
+    public void getUpdateStates() {
+      /*  String url = AxxezoAPI + "/states/getState?";
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         log_app log = new log_app();
 
         // get list manifest id_people and port
-
-        ArrayList<String> select_dni_from_manifest = db.select("select id_people from manifest", "|");
-        if (!select_dni_from_manifest.isEmpty()) {
-            String[] get_manifest_row = null;
+        Cursor peopleDocument = db.select("select id_people from manifest");
+        if (peopleDocument!=null&&peopleDocument.getCount()>0) {
             int i = 0;
-            while (i < select_dni_from_manifest.size()) {
-                //Log.e("for i=", i + "");
+            while (!peopleDocument.isAfterLast()) {
                 get_manifest_row = select_dni_from_manifest.get(i).split("\\|");
                 if (get_manifest_row.length > 0) {// is not empty
                     ArrayList<String> get_config_per_rut = db.select("select (select route_id from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ports where id_api=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ships where id=(select ship_id from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')))," +
@@ -1074,12 +1106,12 @@ public class MainActivity extends AppCompatActivity
                                     * 2 --- 1
                                     * 2 --- 2
                                      */
-                                    //case  1,0 1,2 covered
-                                    // if (is_inside_from_manifest < objectJson.getInt("state"))
+        //case  1,0 1,2 covered
+        // if (is_inside_from_manifest < objectJson.getInt("state"))
 
-                                    //else if (is_inside_from_manifest > objectJson.getInt("state"))
-                                    //    db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim() + "'");
-                                } catch (JSONException e) {
+        //else if (is_inside_from_manifest > objectJson.getInt("state"))
+        //    db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim() + "'");
+                                /*} catch (JSONException e) {
                                     e.printStackTrace();
                                 }
                             } else {
@@ -1097,19 +1129,20 @@ public class MainActivity extends AppCompatActivity
                     }
                 }
             }
-        }
+        }*/
 
     }
 
+    /**
+     * Asyntask to play sounds in background
+     * 1 Error
+     * 2 Permitted
+     * 3 Denied
+     * 4 stop all
+     */
     private class LoadSound extends AsyncTask<Void, Void, Void> {
         private int typeSound = -1;
 
-        /*  Asyntask to play sounds in background
-         *  1 Error
-         *  2 Permitted
-         *  3 Denied
-         *  4 stop all
-         */
         public LoadSound(int typeSound) {
             this.typeSound = typeSound;
         }

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.device.ScanManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -28,7 +29,7 @@ import java.util.ArrayList;
 
 public class find_people_in_manifest extends AppCompatActivity {
 
-    private final static String SCAN_ACTION = "urovo.rcv.message";//扫描结束action
+    private final static String SCAN_ACTION = "urovo.rcv.message";//action
     private Vibrator mVibrator;
     private ScanManager mScanManager;
     private SoundPool soundpool = null;
@@ -261,15 +262,13 @@ public class find_people_in_manifest extends AppCompatActivity {
     }
 
     public void findInManifest(String document) {
-        ArrayList<String> select_from_manifest = db.select("select ma.id_people,ma.origin,ma.destination, p.name,(select hour from config limit 1) from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'", "|");
-        if (select_from_manifest.size() > 0) {
+        Cursor get_selected_dni = db.select("select ma.id_people,ma.origin,ma.destination, p.name  from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'");
+        if (get_selected_dni!=null&&get_selected_dni.getCount() > 0) {
             mp3Permitted.start();
-            String[] manifest_is_inside = select_from_manifest.get(0).split("\\|");
             show_dni.setText(document);
-            show_name.setText(manifest_is_inside[3]);
-            show_origin.setText(manifest_is_inside[1]);
-            show_destination.setText(manifest_is_inside[2]);
-            show_hour.setText(manifest_is_inside[4]);
+            show_origin.setText(get_selected_dni.getString(1));
+            show_destination.setText(get_selected_dni.getString(2));
+            show_name.setText(get_selected_dni.getString(3));
             image_authorized.setImageResource(R.drawable.icon_tick_true_manifest);
         } else {
             mp3Dennied.start();
@@ -277,6 +276,8 @@ public class find_people_in_manifest extends AppCompatActivity {
             reset("< No Encontrado >");
             image_authorized.setImageResource(R.drawable.icon_tick_false_manifest);
         }
+        if(get_selected_dni!=null)
+            get_selected_dni.close();
     }
 
 

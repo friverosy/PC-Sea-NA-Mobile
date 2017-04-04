@@ -2,11 +2,9 @@ package com.axxezo.MobileReader;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -22,9 +20,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -115,12 +111,18 @@ public class Configuration extends AppCompatActivity {
         });
     }
 
+    /**
+     * fill combobox, obtaining information content in table "routes"
+     */
     public void loadComboboxRoutes() {
         final DatabaseHelper db = DatabaseHelper.getInstance(this);
         //create adapter from combobox_route
         combobox_route.setClickable(true);
+        ArrayList<String> routes=db.selectAsList("select name from routes");
+        if(routes!=null)
+            routes.add(0,"<elija una ruta>");
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getComboboxList("routes"));
+                android.R.layout.simple_spinner_item, routes);
         //set adapter to spinner
         combobox_route.setAdapter(adapter);
         //set listener from spinner
@@ -144,6 +146,9 @@ public class Configuration extends AppCompatActivity {
         });
     }
 
+    /**
+     * obtain manifest of endpoint, need the user select a route in combobox, insert the data in db local, fill two tables: manifest and  people
+     */
     public void loadManifest() {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         //first delete the manifest table
@@ -168,12 +173,9 @@ public class Configuration extends AppCompatActivity {
         }
 
         //load size of manifest
-        ArrayList<String> select_counts = db.select("select count(id) from manifest", "|");
-        if (select_counts.size() > 0)
-
-        {
-            String[] binnacle_param_id = select_counts.get(0).split("\\|");
-            Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(binnacle_param_id[0]) + " personas a la base de datos", Toast.LENGTH_LONG).show();
+        String select_counts = db.selectFirst("select count(id) from manifest");
+        if (!select_counts.isEmpty()) {
+            Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(select_counts) + " personas a la base de datos", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -244,6 +246,14 @@ public class Configuration extends AppCompatActivity {
            Give the avalaible routes in the System
            obtain the routes from api http://ticket.bsale.cl/control_api/routes
     */
+
+    /**
+     * Give the avalaible routes in the System obtain the routes from endpoint http://ticket.bsale.cl/control_api/itinerarios?date="insert date here"
+     * @param Url= address to obtain routes
+     * @param Token= token bsale, neccesary to send get and post to api
+     * @return content in string, but it really is json array
+     * @throws IOException
+     */
     public String getRoutes(String Url, String Token) throws IOException {
         URL url = new URL(Url + "/itineraries?date=" + getCurrentDateTime("yyyy-MM-dd"));
         Log.d("get routes", url.toString());
@@ -364,11 +374,10 @@ public class Configuration extends AppCompatActivity {
         return result;
     }
 
-    public void wifiState(boolean bool) {
-        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-        wifiManager.setWifiEnabled(bool);
-    }
-
+    /**
+     * reset endpoint states, in old version was neccesary because we didn`t have a id_itinerary
+     * @return int that contains http status of this operation (when status 200 is OK)
+     */
     public String GETReset() {
         String url = AxxezoAPI + "/states/removeAll";
         String result = "";
