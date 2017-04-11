@@ -9,15 +9,17 @@ public class People {
     private String name;
     private String nationality;
     private int age;
+    private String mongo_documentID;
 
     public People() {
         //default constructor
     }
-    public People(String document, String name, String nationality, int age) {
+    public People(String document, String name, String nationality, int age, String mongo_documentID) {
         this.document = document;
         this.name = name;
         this.nationality = nationality;
         this.age = age;
+        this.mongo_documentID=mongo_documentID;
     }
     //use this constructor in cards list
 
@@ -58,6 +60,14 @@ public class People {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public String getMongo_documentID() {
+        return mongo_documentID;
+    }
+
+    public void setMongo_documentID(String mongo_documentID) {
+        this.mongo_documentID = mongo_documentID;
     }
 
     @Override

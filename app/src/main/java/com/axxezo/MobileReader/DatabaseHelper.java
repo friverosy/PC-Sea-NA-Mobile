@@ -61,6 +61,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //people
     private static final String PERSON_ID = "id";
+    private static final String PERSON_MONGO_ID = "id_mongo";
     private static final String PERSON_DOCUMENT = "document";
     private static final String PERSON_NAME = "name";
     private static final String PERSON_NATIONALITY = "nationality";
@@ -69,9 +70,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String ROUTE_ID = "id";
     private static final String ROUTE_NAME = "name";
     private static final String ROUTE_SAILING_DATE = "sailing_date";
+    private static final String ROUTE_MONGO_ID = "id_mongo";
 
     //ports
     private static final String PORT_ID = "id";
+    private static final String PORT_ID_MONGO = "id_mongo";
     private static final String PORT_ID_API = "id_api";
     private static final String PORT_NAME = "name";
     private static final String PORT_IS_IN_MANIFEST = "is_in_manifest";
@@ -123,7 +126,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     String CREATE_PEOPLE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PEOPLE + " ( " +
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PERSON_DOCUMENT + " TEXT NOT NULL UNIQUE, " +
-            PERSON_NAME + " TEXT, " + PERSON_NATIONALITY + " TEXT, " +
+            PERSON_MONGO_ID + " TEXT, "+
+            PERSON_NAME + " TEXT, " +
+            PERSON_NATIONALITY + " TEXT, " +
             PERSON_AGE + " INTEGER);";
 
     // "CONSTRAINT "+PERSON_DOCUMENT+" UNIQUE ("+PERSON_DOCUMENT+")); ";
@@ -140,13 +145,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
             ROUTE_NAME + " TEXT, " +
-            ROUTE_SAILING_DATE + " TEXT);";
+            ROUTE_SAILING_DATE + " TEXT," +
+            ROUTE_MONGO_ID + " TEXT);";
 
     String CREATE_PORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PORTS + " ( " +
             PORT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PORT_ID_API + " INTEGER, " +
-            PORT_NAME + " TEXT, " +
-            PORT_IS_IN_MANIFEST + " TEXT DEFAULT 'FALSE');";
+            PORT_ID_MONGO + " TEXT, " +
+            PORT_NAME + " TEXT); ";
 
     String CREATE_TRANSPORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_SHIPS + " ( " +
             SHIP_ID + " INTEGER PRIMARY KEY, " +
@@ -215,19 +221,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         switch (table) {
             case "routes":
                 if (!json.isEmpty() && json.length() > 3) {
-                    objectJson = new JSONObject(json);
-                    jsonArray = objectJson.getJSONArray("itinerarios");
+                    jsonArray = new JSONArray(json);
                     try {
                         db.beginTransactionNonExclusive();
                         db.delete(TABLE_ROUTES, null, null);
 
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
-                            Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("id_itinerario"), jsonArray.getJSONObject(i).getString("nombre_ruta").toUpperCase(),
-                                    jsonArray.getJSONObject(i).getString("zarpe"));
+                            Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("refId"), jsonArray.getJSONObject(i).getString("name").toUpperCase(),
+                                    jsonArray.getJSONObject(i).getString("depart"),jsonArray.getJSONObject(i).getString("_id"));
                             values.put(ROUTE_ID, routes.getID());
                             values.put(ROUTE_NAME, routes.getName().trim());
                             values.put(ROUTE_SAILING_DATE, routes.getSailing_date());
+                            values.put(ROUTE_MONGO_ID,routes.getId_mongo());
                             db.insert(TABLE_ROUTES, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -243,27 +249,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     Log.i("json content", json.toString());
                 break;
             case "manifest":
-                if (!json.isEmpty()) {
-                    objectJson = new JSONObject(json);
-                    jsonArray = objectJson.getJSONArray("manifiesto_embarque");
+                if (!json.isEmpty()&& json.length() > 3) {
+                    jsonArray = new JSONArray(json);
                     try {
                         //db.delete(TABLE_MANIFEST, null, null);
                         //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                         db.beginTransactionNonExclusive();
                         for (int i = 0; i < jsonArray.length(); i++) {
 
-                            People people = new People(jsonArray.getJSONObject(i).getString("codigo_pasajero").trim(), jsonArray.getJSONObject(i).getString("nombre_pasajero").toUpperCase(), jsonArray.getJSONObject(i).getString("nacionalidad").toUpperCase(), 0);
-                            navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("codigo_pasajero"), jsonArray.getJSONObject(i).getString("origen").toUpperCase(), jsonArray.getJSONObject(i).getString("destino").toUpperCase(), 0);
+                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase()," ",0,jsonArray.getJSONObject(i).getString("personId").toUpperCase());
+                            navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0);
 
                             String doc;
                             doc = people.getDocument().toUpperCase();
                             if (people.getDocument().contains("-"))
                                 doc = doc.substring(0, doc.length() - 2);
                             String name = removeAccent(people.getName().toUpperCase());
-                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                                    doc + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ")");
+                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + ","+ PERSON_MONGO_ID +","+ PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
+                                    doc + "','"+people.getMongo_documentID()+ "','"  + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ")");
                             db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                                    doc + "','" + manifest.getOrigin().toUpperCase() + "','" + manifest.getDestination().toUpperCase() + "','" + manifest.getIsInside() + "')");
+                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination()+ "','" + manifest.getIsInside() + "')");
                         }
                         // finnaly insert fill config table
                         db.setTransactionSuccessful();
@@ -278,17 +283,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     Log.i("error", "Json empty!");
                 break;
             case "ports":
-                if (!json.isEmpty()) {
-                    objectJson = new JSONObject(json);
-                    jsonArray = objectJson.getJSONArray("puertos");
+                if (!json.isEmpty()&& json.length() > 3) {
+                    jsonArray = new JSONArray(json);
                     try {
                         db.beginTransactionNonExclusive();
                         db.execSQL("delete from ports");
 
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
-                            Ports port = new Ports(jsonArray.getJSONObject(i).getInt("id_ubicacion"), jsonArray.getJSONObject(i).getString("nombre_ubicacion"));
-                            values.put(PORT_ID_API, port.getId());
+                            Ports port = new Ports(jsonArray.getJSONObject(i).getString("_id"), jsonArray.getJSONObject(i).getInt("locationId"), jsonArray.getJSONObject(i).getString("locationName"));
+                            values.put(PORT_ID_MONGO, port.getId_mongo());
+                            values.put(PORT_ID_API, port.getId_api());
                             values.put(PORT_NAME, port.getName().trim().toUpperCase());
                             db.insert(TABLE_PORTS, // table
                                     null, //nullColumnHack
@@ -340,7 +345,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String row = "";
         try {
             cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination," +
-                    "m.boletus from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+                    "m.boletus,p.id_mongo from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
@@ -497,7 +502,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-    public ArrayList<String> selectAsList(String qry) {
+    public ArrayList<String> selectAsList(String qry, int position) {
         SQLiteDatabase db = this.getWritableDatabase();
         ArrayList<String> list = new ArrayList<String>();
         log_app log = new log_app();
@@ -505,7 +510,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             cursor = db.rawQuery(qry, null);
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-                list.add(cursor.getString(0));
+                list.add(cursor.getString(position));
             }
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());

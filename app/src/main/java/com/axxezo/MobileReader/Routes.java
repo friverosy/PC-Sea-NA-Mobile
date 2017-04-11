@@ -8,12 +8,14 @@ public class Routes {
 
     private int ID;
     private String name;
+    private String id_mongo;
     private String sailing_date;
 
-    public Routes(int ID, String name, String sailing_date) {
+    public Routes(int ID, String name, String sailing_date, String id_mongo) {
         this.ID = ID;
         this.name = name;
         this.sailing_date = sailing_date;
+        this.id_mongo=id_mongo;
     }
 
     public int getID() {
@@ -34,6 +36,14 @@ public class Routes {
 
     public String getSailing_date() {
         return sailing_date;
+    }
+
+    public String getId_mongo() {
+        return id_mongo;
+    }
+
+    public void setId_mongo(String id_mongo) {
+        this.id_mongo = id_mongo;
     }
 
     public void setSailing_date(String sailing_date) {

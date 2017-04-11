@@ -68,9 +68,11 @@ public class Configuration extends AppCompatActivity {
 
         token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
         token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-        URL = "http://ticket.bsale.cl/control_api";
-        AxxezoAPI = "http://192.168.1.117:3000/api";
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
+        //URL = "http://ticket.bsale.cl/control_api";
+        URL = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
+        //URL = "http://192.168.1.102:9000/api";
+        //AxxezoAPI = "http://192.168.1.102:9000/api";
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/";
 
         //inserts in db
         try {
@@ -92,21 +94,21 @@ public class Configuration extends AppCompatActivity {
             public void onClick(View v) {
                 //simulateSuccessProgress(loadButton);
                 onclick = true;
-                if ((combobox_route != null && combobox_route.getSelectedItem() != null) && !combobox_route.getSelectedItem().equals("")) {
-                    mVibrator.vibrate(100);
-                    loadManifest();
-                    loadButton.setClickable(false);
-                    reset.execute();
-                    if (status.equals("200"))
-                        Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT);
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    startActivity(intent);
-                    //wifiState(true);
-                } else {
-                    Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
-                    loadButton.setProgress(-1);
+                // if ((combobox_route != null && combobox_route.getSelectedItem() != null) && !combobox_route.getSelectedItem().equals("")) {
+                mVibrator.vibrate(100);
+                loadManifest();
+                loadButton.setClickable(false);
+                reset.execute();
+                if (status.equals("200"))
+                    Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT);
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(intent);
+                //wifiState(true);
+                //} else {
+                //    Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
+                //    loadButton.setProgress(-1);
 
-                }
+                //}
             }
         });
     }
@@ -118,9 +120,9 @@ public class Configuration extends AppCompatActivity {
         final DatabaseHelper db = DatabaseHelper.getInstance(this);
         //create adapter from combobox_route
         combobox_route.setClickable(true);
-        ArrayList<String> routes=db.selectAsList("select name from routes");
-        if(routes!=null)
-            routes.add(0,"<elija una ruta>");
+        ArrayList<String> routes = db.selectAsList("select name from routes", 0);
+        if (routes != null)
+            routes.add(0, "<elija una ruta>");
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, routes);
         //set adapter to spinner
@@ -159,10 +161,10 @@ public class Configuration extends AppCompatActivity {
 
         try {
 
-            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(),"manifest");
-            db.insert("insert into config(route_id,route_name,date) values ( (select id from routes where id='"+selectionSpinnerRoute+"')" +
-                    ",(select name from routes where id='"+selectionSpinnerRoute+"'),(select sailing_date from routes where id='"+selectionSpinnerRoute+"'));");
-            db.insertJSON(new getAPIInformation(URL,selectionSpinnerRoute).execute().get(),"ports"); //insert ports of route selected
+            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
+            // db.insert("insert into config(route_id,route_name,date) values ( (select id from routes where id='"+selectionSpinnerRoute+"')" +
+            //         ",(select name from routes where id='"+selectionSpinnerRoute+"'),(select sailing_date from routes where id='"+selectionSpinnerRoute+"'));");
+            db.insertJSON(new getAPIInformation(URL, selectionSpinnerRoute).execute().get(), "ports"); //insert ports of route selected
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -195,16 +197,18 @@ public class Configuration extends AppCompatActivity {
             getInformation = "";
             flag = 0;
         }
-        getAPIInformation(String URL, String token,Integer id_route) {//manifest
+
+        getAPIInformation(String URL, String token, Integer id_route) {//manifest
             this.URL = URL;
             this.token = token;
-            this.route=id_route;
+            this.route = id_route;
             getInformation = "";
             flag = 1;
         }
-        getAPIInformation(String URL,Integer id_itinerary) {//ports
+
+        getAPIInformation(String URL, Integer id_itinerary) {//ports
             this.URL = URL;
-            this.route=id_itinerary;
+            this.route = id_itinerary;
             getInformation = "";
             flag = 2;
         }
@@ -221,7 +225,7 @@ public class Configuration extends AppCompatActivity {
                         getInformation = getManifest(URL, token, route);
                         break;
                     case 2:
-                        getInformation = getPorts(URL,route);
+                        getInformation = getPorts(URL, route);
                         break;
                 }
 
@@ -242,20 +246,16 @@ public class Configuration extends AppCompatActivity {
         }
     }
 
-    /*
-           Give the avalaible routes in the System
-           obtain the routes from api http://ticket.bsale.cl/control_api/routes
-    */
-
     /**
      * Give the avalaible routes in the System obtain the routes from endpoint http://ticket.bsale.cl/control_api/itinerarios?date="insert date here"
-     * @param Url= address to obtain routes
+     *
+     * @param Url=   address to obtain routes
      * @param Token= token bsale, neccesary to send get and post to api
      * @return content in string, but it really is json array
      * @throws IOException
      */
     public String getRoutes(String Url, String Token) throws IOException {
-        URL url = new URL(Url + "/itineraries?date=" + getCurrentDateTime("yyyy-MM-dd"));
+        URL url = new URL(Url + "/itineraries/");
         Log.d("get routes", url.toString());
         String content = null;
         HttpURLConnection conn = null;
@@ -295,10 +295,9 @@ public class Configuration extends AppCompatActivity {
     }
 
     public String getManifest(String Url, String Token, int ID_route) throws IOException {
-        //String date must be in format yyyy-MM-dd
-        //String hour must be in format HH-dd
-        int port=5; //ONLY TEST
-        URL url = new URL(Url + "/embarks?itinerary=" + ID_route + "&port=" + port );
+        //"http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary="
+        ID_route = 1;
+        URL url = new URL(Url + "/manifests?itinerary=" + ID_route);
         Log.d("get manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
@@ -329,8 +328,9 @@ public class Configuration extends AppCompatActivity {
         Log.d("Manifes Server response", content);
         return content;
     }
-    public String getPorts(String Url,int ID_route) throws IOException {
-        URL url = new URL(Url + "/itinerary_ports?itinerary="+ID_route);
+
+    public String getPorts(String Url, int ID_route) throws IOException {
+        URL url = new URL(Url + "/seaports");
         Log.d("get ports", url.toString());
         String content = "";
         HttpURLConnection conn = null;
@@ -376,6 +376,7 @@ public class Configuration extends AppCompatActivity {
 
     /**
      * reset endpoint states, in old version was neccesary because we didn`t have a id_itinerary
+     *
      * @return int that contains http status of this operation (when status 200 is OK)
      */
     public String GETReset() {

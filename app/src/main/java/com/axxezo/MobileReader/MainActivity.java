@@ -94,6 +94,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -192,11 +193,11 @@ public class MainActivity extends AppCompatActivity
         //asign timers to Asyntask
         timer_sendRecordsAPI = 420000;
         timer_asyncUpdateManifest = 120000;
-        timer_asyncUpdatePeopleState = 240000;
+        timer_asyncUpdatePeopleState = 60000;
 
         //asign url api axxezo
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:3000/api";
-        //AxxezoAPI = "http://192.168.1.126:3000/api";
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
+        //AxxezoAPI = "http://192.168.1.102:9001/api";
 
         //enable WAL mode in DB
         DatabaseHelper db = DatabaseHelper.getInstance(this);
@@ -236,15 +237,17 @@ public class MainActivity extends AppCompatActivity
             }
         });
         //fill information in combobox
-        Cursor getOriginandDestination = db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc");
+        Cursor getOriginandDestination = db.select("select distinct m.origin,p.name from manifest as m left join ports as p on m.origin=p.id_mongo union " +
+                "select distinct m.destination,p.name from manifest as m left join ports as p on m.destination=p.id_mongo");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
         if (getOriginandDestination != null)
             while (!getOriginandDestination.isAfterLast()) {
-                listOriginDestination.add(getOriginandDestination.getString(0));
+                listOriginDestination.add(getOriginandDestination.getString(1));
                 getOriginandDestination.moveToNext();
             }
         final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, listOriginDestination);
+
         comboLanded.setAdapter(adapter);
         comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -262,10 +265,8 @@ public class MainActivity extends AppCompatActivity
         //sendRecordstoAPI();
         //Asyntask_insertNewPeopleManifest();
         //asyncUpdateManifestinTime();
-        //asyncUpdateManifestState();
-        // if (getOriginandDestination != null)
-        //     getOriginandDestination.close();
-        if(getOriginandDestination!=null)
+        asyncUpdateManifestState(); //pending change values from string to integer
+        if (getOriginandDestination != null)
             getOriginandDestination.close();
     }
 
@@ -663,11 +664,11 @@ public class MainActivity extends AppCompatActivity
             if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
                 if (id_itinerary.trim().equals(db.selectFirst("select route_id from config where route_id='" + id_itinerary + "'").trim())) {
                     if (mySwitch.isChecked()) {
-                        if ((db.selectFirst("select origin from manifest where id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
+                        if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
                             valid = true;
                         else
                             TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
-                    } else if ((db.selectFirst("select destination from manifest where id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
+                    } else if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
                         valid = true;
                     else
                         TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
@@ -676,11 +677,11 @@ public class MainActivity extends AppCompatActivity
             } else if (type == 28 && id_itinerary == "" || type == 17) { //old dni and new dni validations
                 if (!db.selectFirst("select id_people from manifest where id_people='" + rut + "'").isEmpty()) {
                     if (mySwitch.isChecked()) {
-                        if (!selectedSpinnerLanded.equals(db.selectFirst("select origin from manifest where id_people='" + rut + "'"))) {
+                        if (!selectedSpinnerLanded.equals(db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'"))) {
                             TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
                         } else
                             valid = true;
-                    } else if (!selectedSpinnerLanded.equals(db.selectFirst("select destination from manifest where id_people='" + rut + "'"))) {
+                    } else if (!selectedSpinnerLanded.equals(db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'"))) {
                         TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
                     } else
                         valid = true;
@@ -717,6 +718,7 @@ public class MainActivity extends AppCompatActivity
             record.setPort_registry(comboLanded.getSelectedItem().toString());
             record.setOrigin(person.getString(2));
             record.setDestination(person.getString(3));
+            record.setMongo_id_person(person.getString(5));
 
             //finally add record
             db.add_record(record);
@@ -774,74 +776,48 @@ public class MainActivity extends AppCompatActivity
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
         try {
-            if (record.getDatetime() != null)
-                jsonObject.accumulate("datetime", record.getDatetime());
-            if (record.getPerson_document() != null)
-                jsonObject.accumulate("doc", record.getPerson_document());
-            if (record.getPerson_name() != null)
-                jsonObject.accumulate("name", record.getPerson_name());
-            if (record.getOrigin() != null)
-                jsonObject.accumulate("origen", record.getOrigin());
-            if (record.getDestination() != null)
-                jsonObject.accumulate("destination", record.getDestination());
-            if (record.getPort_registry() != null)
-                jsonObject.accumulate("port", record.getPort_registry());//puerto de registro
+            jsonObject.accumulate("person", record.getMongo_id_person());
+            jsonObject.accumulate("seaport", record.getPort_registry());
+            //jsonObject.accumulate("manifest", record.getManifest_mongoId());
             jsonObject.accumulate("state", record.getInput());
-            jsonObject.accumulate("permitted", record.getPermitted());
-            if (record.getTicket() != 0)
-                jsonObject.accumulate("boletus", record.getTicket());
-            if (record.getReason() != null)
+            jsonObject.accumulate("date", record.getDatetime());
+            if (record.getTicket() != 0) {
+                jsonObject.accumulate("ticket", record.getTicket());
                 jsonObject.accumulate("reason", record.getReason());
-
-
-            if (jsonObject.length() <= 22) { // 9 element on json
-                json = jsonObject.toString();
-
-                RequestBody body = RequestBody.create(JSON, json);
-
-                // create object okhttp
-                Request request = new Request.Builder()
-                        .url(url)
-                        .addHeader("Accept", "application/json")
-                        .addHeader("Content-type", "application/json")
-                        .post(body)
-                        .build();
-
-                if (!AxxezoAPI.equals("http://:0")) {
-
-                    //POST using okhttp
-                    Response response = client.newCall(request).execute();
-                    String tmp = response.body().string();
-                    log.writeLog(getApplicationContext(), "Main:line 1037", "DEBUG", "response " + response.code() + " name " + record.getPerson_name());
-
-                    // 10. convert inputstream to string
-                    if (tmp != null) {
-                        if (response.isSuccessful()) {
-                            Log.d("json POSTED", json);
-                            // if has sync=0 its becouse its an offline record to be will synchronized.
-                            if (record.getSync() == 0) {
-                                db.update_record(record.getId());
-                            }
-                        } else if (response.code() == 422) {
-                            //return 422 when the record is sync but his state in db isn`t change
-                            db.update_record(record.getId());
-                        }
-                    } else {
-                        result = String.valueOf(response.code());
-                    }
-                    //result its the json to sent
-                    if (result.startsWith("http://"))
-                        result = "204"; //no content
-                } else {
-                    new LoadSound(1).execute();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            makeToast("Configure datos del servidor primero");
-                        }
-                    });
-                }
             }
+
+            json = jsonObject.toString();
+
+            RequestBody body = RequestBody.create(JSON, json);
+
+            // create object okhttp
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("Accept", "application/json")
+                    .addHeader("Content-type", "application/json")
+                    .post(body)
+                    .build();
+
+            //POST using okhttp
+            Response response = client.newCall(request).execute();
+            String tmp = response.body().string();
+            log.writeLog(getApplicationContext(), "Main:line 1037", "DEBUG", "response " + response.code() + " name " + record.getPerson_name());
+
+            // 10. convert inputstream to string
+            if (tmp != null) {
+                if (response.isSuccessful()) {
+                    Log.d("json POSTED", json);
+                    // if has sync=0 its becouse its an offline record to be will synchronized.
+                    if (record.getSync() == 0) {
+                        db.update_record(record.getId());
+                    }
+                }
+            } else {
+                result = String.valueOf(response.code());
+            }
+            //result its the json to sent
+            if (result.startsWith("http://"))
+                result = "204"; //no content
         } catch (UnsupportedEncodingException e) {
             log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
         } catch (JSONException e) {
@@ -1052,85 +1028,56 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * download a jsonarray that contains people last state, then, compare this with the state in db local, this method sync the state of persons in PDAs
+     * get list from api, then, take each documentId and find this in manifest table, if found it, compare state that is entering with state in db
      */
     public void getUpdateStates() {
-      /*  String url = AxxezoAPI + "/states/getState?";
+        String url = AxxezoAPI + "/registers/status?itinerary=1";
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         log_app log = new log_app();
+        String result = "";
+        InputStream inputStream;
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet(url);
+        HttpResponse httpResponse = null;
+        JSONArray jsonArray = null;
 
-        // get list manifest id_people and port
-        Cursor peopleDocument = db.select("select id_people from manifest");
-        if (peopleDocument!=null&&peopleDocument.getCount()>0) {
-            int i = 0;
-            while (!peopleDocument.isAfterLast()) {
-                get_manifest_row = select_dni_from_manifest.get(i).split("\\|");
-                if (get_manifest_row.length > 0) {// is not empty
-                    ArrayList<String> get_config_per_rut = db.select("select (select route_id from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ports where id_api=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select name from ships where id=(select ship_id from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')))," +
-                            "(select date from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "')),(select hour from config where port_registry=(select port from manifest where id_people='" + get_manifest_row[0] + "'))", "|");
-                    String[] get_config_per_row = get_config_per_rut.get(0).split("\\|");
-                    if (get_config_per_row.length > 0) {
-                        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
-                        nameValuePairs.add(new BasicNameValuePair("doc", get_manifest_row[0]));
-                        nameValuePairs.add(new BasicNameValuePair("route", get_config_per_row[0]));
-                        nameValuePairs.add(new BasicNameValuePair("port", get_config_per_row[1]));
-                        nameValuePairs.add(new BasicNameValuePair("ship", get_config_per_row[2]));
-                        nameValuePairs.add(new BasicNameValuePair("date", get_config_per_row[3]));
-                        nameValuePairs.add(new BasicNameValuePair("hour", get_config_per_row[4]));
-
-                        //finally send get request
-                        String result = "";
-                        InputStream inputStream;
-                        HttpClient httpclient = new DefaultHttpClient();
-                        String paramsString = URLEncodedUtils.format(nameValuePairs, "UTF-8");
-                        HttpGet httpGet = new HttpGet(url + paramsString);
-                        HttpResponse httpResponse = null;
-                        try {
-                            httpResponse = httpclient.execute(httpGet);
-                            inputStream = httpResponse.getEntity().getContent();
-                            if (inputStream != null) {
-                                try {
-                                    result = convertInputStreamToString(inputStream);
-                                    JSONObject objectJson = new JSONObject(result);
-                                    if (!objectJson.getString("doc").isEmpty() && objectJson.getInt("state") != -1)
-                                        db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim().toUpperCase() + "'");
-
-
-                                    //is_inside_from_manifest = Integer.parseInt(db.selectFirst("select is_inside from manifest where id_people='" + objectJson.getString("doc").trim() + "'"));
-                                    /* seven combinations
-                                    * 0 --- 0
-                                    * 0 --- 1
-                                    * 1 --- 0
-                                    * 1 --- 1
-                                    * 1 --- 2
-                                    * 2 --- 1
-                                    * 2 --- 2
-                                     */
-        //case  1,0 1,2 covered
-        // if (is_inside_from_manifest < objectJson.getInt("state"))
-
-        //else if (is_inside_from_manifest > objectJson.getInt("state"))
-        //    db.insert("update manifest set is_inside='" + objectJson.getInt("state") + "' where id_people='" + objectJson.getString("doc").trim() + "'");
-                                /*} catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                result = String.valueOf(httpResponse.getStatusLine().getStatusCode());
-                            }
-                            i++;
-                            inputStream.close();
-                        } catch (IOException e) {
-                            log.writeLog(getApplicationContext(), "Main line:1373", "ERROR", e.getMessage());
-                            Log.e("status", "OFFLINE");
-                            i = select_dni_from_manifest.size();
-                        }
-
-
-                    }
+        //1.- obtaining json array with states from endpoint
+        try {
+            httpResponse = httpclient.execute(httpGet);
+            inputStream = httpResponse.getEntity().getContent();
+            if (inputStream != null) {
+                try {
+                    result = convertInputStreamToString(inputStream);
+                    jsonArray = new JSONArray(result);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                result = String.valueOf(httpResponse.getStatusLine().getStatusCode());
+            }
+            if (inputStream != null)
+                inputStream.close();
+        } catch (IOException e) {
+            log.writeLog(getApplicationContext(), "Main line:1373", "ERROR", e.getMessage());
+            Log.e("status", "OFFLINE");
+        }
+        //2.- process JSONarray, ask each jsonobject if exist in manifest table and compare states
+        if (jsonArray != null && jsonArray.length() > 0) {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                try {
+                    JSONObject people_information = jsonArray.getJSONObject(i);
+                    String dni_json = people_information.getString("documentId");
+                    if (dni_json.contains("-"))
+                        dni_json = dni_json.substring(0, dni_json.indexOf("-"));
+                    String getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
+                    if (!getInside.isEmpty() && (!getInside.equals(people_information.getString("state"))))
+                        db.insert("update manifest set is_inside='" + people_information.getString("state") +
+                                "' where id_people='" + dni_json.trim().toUpperCase() + "'");
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
             }
-        }*/
-
+        }
     }
 
     /**

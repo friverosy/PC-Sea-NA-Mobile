@@ -35,7 +35,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     public customViewPeople(ArrayList<Cards> mDataSet) {
         this.mDataSet = mDataSet;
         this.filteredmDataSet = mDataSet;
-        for(int i=0;i<this.mDataSet.size();i++){
+        for (int i = 0; i < this.mDataSet.size(); i++) {
             positions.add(mDataSet.get(i).getIsInside());
         }
     }
@@ -139,7 +139,6 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             spinner_state = (Spinner) itemView.findViewById(R.id.spinner_state);
 
 
-
         }
     }
 
@@ -162,42 +161,45 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         protected FilterResults performFiltering(CharSequence constraint) {
             final FilterResults results = new FilterResults();
             ArrayList<Cards> filterList = new ArrayList<Cards>();
-            if (constraint.length() == 0) {
-                filterList.addAll(filteredmDataSet);
-            } else {
-                final String[] parts = constraint.toString().split("\\,");
-                String filterPatternOrigin = "";
-                String filterPatternDestination = "";
-                if (parts[0].equals("< TODOS >") || parts[1].equals("< TODOS >")) {
-                    filterPatternOrigin = parts[0].trim();
-                    filterPatternDestination = parts[1].trim();
-                    if (parts[0].equals("< TODOS >") && parts[1].equals("< TODOS >"))
-                        filterList.addAll(filteredmDataSet);
-                    else
+            if (!mDataSet.isEmpty()) {
+                if (constraint.length() == 0) {
+                    filterList.addAll(filteredmDataSet);
+                } else {
+                    final String[] parts = constraint.toString().split("\\,");
+                    String filterPatternOrigin = "";
+                    String filterPatternDestination = "";
+                    if (parts[0].equals("< TODOS >") || parts[1].equals("< TODOS >")) {
+                        filterPatternOrigin = parts[0].trim();
+                        filterPatternDestination = parts[1].trim();
+                        if (parts[0].equals("< TODOS >") && parts[1].equals("< TODOS >"))
+                            filterList.addAll(filteredmDataSet);
+                        else
+                            for (final Cards cards : filteredmDataSet) {
+                                if (parts[0].equals("< TODOS >")) {
+                                    if (cards.getDestination().contains(filterPatternDestination))
+                                        filterList.add(cards);
+                                } else if (parts[1].equals("< TODOS >"))
+                                    if (cards.getOrigin().contains(filterPatternOrigin))
+                                        filterList.add(cards);
+                            }
+                    }
+                    if (!parts[0].isEmpty() || !parts[1].isEmpty()) {
+                        filterPatternOrigin = parts[0].trim();
+                        filterPatternDestination = parts[1].trim();
+                        Log.e("error", "origin:" + parts[0] + " destination" + parts[1]);
                         for (final Cards cards : filteredmDataSet) {
-                            if (parts[0].equals("< TODOS >")) {
-                                if (cards.getDestination().contains(filterPatternDestination))
-                                    filterList.add(cards);
-                            } else if (parts[1].equals("< TODOS >"))
-                                if (cards.getOrigin().contains(filterPatternOrigin))
-                                    filterList.add(cards);
-                        }
-                }
-                if (!parts[0].isEmpty() || !parts[1].isEmpty()) {
-                    filterPatternOrigin = parts[0].trim();
-                    filterPatternDestination = parts[1].trim();
-                    Log.e("error", "origin:" + parts[0] + " destination" + parts[1]);
-                    for (final Cards cards : filteredmDataSet) {
-                        if (cards.getOrigin().contains(filterPatternOrigin) && cards.getDestination().contains(filterPatternDestination)) {
-                            filterList.add(cards);
+                            if (cards.getOrigin().contains(filterPatternOrigin) && cards.getDestination().contains(filterPatternDestination)) {
+                                filterList.add(cards);
+                            }
                         }
                     }
+                    //Log.e("LIST","list size: "+filterList.size());
                 }
-                //Log.e("LIST","list size: "+filterList.size());
             }
             results.values = filterList;
             return results;
         }
+
 
         @Override
         protected void publishResults(CharSequence constraint, FilterResults results) {

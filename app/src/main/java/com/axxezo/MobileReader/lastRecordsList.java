@@ -1,20 +1,30 @@
 package com.axxezo.MobileReader;
 
 import android.app.ListActivity;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Vibrator;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.Filter;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 
@@ -33,7 +43,10 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
     private cardsSpinnerAdapter spinner_adapter_destination;
     private String spinner_destination_selected;//default first item in combobox
     private String spinner_origin_selected;//default first item in combobox
-
+    private TextView txt_view_origin;
+    private TextView txt_view_destination;
+    private Vibrator mVibrator;
+    private EditText find;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,10 +63,15 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         //adapter.getFilter().filter();
         combo_origin = (Spinner) findViewById(R.id.spinner_origin);
         combo_destination = (Spinner) findViewById(R.id.spinner_destination);
+        txt_view_origin = (TextView) findViewById(R.id.txt_view_origin);
+        txt_view_destination = (TextView) findViewById(R.id.txt_view_destination);
+        mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        find = (EditText) findViewById(R.id.editttext_search);
         DatabaseHelper db = DatabaseHelper.getInstance(this);
 
         //fill origin combobox
-        ArrayList<String> listOriginAndDestination = db.selectAsList("select distinct origin from manifest union select distinct destination from manifest");
+        ArrayList<String> listOriginAndDestination = db.selectAsList("select distinct m.origin,p.name from manifest as m left join ports as p on m.origin=p.id_mongo union " +
+                "select distinct m.destination,p.name from manifest as m left join ports as p on m.destination=p.id_mongo", 1);
         if (listOriginAndDestination != null)
             if (listOriginAndDestination.isEmpty())
                 listOriginAndDestination.add("");
@@ -65,7 +83,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         spinner_origin_selected = combo_origin.getItemAtPosition(0).toString();
         combo_origin.setOnItemSelectedListener(this);
 
-         //fill destination with same combinations of ports
+        //fill destination with same combinations of ports
         spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_destination.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_destination.setAdapter(spinner_adapter_destination);
@@ -91,11 +109,10 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
 
             }
         });
-
-
         addPersonCards();
         getStatusFromManifest(1, spinner_origin_selected, spinner_destination_selected);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
+        FloatingActionButton fab_search = (FloatingActionButton) findViewById(R.id.fab_search);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -111,6 +128,27 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 information.setTextColor(Color.WHITE);
                 information.setMaxLines(6);
                 snack.show();
+            }
+        });
+        fab_search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mVibrator.vibrate(100);
+                find.setVisibility(View.VISIBLE);
+                /*LinearLayout coor = (LinearLayout) findViewById(R.id.content_last_records_list);
+                find.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams params1= new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT);
+
+                find.setText("asdasdasdasdasd");
+                if (coor.getChildCount() == 8) {
+                  //  params1.rule
+                    coor.addView(find);
+                }
+                Log.e("lenght"," "+coor.getChildCount());
+*/
+
             }
         });
     }
@@ -181,6 +219,8 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 count = LandedCount;
                 break;
         }
+        if (select_counts != null)
+            select_counts.close();
 
         return count;
     }

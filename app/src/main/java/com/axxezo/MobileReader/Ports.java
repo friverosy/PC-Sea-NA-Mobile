@@ -5,20 +5,30 @@ package com.axxezo.MobileReader;
  */
 
 public class Ports {
-    private int id;
+    private String id_mongo;
+    private int id_api;
     private String name;
 
-    public Ports(int id_ruta, String nombre_ruta) {
-        id=id_ruta;
-        name=nombre_ruta;
+    public Ports(String id_mongo, int id_api, String name) {
+        this.id_mongo = id_mongo;
+        this.id_api = id_api;
+        this.name = name;
     }
 
-    public int getId() {
-        return id;
+    public String getId_mongo() {
+        return id_mongo;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setId_mongo(String id_mongo) {
+        this.id_mongo = id_mongo;
+    }
+
+    public int getId_api() {
+        return id_api;
+    }
+
+    public void setId_api(int id_api) {
+        this.id_api = id_api;
     }
 
     public String getName() {
@@ -32,7 +42,8 @@ public class Ports {
     @Override
     public String toString() {
         return "Ports{" +
-                "id=" + id +
+                "id_mongo='" + id_mongo + '\'' +
+                ", id_api=" + id_api +
                 ", name='" + name + '\'' +
                 '}';
     }

@@ -15,6 +15,7 @@ public class Record {
     String destination;
     String port_registry;
     String reason;
+    String mongo_id_person;
     int ticket;
     int input;
     int sync;
@@ -61,6 +62,14 @@ public class Record {
 
     public void setPerson_document(String person_document) {
         this.person_document = person_document;
+    }
+
+    public String getMongo_id_person() {
+        return mongo_id_person;
+    }
+
+    public void setMongo_id_person(String mongo_id_person) {
+        this.mongo_id_person = mongo_id_person;
     }
 
     public String getPerson_name() {
