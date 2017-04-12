@@ -104,7 +104,10 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
     @Override
     public int getItemCount() {
-        return mDataSet.size();
+        if (mDataSet == null)
+            return 0;
+        else
+            return mDataSet.size();
     }
 
 
@@ -159,6 +162,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
         @Override
         protected FilterResults performFiltering(CharSequence constraint) {
+
             final FilterResults results = new FilterResults();
             ArrayList<Cards> filterList = new ArrayList<Cards>();
             if (!mDataSet.isEmpty()) {
@@ -186,7 +190,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
                     if (!parts[0].isEmpty() || !parts[1].isEmpty()) {
                         filterPatternOrigin = parts[0].trim();
                         filterPatternDestination = parts[1].trim();
-                        Log.e("error", "origin:" + parts[0] + " destination" + parts[1]);
+                        //Log.e("error", "origin:" + parts[0] + " destination" + parts[1]);
                         for (final Cards cards : filteredmDataSet) {
                             if (cards.getOrigin().contains(filterPatternOrigin) && cards.getDestination().contains(filterPatternDestination)) {
                                 filterList.add(cards);

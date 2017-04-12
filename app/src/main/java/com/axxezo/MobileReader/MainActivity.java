@@ -237,17 +237,19 @@ public class MainActivity extends AppCompatActivity
             }
         });
         //fill information in combobox
-        Cursor getOriginandDestination = db.select("select distinct m.origin,p.name from manifest as m left join ports as p on m.origin=p.id_mongo union " +
-                "select distinct m.destination,p.name from manifest as m left join ports as p on m.destination=p.id_mongo");
+        Cursor getOriginandDestination = db.select("select name from ports order by name desc");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
-        if (getOriginandDestination != null)
+        if (getOriginandDestination != null && getOriginandDestination.getCount() > 0) {
             while (!getOriginandDestination.isAfterLast()) {
-                listOriginDestination.add(getOriginandDestination.getString(1));
+                if (getOriginandDestination.getString(0) != null)
+                    listOriginDestination.add(getOriginandDestination.getString(0));
                 getOriginandDestination.moveToNext();
             }
-        final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        }
+        if (getOriginandDestination != null)
+            getOriginandDestination.close();
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, listOriginDestination);
-
         comboLanded.setAdapter(adapter);
         comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -266,8 +268,7 @@ public class MainActivity extends AppCompatActivity
         //Asyntask_insertNewPeopleManifest();
         //asyncUpdateManifestinTime();
         asyncUpdateManifestState(); //pending change values from string to integer
-        if (getOriginandDestination != null)
-            getOriginandDestination.close();
+
     }
 
     @Override

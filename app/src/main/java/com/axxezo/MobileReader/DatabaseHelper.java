@@ -126,7 +126,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     String CREATE_PEOPLE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PEOPLE + " ( " +
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PERSON_DOCUMENT + " TEXT NOT NULL UNIQUE, " +
-            PERSON_MONGO_ID + " TEXT, "+
+            PERSON_MONGO_ID + " TEXT, " +
             PERSON_NAME + " TEXT, " +
             PERSON_NATIONALITY + " TEXT, " +
             PERSON_AGE + " INTEGER);";
@@ -229,11 +229,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
                             Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("refId"), jsonArray.getJSONObject(i).getString("name").toUpperCase(),
-                                    jsonArray.getJSONObject(i).getString("depart"),jsonArray.getJSONObject(i).getString("_id"));
+                                    jsonArray.getJSONObject(i).getString("depart"), jsonArray.getJSONObject(i).getString("_id"));
                             values.put(ROUTE_ID, routes.getID());
                             values.put(ROUTE_NAME, routes.getName().trim());
                             values.put(ROUTE_SAILING_DATE, routes.getSailing_date());
-                            values.put(ROUTE_MONGO_ID,routes.getId_mongo());
+                            values.put(ROUTE_MONGO_ID, routes.getId_mongo());
                             db.insert(TABLE_ROUTES, // table
                                     null, //nullColumnHack
                                     values); // key/value -> keys = column names/ values = column values
@@ -249,7 +249,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     Log.i("json content", json.toString());
                 break;
             case "manifest":
-                if (!json.isEmpty()&& json.length() > 3) {
+                if (!json.isEmpty() && json.length() > 3) {
                     jsonArray = new JSONArray(json);
                     try {
                         //db.delete(TABLE_MANIFEST, null, null);
@@ -257,7 +257,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         db.beginTransactionNonExclusive();
                         for (int i = 0; i < jsonArray.length(); i++) {
 
-                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase()," ",0,jsonArray.getJSONObject(i).getString("personId").toUpperCase());
+                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId").toUpperCase());
                             navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0);
 
                             String doc;
@@ -265,10 +265,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             if (people.getDocument().contains("-"))
                                 doc = doc.substring(0, doc.length() - 2);
                             String name = removeAccent(people.getName().toUpperCase());
-                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + ","+ PERSON_MONGO_ID +","+ PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                                    doc + "','"+people.getMongo_documentID()+ "','"  + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ")");
+                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
+                                    doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ")");
                             db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination()+ "','" + manifest.getIsInside() + "')");
+                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
                         }
                         // finnaly insert fill config table
                         db.setTransactionSuccessful();
@@ -283,7 +283,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     Log.i("error", "Json empty!");
                 break;
             case "ports":
-                if (!json.isEmpty()&& json.length() > 3) {
+                if (!json.isEmpty() && json.length() > 3) {
                     jsonArray = new JSONArray(json);
                     try {
                         db.beginTransactionNonExclusive();
@@ -479,7 +479,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = null;
         try {
             cursor = db.rawQuery(select, null);
-            cursor.moveToFirst();
+            if (cursor != null && cursor.getCount() > 0)
+                cursor.moveToFirst();
             //cursor.moveToFirst();
         } catch (android.database.SQLException e) {
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());

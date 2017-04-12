@@ -2,6 +2,7 @@ package com.axxezo.MobileReader;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -39,7 +40,7 @@ import java.util.concurrent.ExecutionException;
 public class Configuration extends AppCompatActivity {
 
     private Spinner combobox_route;
-    private Integer selectionSpinnerRoute;
+    private String selectionSpinnerRoute;
     String hour;
     private Vibrator mVibrator;
     private String URL;
@@ -49,6 +50,7 @@ public class Configuration extends AppCompatActivity {
     private String AxxezoAPI;
     private int manifest_load_ports;
     private String status;
+    private String id_api_route;
     private boolean onclick = false;
 
     @Override
@@ -77,7 +79,7 @@ public class Configuration extends AppCompatActivity {
         //inserts in db
         try {
             DatabaseHelper db = DatabaseHelper.getInstance(this);
-            db.insertJSON(new getAPIInformation(URL, token_navieraAustral).execute().get(), "routes");
+            db.insertJSON(new getAPIInformation().execute().get(), "routes");
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -122,7 +124,7 @@ public class Configuration extends AppCompatActivity {
         combobox_route.setClickable(true);
         ArrayList<String> routes = db.selectAsList("select name from routes", 0);
         if (routes != null)
-            routes.add(0, "<elija una ruta>");
+            routes.add(0, "<ELIJA UNA RUTA>");
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, routes);
         //set adapter to spinner
@@ -134,12 +136,16 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setClickable(true);
                 if (combobox_route.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_route.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirst("SELECT id from ROUTES where name=" + "'" + nameElement + "'"));
-                    if (idElementSelected != 0) {
-                        selectionSpinnerRoute = idElementSelected;
+                    Cursor idElementSelected =db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
+                    if (idElementSelected!=null&&idElementSelected.getCount()>0) {
+                        selectionSpinnerRoute = idElementSelected.getString(1);
+                        id_api_route=idElementSelected.getString(0);
                         Log.i("id LogApp Routes", "----" + selectionSpinnerRoute);
                     }
+                    if(idElementSelected!=null)
+                        idElementSelected.close();
                 }
+
             }
 
             @Override
@@ -164,7 +170,7 @@ public class Configuration extends AppCompatActivity {
             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
             // db.insert("insert into config(route_id,route_name,date) values ( (select id from routes where id='"+selectionSpinnerRoute+"')" +
             //         ",(select name from routes where id='"+selectionSpinnerRoute+"'),(select sailing_date from routes where id='"+selectionSpinnerRoute+"'));");
-            db.insertJSON(new getAPIInformation(URL, selectionSpinnerRoute).execute().get(), "ports"); //insert ports of route selected
+            db.insertJSON(new getAPIInformation(URL, id_api_route).execute().get(), "ports"); //insert ports of route selected
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -185,30 +191,27 @@ public class Configuration extends AppCompatActivity {
         private String URL;
         private String getInformation;
         private String token;
-        private String date;
         private int flag = -1;
-        private int route;
-        private int port;
-        private int transport;
+        private String route;
+        private String id_api_bsale;
+        private
 
-        getAPIInformation(String URL, String token) {//routes
-            this.URL = URL;
-            this.token = token;
+        getAPIInformation() {//routes
             getInformation = "";
             flag = 0;
         }
 
-        getAPIInformation(String URL, String token, Integer id_route) {//manifest
+        getAPIInformation(String URL, String token, String id_mongo_route) {//manifest
             this.URL = URL;
             this.token = token;
-            this.route = id_route;
+            this.route = id_mongo_route;
             getInformation = "";
             flag = 1;
         }
 
-        getAPIInformation(String URL, Integer id_itinerary) {//ports
+        getAPIInformation(String URL, String id_api_bsale) {//ports
             this.URL = URL;
-            this.route = id_itinerary;
+            this.route = id_api_bsale;
             getInformation = "";
             flag = 2;
         }
@@ -219,7 +222,7 @@ public class Configuration extends AppCompatActivity {
             try {
                 switch (flag) {
                     case 0:
-                        getInformation = getRoutes(URL, token);
+                        getInformation = getRoutes();
                         break;
                     case 1:
                         getInformation = getManifest(URL, token, route);
@@ -249,19 +252,17 @@ public class Configuration extends AppCompatActivity {
     /**
      * Give the avalaible routes in the System obtain the routes from endpoint http://ticket.bsale.cl/control_api/itinerarios?date="insert date here"
      *
-     * @param Url=   address to obtain routes
-     * @param Token= token bsale, neccesary to send get and post to api
      * @return content in string, but it really is json array
      * @throws IOException
      */
-    public String getRoutes(String Url, String Token) throws IOException {
-        URL url = new URL(Url + "/itineraries/");
+    public String getRoutes() throws IOException {
+        URL url = new URL(URL + "/itineraries/");
         Log.d("get routes", url.toString());
         String content = null;
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
+            conn.setRequestProperty("TOKEN",token_navieraAustral);
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(2000);
             conn.connect();
@@ -294,10 +295,9 @@ public class Configuration extends AppCompatActivity {
         return content;
     }
 
-    public String getManifest(String Url, String Token, int ID_route) throws IOException {
+    public String getManifest(String Url, String Token, String id_mongo_route) throws IOException {
         //"http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary="
-        ID_route = 1;
-        URL url = new URL(Url + "/manifests?itinerary=" + ID_route);
+        URL url = new URL(Url + "/manifests?itinerary=" + id_mongo_route);
         Log.d("get manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
@@ -329,8 +329,8 @@ public class Configuration extends AppCompatActivity {
         return content;
     }
 
-    public String getPorts(String Url, int ID_route) throws IOException {
-        URL url = new URL(Url + "/seaports");
+    public String getPorts(String Url, String  id_mongo_route) throws IOException {
+        URL url = new URL(Url+"/itineraries/"+id_mongo_route+"/seaports");
         Log.d("get ports", url.toString());
         String content = "";
         HttpURLConnection conn = null;
@@ -343,7 +343,7 @@ public class Configuration extends AppCompatActivity {
 
             int connStatus = conn.getResponseCode();
             InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
+            if (connStatus != 200 && connStatus != 201) {
                 content = String.valueOf(getData);
             } else
                 content = convertInputStreamToString(getData);

@@ -70,14 +70,13 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         DatabaseHelper db = DatabaseHelper.getInstance(this);
 
         //fill origin combobox
-        ArrayList<String> listOriginAndDestination = db.selectAsList("select distinct m.origin,p.name from manifest as m left join ports as p on m.origin=p.id_mongo union " +
-                "select distinct m.destination,p.name from manifest as m left join ports as p on m.destination=p.id_mongo", 1);
+        ArrayList<String> listOriginAndDestination = db.selectAsList("select name from ports order by name desc", 0);
         if (listOriginAndDestination != null)
             if (listOriginAndDestination.isEmpty())
                 listOriginAndDestination.add("");
             else
                 listOriginAndDestination.add(0, "< TODOS >");
-        spinner_adapter_origin = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
+                spinner_adapter_origin = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_origin.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_origin.setAdapter(spinner_adapter_origin);
         spinner_origin_selected = combo_origin.getItemAtPosition(0).toString();
@@ -87,20 +86,26 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_destination.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_destination.setAdapter(spinner_adapter_destination);
-        spinner_destination_selected = combo_destination.getItemAtPosition(0).toString();
+        spinner_destination_selected = combo_destination.getItemAtPosition(1).toString();
         combo_destination.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
                 spinner_destination_selected = parent.getItemAtPosition(position).toString();
-                Cards cards = new Cards();
+
+                String spinner_origin_name_selection = spinner_origin_selected.equals("< TODOS >") ? spinner_origin_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_origin_selected + "'");
+                String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
                 //Here we use the Filtering Feature which we implemented in our Adapter class.
-                adapter.getFilter().filter((CharSequence) spinner_origin_selected + "," + spinner_destination_selected, new Filter.FilterListener() {
+                Log.e("mongo_id origin",spinner_origin_name_selection);
+                Log.e("mongo_id destination",spinner_destination_name_selection);
+                adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
                     @Override
                     public void onFilterComplete(int count) {
                         adapter.notifyDataSetChanged();
                         recyclerView.setAdapter(adapter);
                     }
                 });
+
 
             }
 
@@ -185,17 +190,17 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                     "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
                     "(select count(*) from manifest where is_inside=2)");
         } else if (origin.equals("< TODOS >") && !destination.equals("< TODOS >")) {
-            select_counts = db.select("select (select count(*) from manifest where destination='" + destination + "')," +
-                    "(select count(*) from manifest where is_inside=0 and destination='" + destination + "'),(select count(*) from manifest where is_inside=1 and destination='" + destination + "')," +
-                    "(select count(*) from manifest where is_inside=2 and destination='" + destination + "')");
+            select_counts = db.select("select (select count(*) from manifest where destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=0 and destination=(select id_mongo from ports where name='" + destination + "')),(select count(*) from manifest where is_inside=1 and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=2 and destination=(select id_mongo from ports where name='" + destination + "'))");
         } else if (!origin.equals("< TODOS >") && destination.equals("< TODOS >")) {
-            select_counts = db.select("select (select count(*) from manifest where origin='" + origin + "')," +
-                    "(select count(*) from manifest where is_inside=0 and origin='" + origin + "'),(select count(*) from manifest where is_inside=1 and origin='" + origin + "')," +
-                    "(select count(*) from manifest where is_inside=2 and origin='" + origin + "')");
+            select_counts = db.select("select (select count(*) from manifest where origin=(select id_mongo from ports where name='" + origin + "'))," +
+                    "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "')),(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "'))," +
+                    "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "'))");
         } else { //last case when
-            select_counts = db.select("select (select count(*) from manifest where origin='" + origin + "' and destination='" + destination + "')," +
-                    "(select count(*) from manifest where is_inside=0 and origin='" + origin + "' and destination='" + destination + "'),(select count(*) from manifest where is_inside=1 and origin='" + origin + "' and destination='" + destination + "')," +
-                    "(select count(*) from manifest where is_inside=2 and origin='" + origin + "' and destination='" + destination + "')");
+            select_counts = db.select("select (select count(*) from manifest where origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "')),(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))");
         }
 
         int count = 0;
@@ -228,9 +233,14 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         Cards cards = new Cards();
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
         spinner_origin_selected = parent.getItemAtPosition(position).toString();
+        String spinner_origin_name_selection = spinner_origin_selected.equals("< TODOS >") ? spinner_origin_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_origin_selected + "'");
+        String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
+       Log.e("mongo_id origin",spinner_origin_name_selection);
+       Log.e("mongo_id destination",spinner_destination_name_selection);
         //Here we use the Filtering Feature which we implemented in our Adapter class.
-        adapter.getFilter().filter((CharSequence) spinner_origin_selected + "," + spinner_destination_selected, new Filter.FilterListener() {
+        adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
             @Override
             public void onFilterComplete(int count) {
                 adapter.notifyDataSetChanged();
