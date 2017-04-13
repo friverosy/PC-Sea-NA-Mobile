@@ -86,7 +86,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_destination.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_destination.setAdapter(spinner_adapter_destination);
-        spinner_destination_selected = combo_destination.getItemAtPosition(1).toString();
+        spinner_destination_selected = combo_destination.getItemAtPosition(0).toString();
         combo_destination.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
