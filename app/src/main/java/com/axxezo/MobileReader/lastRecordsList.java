@@ -117,7 +117,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         addPersonCards();
         getStatusFromManifest(1, spinner_origin_selected, spinner_destination_selected);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
-        FloatingActionButton fab_search = (FloatingActionButton) findViewById(R.id.fab_search);
+        //FloatingActionButton fab_search = (FloatingActionButton) findViewById(R.id.fab_search);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -135,12 +135,12 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 snack.show();
             }
         });
-        fab_search.setOnClickListener(new View.OnClickListener() {
+        /*fab_search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mVibrator.vibrate(100);
                 find.setVisibility(View.VISIBLE);
-                /*LinearLayout coor = (LinearLayout) findViewById(R.id.content_last_records_list);
+                LinearLayout coor = (LinearLayout) findViewById(R.id.content_last_records_list);
                 find.setLayoutParams(new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -152,10 +152,11 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                     coor.addView(find);
                 }
                 Log.e("lenght"," "+coor.getChildCount());
-*/
+
 
             }
         });
+        */
     }
 
     private void addPersonCards() {

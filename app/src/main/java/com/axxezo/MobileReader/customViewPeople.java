@@ -4,7 +4,9 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.graphics.Color;
+import android.provider.ContactsContract;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -50,12 +52,15 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
     @Override
     public void onBindViewHolder(final UserViewHolder holder, int position) {
+        DatabaseHelper db=DatabaseHelper.getInstance(holder.itemView.getContext());
+        Cursor origin_destination=db.select("select (select name from ports where id_mongo='"+mDataSet.get(position).getOrigin()+"'),(select name from ports where id_mongo='"+mDataSet.get(position).getDestination()+"')");
         holder.people_Name.setText(mDataSet.get(position).getName().trim());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
 //        holder.people_destination.setText(mDataSet.get(position).getDestination());
-        holder.textViewExpand.setText(mDataSet.get(position).getName() + "\n" + mDataSet.get(position).getDocument() + "\n" + mDataSet.get(position).getDestination() + "\n");
+        holder.textViewExpand.setText("Nombre    :"+mDataSet.get(position).getName() + "\n" +"DNI            :"+mDataSet.get(position).getDocument() + "\n" + "Origen      :" +origin_destination.getString(0)+ "\n"+"Destino    :"+origin_destination.getString(1));
         holder.textViewExpand.setBackgroundColor(Color.parseColor("#E6E6E6"));
-
+        if(origin_destination!=null)
+            origin_destination.close();
         //set random values to inside
         //int random= (int) ((Math.random() * 2) + 1);
         //mDataSet.get(position).setIsInside(random);

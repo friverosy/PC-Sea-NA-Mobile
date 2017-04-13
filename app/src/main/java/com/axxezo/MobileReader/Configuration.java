@@ -170,6 +170,7 @@ public class Configuration extends AppCompatActivity {
             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
             // db.insert("insert into config(route_id,route_name,date) values ( (select id from routes where id='"+selectionSpinnerRoute+"')" +
             //         ",(select name from routes where id='"+selectionSpinnerRoute+"'),(select sailing_date from routes where id='"+selectionSpinnerRoute+"'));");
+            db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
             db.insertJSON(new getAPIInformation(URL, id_api_route).execute().get(), "ports"); //insert ports of route selected
 
         } catch (JSONException e) {
