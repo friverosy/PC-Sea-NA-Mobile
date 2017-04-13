@@ -17,7 +17,7 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:gravity="top|center"
-        android:text="Registro Manual"
+        android:text="Venta a Bordo"
         android:textSize="20sp" />
 
     <RelativeLayout
