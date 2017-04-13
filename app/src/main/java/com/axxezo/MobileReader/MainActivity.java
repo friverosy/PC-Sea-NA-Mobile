@@ -201,7 +201,7 @@ public class MainActivity extends AppCompatActivity
 
         //enable WAL mode in DB
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        db.setWriteAheadLoggingEnabled(true);
+        //db.setWriteAheadLoggingEnabled(true);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
