@@ -5,7 +5,9 @@ import android.database.Cursor;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -33,7 +35,7 @@ public class manual_registration extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        final DatabaseHelper db = new DatabaseHelper(this);
+        final DatabaseHelper db = DatabaseHelper.getInstance(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_manual_registration);
         ticket_no = (EditText) findViewById(R.id.registration_input_ticket);
@@ -45,11 +47,11 @@ public class manual_registration extends AppCompatActivity {
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         //fill information in combobox
-        Cursor getOriginandDestination = db.select("select distinct origin from manifest union select distinct destination from manifest order by origin desc");
+        Cursor getOriginandDestination = db.select("select distinct m.origin,p.name from manifest as m left join ports as p on m.origin=p.id_mongo union select distinct m.destination,p.name from manifest as m left join ports as p on m.destination=p.id_mongo");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
         if (getOriginandDestination != null)
             while (!getOriginandDestination.isAfterLast()) {
-                listOriginDestination.add(getOriginandDestination.getString(0));
+                listOriginDestination.add(getOriginandDestination.getString(1));
                 getOriginandDestination.moveToNext();
             }
         if (listOriginDestination == null || listOriginDestination.isEmpty())
@@ -95,22 +97,26 @@ public class manual_registration extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mVibrator.vibrate(100);
-                if (ticket_no.getText() == null) {
-                    ticket_no.setError("falta ingresar folio Boleta");
-                }
-                if (dni.getText() == null) {
-                    dni.setError("falta ingresar DNI");
-                }
-                if (name.getText() == null) {
-                    name.setError("falta ingresar Nombre");
-                }
-                if (ticket_no.getText() != null && dni.getText() != null && name.getText() != null) {
+                if (ticket_no.getText().toString().isEmpty()) {
+                    ticket_no.setError("Falta ingresar Número de Boleta");
+                    ticket_no.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(ticket_no, InputMethodManager.SHOW_IMPLICIT);
+                } else if (dni.getText().toString().isEmpty()) {
+                    dni.setError("Falta ingresar DNI");
+                    dni.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(dni, InputMethodManager.SHOW_IMPLICIT);
+                } else if (name.getText().toString().isEmpty()){
+                    name.setError("Falta ingresar Nombre");
+                    name.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(name, InputMethodManager.SHOW_IMPLICIT);
+                } else {
                     // String origin =selected_origin;
                     String port = db.selectFirst("select id_api from ports where name='" + selected_origin + "'");
                     db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
                     db.insert("insert into manifest(id_people,origin,destination,port,boletus) values('" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString()) + "')");
-                    // db.insert("insert into records(datetime,person_document,origin,destination,ticket,sync) values('" + getCurrentDateTime() + "','" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + ticket_no.getText().toString().toUpperCase() +"','"+0+"')");
-                    Toast.makeText(getApplicationContext(), "Persona Ingresada Exitosamente", Toast.LENGTH_LONG).show();
                     Record record = new Record();
                     record.setDatetime(getCurrentDateTime("yyy-MM-dd HH:mm:ss.S"));
                     record.setPerson_document(dni.getText().toString().toUpperCase());
@@ -120,7 +126,7 @@ public class manual_registration extends AppCompatActivity {
                     record.setTicket(Integer.parseInt(ticket_no.getText().toString()));
                     record.setPermitted(0);
                     db.add_record(record);
-                    db.close();
+                    Toast.makeText(getApplicationContext(), "Persona Ingresada Exitosamente", Toast.LENGTH_LONG).show();
                 }
             }
         });

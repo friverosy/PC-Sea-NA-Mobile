@@ -109,7 +109,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -162,6 +162,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             RECORD_DATETIME + " TEXT, " +
             RECORD_PERSON_DOC + " INTEGER, " +
+            PERSON_MONGO_ID + " TEXT, " +
             RECORD_PERSON_NAME + " TEXT, " +
             RECORD_ORIGIN + " INTEGER, " +
             RECORD_DESTINATION + " INTEGER, " +
@@ -240,6 +241,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
+                        e.printStackTrace();
                         log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
@@ -273,8 +275,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         // finnaly insert fill config table
                         db.setTransactionSuccessful();
                     } catch (JSONException e) {
+                        e.printStackTrace();
                         log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } catch (android.database.SQLException e) {
+                        e.printStackTrace();
                         log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
@@ -301,6 +305,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
+                        e.printStackTrace();
                         log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } finally {
                         db.endTransaction();
@@ -316,16 +321,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String firstElement = "";
         log_app log = new log_app();
         SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = null;
         try {
-            Cursor cursor = db.rawQuery(Query, null);
+            cursor = db.rawQuery(Query, null);
             cursor.moveToFirst();
             if (cursor.getCount() == 0)
                 return Query = "";
             else
                 firstElement = cursor.getString(0);
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
+        cursor.close();
         return firstElement;
     }
 
@@ -348,6 +356,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     "m.boletus,p.id_mongo from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
         return cursor;
@@ -363,6 +372,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         //values.put(RECORD_ID, record.getId());
         values.put(RECORD_PERSON_DOC, record.getPerson_document());
+        values.put(PERSON_MONGO_ID, record.getMongo_id_person());
         values.put(RECORD_PERSON_NAME, record.getPerson_name());
         values.put(RECORD_ORIGIN, record.getOrigin());
         values.put(RECORD_DESTINATION, record.getDestination());
@@ -380,11 +390,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.insert(TABLE_RECORDS, null, values);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
         // 4. close
         finally {
             db.endTransaction();
+            //updatePeopleManifest(record.getPerson_document(), record.getInput());
         }
     }
 
@@ -412,23 +424,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             while (!cursor.isAfterLast()) {
                 Record record = new Record();
-                record.setId(cursor.getInt(0));                     //ID
-                record.setDatetime(cursor.getString(1));            //DATETIME
-                record.setPerson_document(cursor.getString(2));     //PERSON_DOCUMENT
-                record.setPerson_name(cursor.getString(3));         //PERSON_NAME
-                record.setOrigin(cursor.getString(4));              //ORIGIN
-                record.setDestination(cursor.getString(5));         //DESTINATION
-                record.setPort_registry(cursor.getString(6));       //PORT_REGISTER
-                record.setInput(cursor.getInt(7));                  //INPUT
-                record.setSync(cursor.getInt(8));                   //SYNC
-                record.setPermitted(cursor.getInt(9));              //PERMITTED
-                record.setTicket(cursor.getInt(10));                //MANIFEST TICKET(ONLY IN MANUAL REGISTRATION)
-                record.setReason(cursor.getString(11));             //REASON
+                record.setId(cursor.getInt(cursor.getColumnIndex(RECORD_ID)));
+                record.setDatetime(cursor.getString(cursor.getColumnIndex(RECORD_DATETIME)));
+                record.setPerson_document(cursor.getString(cursor.getColumnIndex(RECORD_PERSON_DOC)));
+                record.setMongo_id_person(cursor.getString(cursor.getColumnIndex(PERSON_MONGO_ID)));
+                record.setPerson_name(cursor.getString(cursor.getColumnIndex(RECORD_PERSON_NAME)));
+                record.setOrigin(cursor.getString(cursor.getColumnIndex(RECORD_ORIGIN)));
+                record.setDestination(cursor.getString(cursor.getColumnIndex(RECORD_DESTINATION)));
+                record.setPort_registry(cursor.getString(cursor.getColumnIndex(RECORD_PORT_REGISTRY)));
+                record.setInput(cursor.getInt(cursor.getColumnIndex(RECORD_IS_INPUT)));
+                record.setSync(cursor.getInt(cursor.getColumnIndex(RECORD_SYNC)));
+                record.setPermitted(cursor.getInt(cursor.getColumnIndex(RECORD_IS_PERMITTED)));
+                record.setTicket(cursor.getInt(cursor.getColumnIndex(RECORD_TICKET)));
+                record.setReason(cursor.getString(cursor.getColumnIndex(RECORD_REASON)));
 
                 records.add(record);
                 cursor.moveToNext();
             }
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
         // 5. return
@@ -450,6 +464,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     null);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         } finally {
             // 4. close
@@ -467,6 +482,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut + "'");
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         } finally {
             db.endTransaction();
@@ -483,6 +499,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.moveToFirst();
             //cursor.moveToFirst();
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
         return cursor;
@@ -496,6 +513,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL(insert);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         } finally {
             db.endTransaction();
@@ -514,6 +532,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 list.add(cursor.getString(position));
             }
         } catch (android.database.SQLException e) {
+            e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
         return list;

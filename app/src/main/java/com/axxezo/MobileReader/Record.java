@@ -60,6 +60,7 @@ public class Record {
         return person_document;
     }
 
+
     public void setPerson_document(String person_document) {
         this.person_document = person_document;
     }
