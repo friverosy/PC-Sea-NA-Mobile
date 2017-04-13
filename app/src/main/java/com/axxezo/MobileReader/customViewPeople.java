@@ -68,23 +68,23 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             case 0:
                 holder.icon_entry.setText("");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_blank));
-                holder.spinner_state.setSelection(0);
+               // holder.spinner_state.setSelection(0);
                 break;
             case 1:
                 holder.icon_entry.setText("E");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_embarked));
-                holder.spinner_state.setSelection(1);
+               // holder.spinner_state.setSelection(1);
                 break;
             case 2:
                 holder.icon_entry.setText("D");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_landed));
-                holder.spinner_state.setSelection(2);
+               // holder.spinner_state.setSelection(2);
                 break;
         }
-        holder.spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+       /* holder.spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-               /* if(positions.get(holder.getAdapterPosition()) ==mDataSet.get(position).getIsInside()) {
+               if(positions.get(holder.getAdapterPosition()) ==mDataSet.get(position).getIsInside()) {
                     AlertDialog alertDialog = new AlertDialog.Builder(holder.itemView.getContext()).create();
                     alertDialog.setTitle("Alert");
                     alertDialog.setMessage("Alert message to be shown");
@@ -96,7 +96,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
                             });
                     alertDialog.show();
                     Log.e("posicion", position + "");
-                }*/
+                }
             }
 
             @Override
@@ -104,6 +104,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
             }
         });
+        */
 
     }
 
@@ -144,7 +145,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             icon_entry = (TextView) itemView.findViewById(R.id.icon_entry);
             spinner_destination = (Spinner) itemView.findViewById(R.id.spinner_destination);
             textViewExpand = (ExpandableTextView) itemView.findViewById(R.id.textView_expand);
-            spinner_state = (Spinner) itemView.findViewById(R.id.spinner_state);
+            //spinner_state = (Spinner) itemView.findViewById(R.id.spinner_state);
 
 
         }

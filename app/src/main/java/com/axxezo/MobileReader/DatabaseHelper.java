@@ -96,6 +96,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_IS_PERMITTED = "permitted";
     private static final String RECORD_TICKET = "ticket";
     private static final String RECORD_REASON = "reason";
+    private static final String RECORD_MONGO_ID_MANIFEST ="mongo_id_manifest";
 
     //hours
     private static final String HOUR_ID = "id";
@@ -109,7 +110,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON,RECORD_MONGO_ID_MANIFEST};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -171,6 +172,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_SYNC + " INTEGER, " +
             RECORD_IS_PERMITTED + " INTEGER," +
             RECORD_TICKET + " TEXT, " +
+            RECORD_MONGO_ID_MANIFEST + " TEXT, " +
             RECORD_REASON + " TEXT); ";
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
@@ -259,7 +261,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         db.beginTransactionNonExclusive();
                         for (int i = 0; i < jsonArray.length(); i++) {
 
-                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId").toUpperCase());
+                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"));
                             navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0);
 
                             String doc;
@@ -383,6 +385,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_IS_PERMITTED, record.getPermitted());
         values.put(RECORD_TICKET, record.getTicket());
         values.put(RECORD_REASON, record.getReason());
+        values.put(RECORD_MONGO_ID_MANIFEST, record.getMongo_id_manifest());
 
         // 3. insert
         try {
@@ -437,6 +440,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 record.setPermitted(cursor.getInt(cursor.getColumnIndex(RECORD_IS_PERMITTED)));
                 record.setTicket(cursor.getInt(cursor.getColumnIndex(RECORD_TICKET)));
                 record.setReason(cursor.getString(cursor.getColumnIndex(RECORD_REASON)));
+                record.setMongo_id_manifest(cursor.getString(cursor.getColumnIndex(RECORD_MONGO_ID_MANIFEST)));
 
                 records.add(record);
                 cursor.moveToNext();
@@ -444,6 +448,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (android.database.SQLException e) {
             e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        }
+        finally {
+            if(cursor!=null)
+                cursor.close();
         }
         // 5. return
         return records;

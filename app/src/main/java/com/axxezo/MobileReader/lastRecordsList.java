@@ -76,7 +76,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 listOriginAndDestination.add("");
             else
                 listOriginAndDestination.add(0, "< TODOS >");
-                spinner_adapter_origin = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
+        spinner_adapter_origin = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_origin.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_origin.setAdapter(spinner_adapter_origin);
         spinner_origin_selected = combo_origin.getItemAtPosition(0).toString();
@@ -86,7 +86,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
         spinner_adapter_destination.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_destination.setAdapter(spinner_adapter_destination);
-        spinner_destination_selected = combo_destination.getItemAtPosition(1).toString();
+        spinner_destination_selected = combo_destination.getItemAtPosition(0).toString();
         combo_destination.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -96,8 +96,8 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 String spinner_origin_name_selection = spinner_origin_selected.equals("< TODOS >") ? spinner_origin_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_origin_selected + "'");
                 String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
                 //Here we use the Filtering Feature which we implemented in our Adapter class.
-                Log.e("mongo_id origin",spinner_origin_name_selection);
-                Log.e("mongo_id destination",spinner_destination_name_selection);
+                Log.e("mongo_id origin", spinner_origin_name_selection);
+                Log.e("mongo_id destination", spinner_destination_name_selection);
                 adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
                     @Override
                     public void onFilterComplete(int count) {
@@ -238,8 +238,8 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         spinner_origin_selected = parent.getItemAtPosition(position).toString();
         String spinner_origin_name_selection = spinner_origin_selected.equals("< TODOS >") ? spinner_origin_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_origin_selected + "'");
         String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
-       Log.e("mongo_id origin",spinner_origin_name_selection);
-       Log.e("mongo_id destination",spinner_destination_name_selection);
+        Log.e("mongo_id origin", spinner_origin_name_selection);
+        Log.e("mongo_id destination", spinner_destination_name_selection);
         //Here we use the Filtering Feature which we implemented in our Adapter class.
         adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
             @Override
