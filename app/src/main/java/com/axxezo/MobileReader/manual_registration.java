@@ -61,11 +61,11 @@ public class manual_registration extends AppCompatActivity {
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         //fill information in combobox
-        Cursor getOriginandDestination = db.select("select distinct m.origin,p.name from manifest as m left join ports as p on m.origin=p.id_mongo union select distinct m.destination,p.name from manifest as m left join ports as p on m.destination=p.id_mongo");
+        Cursor getOriginandDestination = db.select("select name from ports");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
         if (getOriginandDestination != null)
             while (!getOriginandDestination.isAfterLast()) {
-                listOriginDestination.add(getOriginandDestination.getString(1));
+                listOriginDestination.add(getOriginandDestination.getString(0));
                 getOriginandDestination.moveToNext();
             }
         if (listOriginDestination == null || listOriginDestination.isEmpty())
@@ -128,15 +128,17 @@ public class manual_registration extends AppCompatActivity {
                     imm.showSoftInput(name, InputMethodManager.SHOW_IMPLICIT);
                 } else {
                     // String origin =selected_origin;
+                    String origin_mongo_id=db.selectFirst("select id_mongo from ports where name='"+origin.getSelectedItem().toString().trim()+"'");
+                    String destination_mongo_id=db.selectFirst("select id_mongo from ports where name='"+destination.getSelectedItem().toString().trim()+"'");
                     String port = db.selectFirst("select id_api from ports where name='" + selected_origin + "'");
                     db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
-                    db.insert("insert into manifest(id_people,origin,destination,port,boletus) values('" + dni.getText().toString().toUpperCase() + "','" + origin.getSelectedItem().toString().trim() + "','" + destination.getSelectedItem().toString().trim() + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString()) + "')");
+                    db.insert("insert into manifest(id_people,origin,destination,port,boletus) values('" + dni.getText().toString().toUpperCase() + "','" + origin_mongo_id + "','" + destination_mongo_id + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString()) + "')");
                     Record record = new Record();
                     record.setDatetime(getCurrentDateTime("yyy-MM-dd HH:mm:ss.S"));
                     record.setPerson_document(dni.getText().toString().toUpperCase());
                     record.setPerson_name(name.getText().toString().toUpperCase());
-                    record.setOrigin(origin.getSelectedItem().toString().trim());
-                    record.setDestination(destination.getSelectedItem().toString().trim());
+                    record.setOrigin(origin_mongo_id);
+                    record.setDestination(destination_mongo_id);
                     record.setTicket(Integer.parseInt(ticket_no.getText().toString()));
                     record.setPermitted(0);
                     //db.add_record(record);

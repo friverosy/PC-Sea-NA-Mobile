@@ -62,7 +62,6 @@ public class find_people_in_manifest extends AppCompatActivity {
         show_name = (TextView) findViewById(R.id.textView_show_name);
         show_origin = (TextView) findViewById(R.id.textView_show_origin);
         show_destination = (TextView) findViewById(R.id.textView_show_destination);
-        show_hour = (TextView) findViewById(R.id.textView_show_hour);
         image_authorized = (ImageView) findViewById(R.id.imageView_is_in_manifest);
 
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -262,7 +261,7 @@ public class find_people_in_manifest extends AppCompatActivity {
     }
 
     public void findInManifest(String document) {
-        Cursor get_selected_dni = db.select("select ma.id_people,ma.origin,ma.destination, p.name  from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'");
+        Cursor get_selected_dni = db.select("select ma.id_people,(select name from ports where id_mongo=ma.origin),(select name from ports where id_mongo=ma.destination), p.name  from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'");
         if (get_selected_dni!=null&&get_selected_dni.getCount() > 0) {
             mp3Permitted.start();
             show_dni.setText(document);

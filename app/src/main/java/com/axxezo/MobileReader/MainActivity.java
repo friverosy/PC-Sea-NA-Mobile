@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity
         //asign timers to Asyntask
         timer_sendRecordsAPI = 420000;
         timer_asyncUpdateManifest = 120000;
-        timer_asyncUpdatePeopleState = 600000;
+        timer_asyncUpdatePeopleState = 6000;
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
@@ -720,6 +720,7 @@ public class MainActivity extends AppCompatActivity
             record.setOrigin(person.getString(2));
             record.setDestination(person.getString(3));
             record.setMongo_id_person(person.getString(5));
+            record.setMongo_id_manifest(db.selectFirst("select id_mongo from routes where id=(select route_id from config)"));
 
             //finally add record
             db.add_record(record);
@@ -779,9 +780,10 @@ public class MainActivity extends AppCompatActivity
         try {
             jsonObject.accumulate("person", record.getMongo_id_person());
             jsonObject.accumulate("seaport", record.getPort_registry());
-            jsonObject.accumulate("manifest", db.selectFirst("select id_mongo from routes where id=(select route_id from config)")); //falta
+            jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
             jsonObject.accumulate("state", record.getInput()+"");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
+
             if (record.getTicket() != 0) {
                 jsonObject.accumulate("ticket", record.getTicket());
                 jsonObject.accumulate("reason", record.getReason());

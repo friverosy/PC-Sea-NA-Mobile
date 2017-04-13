@@ -74,13 +74,13 @@
                 android:maxLines="5"
                 android:id="@+id/textView_expand" />
 
-            <Spinner
+           <!-- <Spinner
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_marginStart="84dp"
                 android:entries="@array/states_array"
-                android:id="@+id/spinner_state" />
+                android:id="@+id/spinner_state" />-->
 
         </RelativeLayout>
     </android.support.v7.widget.CardView>
