@@ -141,6 +141,7 @@ public class manual_registration extends AppCompatActivity {
                     record.setDestination(destination_mongo_id);
                     record.setTicket(Integer.parseInt(ticket_no.getText().toString()));
                     record.setPermitted(0);
+                    record.setMongo_id_manifest(db.selectFirst("select id_mongo from routes where id=(select route_id from config)"));
                     //db.add_record(record);
                     new RegisterTask(record).execute();
                 }
@@ -198,9 +199,9 @@ public class manual_registration extends AppCompatActivity {
         try {
             jsonObject.accumulate("person", record.getMongo_id_person());
             jsonObject.accumulate("seaport", record.getPort_registry());
-            jsonObject.accumulate("manifest", db.selectFirst("select id_mongo from routes where id=(select route_id from config)")); //falta
+            jsonObject.accumulate("manifest", record.getMongo_id_manifest());
             jsonObject.accumulate("state", record.getInput()+"");
-            jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
+            jsonObject.accumulate("date", record.getDatetime());
             jsonObject.accumulate("ticket", record.getTicket());
             jsonObject.accumulate("reason", record.getReason());
 
