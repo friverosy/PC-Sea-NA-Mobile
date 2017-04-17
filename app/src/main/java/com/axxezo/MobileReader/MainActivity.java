@@ -130,7 +130,6 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
 
-    private String URL = "http://ticket.bsale.cl/control_api";
     private static String token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
     private static String token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
     private TextView TextViewFullname;
@@ -152,6 +151,7 @@ public class MainActivity extends AppCompatActivity
     private Spinner comboLanded;
     private String selectedSpinnerLanded;
     private log_app log;
+    private String updateTimePeople;
 
 
     /********
@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity
      * Asyntask declarations.....
      */
     private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
-    private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest;
+    private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest; //asyntask to update in realtime new people inserts in manifest
 
 
     @Override
@@ -189,6 +189,7 @@ public class MainActivity extends AppCompatActivity
         mySwitch = (Switch) findViewById(R.id.mySwitch);
         log = new log_app();
         selectedSpinnerLanded = "";
+        updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
 
         //asign timers to Asyntask
         timer_sendRecordsAPI = 420000;
@@ -265,8 +266,7 @@ public class MainActivity extends AppCompatActivity
 
         //call in oncreate asyntask
         sendRecordstoAPI();
-        //Asyntask_insertNewPeopleManifest();
-        //asyncUpdateManifestinTime();
+        asyncUpdateManifestinTime();
         asyncUpdateManifestState(); //pending change values from string to integer
     }
 
@@ -574,14 +574,10 @@ public class MainActivity extends AppCompatActivity
         log_app log = new log_app();
         int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
         int total_temp = 0;
-        Cursor ports = null;
         try {
-            //1.- to actualize manifest, i need to use endpoint and travel each port to fill the update of persons
-            ports = db.select("select id_api from ports)");
             String id_route = db.selectFirst("select route_id from config");
-            while (!ports.isAfterLast()) {
-                db.insertJSON(new getAPIInformation(URL, token_navieraAustral, Integer.parseInt(id_route), ports.getInt(0)).execute().get(), "manifest");
-            }
+            if (!id_route.equals(""))
+                db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route)).execute().get(), "manifest");
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
             if (count_before != count_after) {
                 int total = count_after - count_before;
@@ -596,8 +592,6 @@ public class MainActivity extends AppCompatActivity
         } catch (ExecutionException e) {
             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         }
-        if (ports != null)
-            ports.close();
         return total_temp;
     }
 
@@ -716,7 +710,7 @@ public class MainActivity extends AppCompatActivity
             record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
             record.setSync(0);
             //record.setPort_registry(comboLanded.getSelectedItem().toString());
-            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '"+comboLanded.getSelectedItem().toString()+"'"));
+            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
             record.setOrigin(person.getString(2));
             record.setDestination(person.getString(3));
             record.setMongo_id_person(person.getString(5));
@@ -781,7 +775,7 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("person", record.getMongo_id_person());
             jsonObject.accumulate("seaport", record.getPort_registry());
             jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
-            jsonObject.accumulate("state", record.getInput()+"");
+            jsonObject.accumulate("state", record.getInput() + "");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
 
             if (record.getTicket() != 0) {
@@ -804,7 +798,7 @@ public class MainActivity extends AppCompatActivity
             //POST using okhttp
             Response response = client.newCall(request).execute();
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
-            Log.d("-----response",tmp);
+            Log.d("-----response", tmp);
             //log.writeLog(getApplicationContext(), "Main:line 1037", "DEBUG", "response " + response.code() + " name " + record.getPerson_name());
 
             // 10. convert inputstream to string
@@ -896,21 +890,19 @@ public class MainActivity extends AppCompatActivity
      * the endpoint is different
      *
      * @param Url
-     * @param Token
      * @param ID_route
-     * @param port
      * @return content JSON to insert
      * @throws IOException
      */
-    public String Asyntask_insertNewPeopleManifest(String Url, String Token, int ID_route, int port) throws IOException {
-        //String date must be in format yyyy-MM-dd
-        URL url = new URL(Url + "/itinerary_manifest?itinerary=" + ID_route + "&port=" + port + "&date=" + getCurrentDateTime("yyyy-MM-dd"));
-        Log.d("---get manifest", url.toString());
+    public String Asyntask_insertNewPeopleManifest(String Url, int ID_route) throws IOException {
+        //http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary=1822&date=2017-04-14T10:44:00
+        URL url = new URL(Url + "/manifests?itinerary=" + ID_route + "&date=" + updateTimePeople);
+        Log.d("---get newPeople", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
+            conn.setRequestProperty("TOKEN", token_navieraAustral);
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(2000);
             conn.connect();
@@ -919,8 +911,12 @@ public class MainActivity extends AppCompatActivity
             InputStream getData = conn.getInputStream();
             if (connStatus != 200) {
                 content = String.valueOf(getData);
-            } else
+            } else {
                 content = convertInputStreamToString(getData);
+                if (!content.equals("[]"))
+                    updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
+                Log.e("content",content);
+            }
         } catch (MalformedURLException me) {
 
         } catch (IOException ioe) {
@@ -933,6 +929,7 @@ public class MainActivity extends AppCompatActivity
             content = "204"; // No content
         }
         Log.d("Manifes Server response", content);
+        //finally updating
         return content;
     }
 
@@ -1000,7 +997,7 @@ public class MainActivity extends AppCompatActivity
         private int route;
         private int port;
 
-        getAPIInformation(String URL, String token, int route, int port) {//manifest
+        getAPIInformation(String URL, int route) {//manifest
             this.URL = URL;
             this.token = token;
             this.route = route;
@@ -1014,7 +1011,7 @@ public class MainActivity extends AppCompatActivity
             try {
                 switch (flag) {
                     case 0:
-                        getInformation = Asyntask_insertNewPeopleManifest(URL, token, route, port);
+                        getInformation = Asyntask_insertNewPeopleManifest(URL, route);
                         break;
                 }
 
@@ -1040,7 +1037,7 @@ public class MainActivity extends AppCompatActivity
     public void getUpdateStates() {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         Cursor itinerary = db.select("select route_id from config");
-        if(itinerary.getCount() > 0) {
+        if (itinerary.getCount() > 0) {
             String url = AxxezoAPI + "/registers/status?itinerary=" + itinerary.getInt(0);
             log_app log = new log_app();
             String result = "";
