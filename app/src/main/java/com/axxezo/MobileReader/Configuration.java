@@ -140,7 +140,6 @@ public class Configuration extends AppCompatActivity {
                     if (idElementSelected!=null&&idElementSelected.getCount()>0) {
                         selectionSpinnerRoute = idElementSelected.getString(1);
                         id_api_route=idElementSelected.getString(0);
-                        Log.i("id LogApp Routes", "----" + selectionSpinnerRoute);
                     }
                     if(idElementSelected!=null)
                         idElementSelected.close();
@@ -168,7 +167,9 @@ public class Configuration extends AppCompatActivity {
         try {
 
             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
-            db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
+            // cambiar insert pot update
+            db.updateConfig(selectionSpinnerRoute);
+            //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
             db.insertJSON(new getAPIInformation(URL, id_api_route).execute().get(), "ports"); //insert ports of route selected
 
         } catch (JSONException e) {
@@ -256,7 +257,6 @@ public class Configuration extends AppCompatActivity {
      */
     public String getRoutes() throws IOException {
         URL url = new URL(URL + "/itineraries/");
-        Log.d("get routes", url.toString());
         String content = null;
         HttpURLConnection conn = null;
         try {
@@ -290,14 +290,12 @@ public class Configuration extends AppCompatActivity {
                 }
             });
         }
-        Log.d("Routes Server response", content);
         return content;
     }
 
     public String getManifest(String Url, String Token, String id_mongo_route) throws IOException {
         //"http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary="
         URL url = new URL(Url + "/manifests?itinerary=" + id_mongo_route);
-        Log.d("get manifest", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -314,9 +312,9 @@ public class Configuration extends AppCompatActivity {
             } else
                 content = convertInputStreamToString(getData);
         } catch (MalformedURLException me) {
-
+            me.printStackTrace();
         } catch (IOException ioe) {
-
+            ioe.printStackTrace();
         }
         if (conn != null) {
             conn.disconnect();
@@ -330,7 +328,6 @@ public class Configuration extends AppCompatActivity {
 
     public String getPorts(String Url, String  id_mongo_route) throws IOException {
         URL url = new URL(Url+"/itineraries/"+id_mongo_route+"/seaports");
-        Log.d("get ports", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -347,9 +344,9 @@ public class Configuration extends AppCompatActivity {
             } else
                 content = convertInputStreamToString(getData);
         } catch (MalformedURLException me) {
-
+            me.printStackTrace();
         } catch (IOException ioe) {
-
+            ioe.printStackTrace();
         }
         if (conn != null) {
             conn.disconnect();
@@ -357,7 +354,6 @@ public class Configuration extends AppCompatActivity {
         if (content.length() <= 2) { //[]
             content = "204"; // No content
         }
-        Log.d("Ports Server response", content);
         return content;
     }
 

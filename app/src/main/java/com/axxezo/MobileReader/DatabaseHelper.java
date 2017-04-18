@@ -104,8 +104,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //Config
     private static final String CONFIG_ROUTE_ID = "route_id";
-    private static final String CONFIG_DATE = "date";
     private static final String CONFIG_ROUTE_NAME = "route_name";
+    private static final String CONFIG_DATE = "date";
+    private static final String CONFIG_MANIFEST_ID = "manifest_id";
 
 
     //set table colums
@@ -116,7 +117,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
     private static final String[] TRANSPORTS_COLUMNS = {SHIP_ID, SHIP_NAME};
     private static final String[] HOURS_COLUMNS = {HOUR_ID, HOUR_NAME};
-    private static final String[] CONFIG_COLUMNS = {CONFIG_ROUTE_ID, CONFIG_DATE};
+    private static final String[] CONFIG_COLUMNS = {CONFIG_ROUTE_ID, CONFIG_ROUTE_NAME, CONFIG_DATE, CONFIG_MANIFEST_ID};
 
     // Database Version
     private static final int DATABASE_VERSION = 1;
@@ -183,7 +184,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
             CONFIG_ROUTE_ID + " INTEGER, " +
             CONFIG_ROUTE_NAME + " INTEGER, " +
-            CONFIG_DATE + " TEXT);";
+            CONFIG_DATE + " TEXT, " +
+            CONFIG_MANIFEST_ID + " TEXT);";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -259,6 +261,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         //db.delete(TABLE_MANIFEST, null, null);
                         //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                         db.beginTransactionNonExclusive();
+                        ContentValues values = new ContentValues();
+                        values.put(CONFIG_MANIFEST_ID, jsonArray.getJSONObject(0).getString("manifestId"));
+                        db.insert(TABLE_CONFIG, null, values);
                         for (int i = 0; i < jsonArray.length(); i++) {
 
                             People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"));
@@ -554,4 +559,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+    public void updateConfig(String route) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        log_app log = new log_app();
+        try {
+            db.beginTransactionNonExclusive();
+            db.execSQL("update config set route_id=" + route + " where id=1");
+            db.setTransactionSuccessful();
+        } catch (android.database.SQLException e) {
+            e.printStackTrace();
+            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            db.endTransaction();
+        }
+    }
 }

@@ -194,7 +194,7 @@ public class MainActivity extends AppCompatActivity
         //asign timers to Asyntask
         timer_sendRecordsAPI = 420000;
         timer_asyncUpdateManifest = 120000;
-        timer_asyncUpdatePeopleState = 6000;
+        timer_asyncUpdatePeopleState = 600000;
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
@@ -576,7 +576,7 @@ public class MainActivity extends AppCompatActivity
         int total_temp = 0;
         try {
             String id_route = db.selectFirst("select route_id from config");
-            if (!id_route.equals(""))
+            if (id_route != null && !id_route.equals(""))
                 db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route)).execute().get(), "manifest");
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
             if (count_before != count_after) {
@@ -714,7 +714,7 @@ public class MainActivity extends AppCompatActivity
             record.setOrigin(person.getString(2));
             record.setDestination(person.getString(3));
             record.setMongo_id_person(person.getString(5));
-            record.setMongo_id_manifest(db.selectFirst("select id_mongo from routes where id=(select route_id from config)"));
+            record.setMongo_id_manifest(db.selectFirst("select manifest_id from config"));
 
             //finally add record
             db.add_record(record);
@@ -784,7 +784,6 @@ public class MainActivity extends AppCompatActivity
             }
 
             json = jsonObject.toString();
-            Log.d("json posting", json);
 
             RequestBody body = RequestBody.create(JSON, json);
 
@@ -798,13 +797,10 @@ public class MainActivity extends AppCompatActivity
             //POST using okhttp
             Response response = client.newCall(request).execute();
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
-            Log.d("-----response", tmp);
-            //log.writeLog(getApplicationContext(), "Main:line 1037", "DEBUG", "response " + response.code() + " name " + record.getPerson_name());
 
             // 10. convert inputstream to string
             if (tmp != null) {
                 if (response.isSuccessful()) {
-                    Log.d("json POSTED", json);
                     // if has sync=0 its becouse its an offline record to be will synchronized.
                     if (record.getSync() == 0) {
                         db.update_record(record.getId());
@@ -895,9 +891,8 @@ public class MainActivity extends AppCompatActivity
      * @throws IOException
      */
     public String Asyntask_insertNewPeopleManifest(String Url, int ID_route) throws IOException {
-        //http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary=1822&date=2017-04-14T10:44:00
+        //http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary=1824&date=2017-04-14T10:44:00
         URL url = new URL(Url + "/manifests?itinerary=" + ID_route + "&date=" + updateTimePeople);
-        Log.d("---get newPeople", url.toString());
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -915,7 +910,6 @@ public class MainActivity extends AppCompatActivity
                 content = convertInputStreamToString(getData);
                 if (!content.equals("[]"))
                     updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
-                Log.e("content",content);
             }
         } catch (MalformedURLException me) {
 
@@ -928,7 +922,6 @@ public class MainActivity extends AppCompatActivity
         if (content.length() <= 2) { //[]
             content = "204"; // No content
         }
-        Log.d("Manifes Server response", content);
         //finally updating
         return content;
     }
@@ -1027,6 +1020,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         protected void onPostExecute(String result) {
+            Log.d("getAPIInformation Res", result);
         }
 
     }
@@ -1054,7 +1048,6 @@ public class MainActivity extends AppCompatActivity
                 if (inputStream != null) {
                     try {
                         result = convertInputStreamToString(inputStream);
-                        Log.d(url, result);
                         jsonArray = new JSONArray(result);
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -1068,19 +1061,25 @@ public class MainActivity extends AppCompatActivity
                 log.writeLog(getApplicationContext(), "Main line:1373", "ERROR", e.getMessage());
                 Log.e("status", "OFFLINE");
             }
+
             //2.- process JSONarray, ask each jsonobject if exist in manifest table and compare states
             if (jsonArray != null && jsonArray.length() > 0) {
+                JSONObject person_information;
+                String getInside;
+                String dni_json;
                 for (int i = 0; i < jsonArray.length(); i++) {
                     try {
-                        JSONObject people_information = jsonArray.getJSONObject(i);
-                        String dni_json = people_information.getString("documentId");
+                        person_information = jsonArray.getJSONObject(i);
+                        dni_json = person_information.getString("documentId");
                         if (dni_json.contains("-"))
                             dni_json = dni_json.substring(0, dni_json.indexOf("-"));
-                        String getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
-                        if (!getInside.isEmpty() && (!getInside.equals(people_information.getString("state"))))
-                            db.insert("update manifest set is_inside='" + people_information.getString("state") +
+                        getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
+
+                        if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state")))){
+                            //Log.d(dni_json + " " + getInside, person_information.getString("state"));
+                            db.insert("update manifest set is_inside='" + person_information.getString("state") +
                                     "' where id_people='" + dni_json.trim().toUpperCase() + "'");
-                        Log.d(dni_json, getInside);
+                        }
                     } catch (JSONException e) {
                         e.printStackTrace();
                         log.writeLog(getApplicationContext(), "Main line:1083", "ERROR", e.getMessage());
