@@ -117,7 +117,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         addPersonCards();
         getStatusFromManifest(1, spinner_origin_selected, spinner_destination_selected);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
-        //FloatingActionButton fab_search = (FloatingActionButton) findViewById(R.id.fab_search);
+        FloatingActionButton fab_search = (FloatingActionButton) findViewById(R.id.fab_search);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -135,28 +135,29 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 snack.show();
             }
         });
-        /*fab_search.setOnClickListener(new View.OnClickListener() {
+        fab_search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mVibrator.vibrate(100);
+                find.setVisibility(View.GONE);
                 find.setVisibility(View.VISIBLE);
-                LinearLayout coor = (LinearLayout) findViewById(R.id.content_last_records_list);
+               /* CoordinatorLayout coor = (CoordinatorLayout) findViewById(R.id.content_last_records_list);
                 find.setLayoutParams(new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT));
-                LinearLayout.LayoutParams params1= new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT);
+                        CoordinatorLayout.LayoutParams.MATCH_PARENT,
+                        CoordinatorLayout.LayoutParams.WRAP_CONTENT));
+                CoordinatorLayout.LayoutParams params1= new CoordinatorLayout.LayoutParams(CoordinatorLayout.LayoutParams.MATCH_PARENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT);
 
                 find.setText("asdasdasdasdasd");
                 if (coor.getChildCount() == 8) {
                   //  params1.rule
                     coor.addView(find);
                 }
-                Log.e("lenght"," "+coor.getChildCount());
+                Log.e("lenght"," "+coor.getChildCount());*/
 
 
             }
         });
-        */
+
     }
 
     private void addPersonCards() {
@@ -241,13 +242,22 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         Log.e("mongo_id origin", spinner_origin_name_selection);
         Log.e("mongo_id destination", spinner_destination_name_selection);
         //Here we use the Filtering Feature which we implemented in our Adapter class.
-        adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
-            @Override
-            public void onFilterComplete(int count) {
-                adapter.notifyDataSetChanged();
-                recyclerView.setAdapter(adapter);
-            }
-        });
+        if (find.getVisibility() == View.GONE || find.getVisibility() == View.INVISIBLE)
+            adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
+                @Override
+                public void onFilterComplete(int count) {
+                    adapter.notifyDataSetChanged();
+                    recyclerView.setAdapter(adapter);
+                }
+            });
+        if(find.getVisibility() == View.VISIBLE)
+            adapter.getFilter().filter((CharSequence) find.getText() + ",", new Filter.FilterListener() {
+                @Override
+                public void onFilterComplete(int count) {
+                    adapter.notifyDataSetChanged();
+                    recyclerView.setAdapter(adapter);
+                }
+            });
 
     }
 

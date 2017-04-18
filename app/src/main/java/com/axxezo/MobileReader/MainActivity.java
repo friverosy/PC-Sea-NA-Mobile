@@ -405,7 +405,9 @@ public class MainActivity extends AppCompatActivity
                         PeopleValidator(barcodeStr, "", "", barcodeType);
                     } else if (!barcodeStr.contains("id_itinerary")) {
                         new LoadSound(1).execute();
+                        TextViewFullname.setText("");
                         TextViewStatus.setText("QR INVALIDO");
+                        imageview.setImageResource(R.drawable.img_false);
                     }
                 }
                 if (barcodeType == 17) { // PDF417->old dni
