@@ -659,15 +659,18 @@ public class MainActivity extends AppCompatActivity
             TextViewRut.setText(rut);
             if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
                 if (id_itinerary.trim().equals(db.selectFirst("select route_id from config where route_id='" + id_itinerary + "'").trim())) {
-                    if (mySwitch.isChecked()) {
-                        if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
+                    if (!db.selectFirst("select id_people from manifest where id_people='" + rut + "'").isEmpty()) {
+                        if (mySwitch.isChecked()) {
+                            if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
+                                valid = true;
+                            else
+                                TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
+                        } else if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
                             valid = true;
                         else
-                            TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
-                    } else if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
-                        valid = true;
-                    else
-                        TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
+                            TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
+                    } else
+                        TextViewStatus.setText("PERSONA NO SE ENCUENTRA EN MANIFIESTO");
                 } else
                     TextViewStatus.setText("VIAJE NO CORRESPONDE");
             } else if (type == 28 && id_itinerary == "" || type == 17) { //old dni and new dni validations
@@ -754,7 +757,7 @@ public class MainActivity extends AppCompatActivity
     public void OfflineRecordsSynchronizer() {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         List<Record> records = db.get_desynchronized_records();
-        Asynctask_sendRecord = new RegisterTask(records, AxxezoAPI + "/registers");
+        Asynctask_sendRecord = new RegisterTask(records, AxxezoAPI);
         Asynctask_sendRecord.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
@@ -779,11 +782,13 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
             jsonObject.accumulate("state", record.getInput() + "");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
-
-            if (record.getTicket() != 0) {
-                jsonObject.accumulate("ticket", record.getTicket());
+            if (record.getPermitted() == -1)//if is rejected
                 jsonObject.accumulate("reason", record.getReason());
-            }
+            if (record.getTicket() != 0) {
+                url = url + "/manualSell";
+                jsonObject.accumulate("ticket", record.getTicket());
+            } else
+                url = url + "/registers";
 
             json = jsonObject.toString();
 
@@ -1076,8 +1081,9 @@ public class MainActivity extends AppCompatActivity
                         if (dni_json.contains("-"))
                             dni_json = dni_json.substring(0, dni_json.indexOf("-"));
                         getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
+                        Log.e(dni_json, person_information.getString("state"));
 
-                        if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state")))){
+                        if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state")))) {
                             //Log.d(dni_json + " " + getInside, person_information.getString("state"));
                             db.insert("update manifest set is_inside='" + person_information.getString("state") +
                                     "' where id_people='" + dni_json.trim().toUpperCase() + "'");

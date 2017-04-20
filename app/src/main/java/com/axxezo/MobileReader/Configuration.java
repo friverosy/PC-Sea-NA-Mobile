@@ -127,6 +127,7 @@ public class Configuration extends AppCompatActivity {
             routes.add(0, "<ELIJA UNA RUTA>");
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, routes);
+        //combobox_route.setTag();
         //set adapter to spinner
         combobox_route.setAdapter(adapter);
         //set listener from spinner
@@ -137,6 +138,7 @@ public class Configuration extends AppCompatActivity {
                 if (combobox_route.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_route.getSelectedItem().toString();
                     Cursor idElementSelected =db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
+                    Log.e("debug",idElementSelected.getInt(1)+"");
                     if (idElementSelected!=null&&idElementSelected.getCount()>0) {
                         selectionSpinnerRoute = idElementSelected.getString(1);
                         id_api_route=idElementSelected.getString(0);
@@ -256,7 +258,7 @@ public class Configuration extends AppCompatActivity {
      * @throws IOException
      */
     public String getRoutes() throws IOException {
-        URL url = new URL(URL + "/itineraries/");
+        URL url = new URL(URL + "/itineraries?date="+getCurrentDateTime("yyyy-MM-dd").toString());
         String content = null;
         HttpURLConnection conn = null;
         try {

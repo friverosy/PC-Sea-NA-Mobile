@@ -135,12 +135,18 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 snack.show();
             }
         });
-        fab_search.setOnClickListener(new View.OnClickListener() {
+        /*fab_search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mVibrator.vibrate(100);
                 find.setVisibility(View.GONE);
                 find.setVisibility(View.VISIBLE);
+                RelativeLayout coor = (RelativeLayout) findViewById(R.id.relative_layout);
+                ViewGroup.LayoutParams params = coor.getLayoutParams();
+// Changes the height and width to the specified *pixels*
+                params.width=500;
+                params.height =100;
+                coor.setLayoutParams(params);
                /* CoordinatorLayout coor = (CoordinatorLayout) findViewById(R.id.content_last_records_list);
                 find.setLayoutParams(new LinearLayout.LayoutParams(
                         CoordinatorLayout.LayoutParams.MATCH_PARENT,
@@ -155,8 +161,8 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 Log.e("lenght"," "+coor.getChildCount());*/
 
 
-            }
-        });
+       //     }
+        //});
 
     }
 
@@ -250,7 +256,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                     recyclerView.setAdapter(adapter);
                 }
             });
-        if(find.getVisibility() == View.VISIBLE)
+        if (find.getVisibility() == View.VISIBLE)
             adapter.getFilter().filter((CharSequence) find.getText() + ",", new Filter.FilterListener() {
                 @Override
                 public void onFilterComplete(int count) {
