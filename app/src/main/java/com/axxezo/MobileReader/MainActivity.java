@@ -192,9 +192,9 @@ public class MainActivity extends AppCompatActivity
         updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
 
         //asign timers to Asyntask
-        timer_sendRecordsAPI = 420000;
-        timer_asyncUpdateManifest = 120000;
-        timer_asyncUpdatePeopleState = 600000;
+        timer_sendRecordsAPI = 4200;
+        timer_asyncUpdateManifest = 12000;
+        timer_asyncUpdatePeopleState = 60000;
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
@@ -720,12 +720,11 @@ public class MainActivity extends AppCompatActivity
             record.setDestination(person.getString(3));
             record.setMongo_id_person(person.getString(5));
             record.setMongo_id_manifest(db.selectFirst("select manifest_id from config"));
+            record.setMongo_id_register(person.getString(6));
 
             //finally add record
             db.add_record(record);
-        } else if (!valid)
-
-        {
+        } else if (!valid) {
             new LoadSound(3).execute();
             if (!TextViewStatus.getText().toString().isEmpty())
                 record.setReason(TextViewStatus.getText().toString());
@@ -788,7 +787,7 @@ public class MainActivity extends AppCompatActivity
                 url = url + "/manualSell";
                 jsonObject.accumulate("ticket", record.getTicket());
             } else
-                url = url + "/registers";
+                url = url + "/registers/"+record.getMongo_id_register();
 
             json = jsonObject.toString();
 
@@ -798,13 +797,13 @@ public class MainActivity extends AppCompatActivity
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("Content-type", "application/json")
-                    .post(body)
+                    .put(body)
                     .build();
 
             //POST using okhttp
             Response response = client.newCall(request).execute();
-            String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
 
+            String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
             // 10. convert inputstream to string
             if (tmp != null) {
                 if (response.isSuccessful()) {

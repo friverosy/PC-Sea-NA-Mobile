@@ -66,6 +66,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String PERSON_NAME = "name";
     private static final String PERSON_NATIONALITY = "nationality";
     private static final String PERSON_AGE = "age";
+    private static final String PERSON_REGISTER_ID = "id_register";
     //routes
     private static final String ROUTE_ID = "id";
     private static final String ROUTE_NAME = "name";
@@ -97,6 +98,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_TICKET = "ticket";
     private static final String RECORD_REASON = "reason";
     private static final String RECORD_MONGO_ID_MANIFEST ="mongo_id_manifest";
+    private static final String RECORD_MONGO_ID_REGISTER ="mongo_id_register";
 
     //hours
     private static final String HOUR_ID = "id";
@@ -110,8 +112,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
     //set table colums
-    private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON,RECORD_MONGO_ID_MANIFEST};
+    private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE, PERSON_REGISTER_ID};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON,RECORD_MONGO_ID_MANIFEST, RECORD_MONGO_ID_REGISTER};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -131,7 +133,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             PERSON_MONGO_ID + " TEXT, " +
             PERSON_NAME + " TEXT, " +
             PERSON_NATIONALITY + " TEXT, " +
-            PERSON_AGE + " INTEGER);";
+            PERSON_AGE + " INTEGER, " +
+            PERSON_REGISTER_ID +" TEXT);";
 
     // "CONSTRAINT "+PERSON_DOCUMENT+" UNIQUE ("+PERSON_DOCUMENT+")); ";
 
@@ -174,7 +177,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_IS_PERMITTED + " INTEGER," +
             RECORD_TICKET + " TEXT, " +
             RECORD_MONGO_ID_MANIFEST + " TEXT, " +
-            RECORD_REASON + " TEXT); ";
+            RECORD_REASON + " TEXT, " +
+            RECORD_MONGO_ID_REGISTER + " TEXT); ";
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
             HOUR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -266,7 +270,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         db.insert(TABLE_CONFIG, null, values);
                         for (int i = 0; i < jsonArray.length(); i++) {
 
-                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"));
+                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("registerId"));
                             navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0);
 
                             String doc;
@@ -274,8 +278,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             if (people.getDocument().contains("-"))
                                 doc = doc.substring(0, doc.length() - 2);
                             String name = removeAccent(people.getName().toUpperCase());
-                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + ") VALUES('" +
-                                    doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ")");
+                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID +") VALUES ('" +
+                                    doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() +"')");
                             db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
                                     doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
                         }
@@ -360,7 +364,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String row = "";
         try {
             cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination," +
-                    "m.boletus,p.id_mongo from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+                    "m.boletus,p.id_mongo,"+PERSON_REGISTER_ID+" from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
         } catch (android.database.SQLException e) {
             e.printStackTrace();
@@ -391,6 +395,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_TICKET, record.getTicket());
         values.put(RECORD_REASON, record.getReason());
         values.put(RECORD_MONGO_ID_MANIFEST, record.getMongo_id_manifest());
+        values.put(RECORD_MONGO_ID_REGISTER, record.getMongo_id_register());
 
         // 3. insert
         try {
@@ -446,6 +451,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 record.setTicket(cursor.getInt(cursor.getColumnIndex(RECORD_TICKET)));
                 record.setReason(cursor.getString(cursor.getColumnIndex(RECORD_REASON)));
                 record.setMongo_id_manifest(cursor.getString(cursor.getColumnIndex(RECORD_MONGO_ID_MANIFEST)));
+                record.setMongo_id_register(cursor.getString(cursor.getColumnIndex(RECORD_MONGO_ID_REGISTER)));
 
                 records.add(record);
                 cursor.moveToNext();
