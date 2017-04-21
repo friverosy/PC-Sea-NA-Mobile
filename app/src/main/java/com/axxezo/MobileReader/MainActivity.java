@@ -192,9 +192,9 @@ public class MainActivity extends AppCompatActivity
         updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
 
         //asign timers to Asyntask
-        timer_sendRecordsAPI = 4200;
-        timer_asyncUpdateManifest = 12000;
-        timer_asyncUpdatePeopleState = 60000;
+        timer_sendRecordsAPI = 67000;
+        timer_asyncUpdateManifest = 120000;
+        timer_asyncUpdatePeopleState = 30000;
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
@@ -691,9 +691,7 @@ public class MainActivity extends AppCompatActivity
         //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
         person = db.validatePerson(rut);
 
-        if (valid && person != null)
-
-        {
+        if (valid && person != null) {
             new LoadSound(2).execute();
             imageview.setImageResource(R.drawable.img_true);
             if (person.getString(1) != null) TextViewFullname.setText(person.getString(1));
@@ -761,14 +759,14 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * POST method that send to api the data contains in local database
+     * PUT method that send to api the data contains in local database
      *
      * @param record= contains all information of the register, like dni, name, origin, destination,etc
      * @param url=    addres of endpoint to send data
      * @param client= receive a client okhttp to send registers, the reason of that, is avoid to create per each record a object okhttp, and only usage one instance of this
      * @return
      */
-    public String POST(Record record, String url, OkHttpClient client) {
+    public String PUT(Record record, String url, OkHttpClient client) {
         String result = "";
         String json = "";
         JSONObject jsonObject = new JSONObject();
@@ -784,7 +782,7 @@ public class MainActivity extends AppCompatActivity
             if (record.getPermitted() == -1)//if is rejected
                 jsonObject.accumulate("reason", record.getReason());
             if (record.getTicket() != 0) {
-                url = url + "/manualSell";
+                url = url + "/manualSell/58f91e398cb1fd2f6c31ef8c";
                 jsonObject.accumulate("ticket", record.getTicket());
             } else
                 url = url + "/registers/"+record.getMongo_id_register();
@@ -820,13 +818,13 @@ public class MainActivity extends AppCompatActivity
                 result = "204"; //no content
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
+            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
+            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
+            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
         }
 
         // 11. return result
@@ -852,7 +850,7 @@ public class MainActivity extends AppCompatActivity
                     .build();
             for (int i = 0; i < newRecord.size(); i++) {
                 Record record = newRecord.get(i);
-                POST(record, url, client);
+                PUT(record, url, client);
             }
             return postReturn;
         }
@@ -918,9 +916,9 @@ public class MainActivity extends AppCompatActivity
                     updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
             }
         } catch (MalformedURLException me) {
-
+            me.printStackTrace();
         } catch (IOException ioe) {
-
+            ioe.printStackTrace();
         }
         if (conn != null) {
             conn.disconnect();
@@ -1080,7 +1078,7 @@ public class MainActivity extends AppCompatActivity
                         if (dni_json.contains("-"))
                             dni_json = dni_json.substring(0, dni_json.indexOf("-"));
                         getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
-                        Log.e(dni_json, person_information.getString("state"));
+                        //Log.e(dni_json, person_information.getString("state"));
 
                         if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state")))) {
                             //Log.d(dni_json + " " + getInside, person_information.getString("state"));

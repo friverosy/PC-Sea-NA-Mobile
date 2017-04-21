@@ -26,13 +26,6 @@ public class People {
     }
     //use this constructor in cards list
 
-
-    public People(String document, String name, String nationality) {
-        this.document = document;
-        this.name = name;
-        this.nationality = nationality;
-    }
-
     public String getMongo_registerID() {
         return mongo_registerID;
     }
