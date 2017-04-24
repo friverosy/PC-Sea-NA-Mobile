@@ -152,6 +152,7 @@ public class MainActivity extends AppCompatActivity
     private String selectedSpinnerLanded;
     private log_app log;
     private String updateTimePeople;
+    public ArrayAdapter<String> adapter;
 
 
     /********
@@ -200,15 +201,11 @@ public class MainActivity extends AppCompatActivity
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         //AxxezoAPI = "http://192.168.1.102:9001/api";
 
-        //enable WAL mode in DB
-        DatabaseHelper db = DatabaseHelper.getInstance(this);
-        db.setWriteAheadLoggingEnabled(true);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
                 mVibrator.vibrate(100);
                 if (!TextViewRut.getText().toString().trim().isEmpty())
                     PeopleValidator(TextViewRut.getText().toString().trim(), "", "", 17);
@@ -237,6 +234,17 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+        fillSpinner();
+        //call in oncreate asyntask
+        sendRecordstoAPI();
+        asyncUpdateManifestinTime();
+        asyncUpdateManifestState(); //pending change values from string to integer
+        getWindow().getDecorView().findViewById(R.id.content_main).invalidate();
+    }
+    public void fillSpinner(){
+        //enable WAL mode in DB
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        db.setWriteAheadLoggingEnabled(true);
         //fill information in combobox
         Cursor getOriginandDestination = db.select("select name from ports order by name desc");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
@@ -249,7 +257,7 @@ public class MainActivity extends AppCompatActivity
         }
         if (getOriginandDestination != null)
             getOriginandDestination.close();
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, listOriginDestination);
         comboLanded.setAdapter(adapter);
         comboLanded.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -263,21 +271,17 @@ public class MainActivity extends AppCompatActivity
 
             }
         });
-
-        //call in oncreate asyntask
-        sendRecordstoAPI();
-        asyncUpdateManifestinTime();
-        asyncUpdateManifestState(); //pending change values from string to integer
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+       /* DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
-        }
+        }*/
+        finish();
     }
 
     @Override
@@ -503,6 +507,7 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         // TODO Auto-generated method stub
         super.onPause();
+        fillSpinner();
         if (mScanManager != null) {
             mScanManager.stopDecode();
             isScaning = false;
@@ -519,6 +524,7 @@ public class MainActivity extends AppCompatActivity
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
+        fillSpinner();
     }
 
     private void asyncUpdateManifestinTime() {
@@ -1139,6 +1145,4 @@ public class MainActivity extends AppCompatActivity
             return null;
         }
     }
-
-
 }

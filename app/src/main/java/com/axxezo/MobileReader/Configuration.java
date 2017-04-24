@@ -1,15 +1,20 @@
 package com.axxezo.MobileReader;
 
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -103,14 +108,10 @@ public class Configuration extends AppCompatActivity {
                 reset.execute();
                 if (status.equals("200"))
                     Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT);
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(intent);
-                //wifiState(true);
-                //} else {
-                //    Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
-                //    loadButton.setProgress(-1);
-
-                //}
+                finish();
+                //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                //startActivity(intent);
+                setResult(RESULT_OK, null);
             }
         });
     }
@@ -413,6 +414,15 @@ public class Configuration extends AppCompatActivity {
         DateFormat date = new SimpleDateFormat(format);
         String localTime = date.format(currentLocalTime);
         return localTime;
+    }
+     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode==RESULT_OK){
+            Intent refresh = new Intent(this, MainActivity.class);
+            startActivity(refresh);
+            this.finish();
+        }
     }
 
 }

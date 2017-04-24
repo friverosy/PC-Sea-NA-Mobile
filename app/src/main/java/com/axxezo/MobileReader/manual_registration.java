@@ -132,7 +132,7 @@ public class manual_registration extends AppCompatActivity {
                     String destination_mongo_id=db.selectFirst("select id_mongo from ports where name='"+destination.getSelectedItem().toString().trim()+"'");
                     String port = db.selectFirst("select id_api from ports where name='" + selected_origin + "'");
                     db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
-                    db.insert("insert into manifest(id_people,origin,destination,port,boletus) values('" + dni.getText().toString().toUpperCase() + "','" + origin_mongo_id + "','" + destination_mongo_id + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString()) + "')");
+                    db.insert("insert into manifest(id_people,origin,destination,port,boletus,is_inside) values('" + dni.getText().toString().toUpperCase() + "','" + origin_mongo_id + "','" + destination_mongo_id + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString())+ "','" +1+ "')");
                     Record record = new Record();
                     record.setDatetime(getCurrentDateTime("yyy-MM-dd HH:mm:ss.S"));
                     record.setPerson_document(dni.getText().toString().toUpperCase());
@@ -143,6 +143,8 @@ public class manual_registration extends AppCompatActivity {
                     record.setPermitted(0);
                     record.setMongo_id_manifest(db.selectFirst("select id_mongo from routes where id=(select route_id from config)"));
                     db.add_record(record);
+                    Toast.makeText(getApplicationContext(),"Persona Registrada Correctamente",Toast.LENGTH_SHORT).show();
+                    finish();
                     //new RegisterTask(record).execute();
                 }
             }
