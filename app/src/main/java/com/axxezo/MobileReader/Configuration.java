@@ -170,17 +170,13 @@ public class Configuration extends AppCompatActivity {
         try {
 
             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
-            db.insert("insert or replace  into config(route_id) values('"+selectionSpinnerRoute+"')");
+            db.insert("insert or replace into config(route_id,manifest_id) values('"+selectionSpinnerRoute+"','"+id_api_route+"')");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
             db.insertJSON(new getAPIInformation(URL, id_api_route).execute().get(), "ports"); //insert ports of route selected
 
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (JSONException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 
@@ -276,10 +272,9 @@ public class Configuration extends AppCompatActivity {
                 content = String.valueOf(getData);
             } else
                 content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-
-        } catch (IOException ioe) {
-            Log.e("class config, line 443", ioe.getMessage().toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("class config, line 443", e.getMessage());
         }
         if (conn != null) {
             conn.disconnect();
@@ -315,10 +310,8 @@ public class Configuration extends AppCompatActivity {
                 content = String.valueOf(getData);
             } else
                 content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-            me.printStackTrace();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         if (conn != null) {
             conn.disconnect();

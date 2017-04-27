@@ -802,7 +802,7 @@ public class MainActivity extends AppCompatActivity
             url = url + "/registers/" + record.getMongo_id_register();
             jsonObject.accumulate("person", record.getMongo_id_person());
             jsonObject.accumulate("seaport", record.getPort_registry());
-            jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
+            //jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
             jsonObject.accumulate("state", record.getInput() + "");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
 
@@ -835,25 +835,7 @@ public class MainActivity extends AppCompatActivity
             //result its the json to sent
             if (result.startsWith("http://"))
                 result = "204"; //no content
-        } catch (
-                UnsupportedEncodingException e
-                )
-
-        {
-            e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
-        } catch (
-                JSONException e
-                )
-
-        {
-            e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
-        } catch (
-                IOException e
-                )
-
-        {
+        } catch (JSONException | IOException e){
             e.printStackTrace();
             log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
         }
@@ -873,7 +855,8 @@ public class MainActivity extends AppCompatActivity
         try {
             if (record.getTicket() != 0) {
                 url = url + "/manualSell/";//manual registers
-               // jsonObject.accumulate("ticket", record.getTicket());
+                Log.e("URL",url);
+                // jsonObject.accumulate("ticket", record.getTicket());
                 jsonObject.accumulate("documentId", record.getPerson_document());
                 jsonObject.accumulate("name", record.getPerson_name());
                 jsonObject.accumulate("origin", record.getOrigin());
@@ -953,7 +936,7 @@ public class MainActivity extends AppCompatActivity
                 Record record = newRecord.get(i);
                 if (record.getPermitted() == 1)
                     PUT(record, url, client);
-                else if (record.getPermitted() == -1|| record.getTicket() != 0)//for denied registers
+                else if (record.getPermitted() == -1 || record.getTicket() != 0)//for denied registers
                     POST(record, url, client);
             }
             return postReturn;
