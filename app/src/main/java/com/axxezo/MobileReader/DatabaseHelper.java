@@ -177,7 +177,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_IS_PERMITTED + " INTEGER," +
             RECORD_TICKET + " TEXT, " +
             RECORD_MONGO_ID_MANIFEST + " TEXT, " +
-            RECORD_REASON + " TEXT, " +
+            RECORD_REASON + " INTEGER, " +
             RECORD_MONGO_ID_REGISTER + " TEXT); ";
 
     String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
@@ -265,29 +265,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         //db.delete(TABLE_MANIFEST, null, null);
                         //db.execSQL("delete from sqlite_sequence where name='MANIFEST'");
                         db.beginTransactionNonExclusive();
-                        ContentValues values = new ContentValues();
-                        values.put(CONFIG_MANIFEST_ID, jsonArray.getJSONObject(0).getString("manifestId"));
-                        db.insert(TABLE_CONFIG, null, values);
+                        //ContentValues values = new ContentValues();
+                        //values.put(CONFIG_MANIFEST_ID, jsonArray.getJSONObject(0).getString("manifestId"));
+                        //db.insert(TABLE_CONFIG, null, values);
                         for (int i = 0; i < jsonArray.length(); i++) {
+                            try {
+                                People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("registerId"));
+                                navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0);
 
-                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("registerId"));
-                            navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0);
-
-                            String doc;
-                            doc = people.getDocument().toUpperCase();
-                            if (people.getDocument().contains("-"))
-                                doc = doc.substring(0, doc.length() - 2);
-                            String name = removeAccent(people.getName().toUpperCase());
-                            db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID +") VALUES ('" +
-                                    doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() +"')");
-                            db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                                    doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                                String doc;
+                                doc = people.getDocument().toUpperCase();
+                                if (people.getDocument().contains("-"))
+                                    doc = doc.substring(0, doc.length() - 2);
+                                String name = removeAccent(people.getName().toUpperCase());
+                                db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
+                                        doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
+                                db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
+                                        doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                            }
                         }
                         // finnaly insert fill config table
                         db.setTransactionSuccessful();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                     } catch (android.database.SQLException e) {
                         e.printStackTrace();
                         log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
@@ -303,16 +304,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     try {
                         db.beginTransactionNonExclusive();
                         db.execSQL("delete from ports");
-
+                        ContentValues values = new ContentValues();
                         for (int i = 0; i < jsonArray.length(); i++) {
-                            ContentValues values = new ContentValues();
-                            Ports port = new Ports(jsonArray.getJSONObject(i).getString("_id"), jsonArray.getJSONObject(i).getInt("locationId"), jsonArray.getJSONObject(i).getString("locationName"));
-                            values.put(PORT_ID_MONGO, port.getId_mongo());
-                            values.put(PORT_ID_API, port.getId_api());
-                            values.put(PORT_NAME, port.getName().trim().toUpperCase());
-                            db.insert(TABLE_PORTS, // table
-                                    null, //nullColumnHack
-                                    values); // key/value -> keys = column names/ values = column values
+                            try {
+                                Ports port = new Ports(jsonArray.getJSONObject(i).getString("_id"), jsonArray.getJSONObject(i).getInt("locationId"), jsonArray.getJSONObject(i).getString("locationName"));
+                                values.put(PORT_ID_MONGO, port.getId_mongo());
+                                values.put(PORT_ID_API, port.getId_api());
+                                values.put(PORT_NAME, port.getName().trim().toUpperCase());
+                                db.insert(TABLE_PORTS, // table
+                                        null, //nullColumnHack
+                                        values); // key/value -> keys = column names/ values = column values
+                            }catch (Exception e) {
+                                e.printStackTrace();
+                                log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                            }
+                            values.clear();
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
@@ -449,7 +455,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 record.setSync(cursor.getInt(cursor.getColumnIndex(RECORD_SYNC)));
                 record.setPermitted(cursor.getInt(cursor.getColumnIndex(RECORD_IS_PERMITTED)));
                 record.setTicket(cursor.getInt(cursor.getColumnIndex(RECORD_TICKET)));
-                record.setReason(cursor.getString(cursor.getColumnIndex(RECORD_REASON)));
+                record.setReason(cursor.getInt(cursor.getColumnIndex(RECORD_REASON)));
                 record.setMongo_id_manifest(cursor.getString(cursor.getColumnIndex(RECORD_MONGO_ID_MANIFEST)));
                 record.setMongo_id_register(cursor.getString(cursor.getColumnIndex(RECORD_MONGO_ID_REGISTER)));
 

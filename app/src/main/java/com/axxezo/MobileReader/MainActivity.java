@@ -193,9 +193,9 @@ public class MainActivity extends AppCompatActivity
         updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
 
         //asign timers to Asyntask
-        timer_sendRecordsAPI = 67000;
-        timer_asyncUpdateManifest = 120000;
-        timer_asyncUpdatePeopleState = 30000;
+        timer_sendRecordsAPI = 10000;           //67000
+        timer_asyncUpdateManifest = 12000;     //120000
+        timer_asyncUpdatePeopleState = 30000;   //30000
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
@@ -241,7 +241,8 @@ public class MainActivity extends AppCompatActivity
         asyncUpdateManifestState(); //pending change values from string to integer
         getWindow().getDecorView().findViewById(R.id.content_main).invalidate();
     }
-    public void fillSpinner(){
+
+    public void fillSpinner() {
         //enable WAL mode in DB
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         db.setWriteAheadLoggingEnabled(true);
@@ -730,16 +731,33 @@ public class MainActivity extends AppCompatActivity
             db.add_record(record);
         } else if (!valid) {
             new LoadSound(3).execute();
-            if (!TextViewStatus.getText().toString().isEmpty())
-                record.setReason(TextViewStatus.getText().toString());
             imageview.setImageResource(R.drawable.img_false);
             TextViewRut.setText(rut);
             if (is_input) record.setInput(1);
             else record.setInput(2);
-            record.setPermitted(-1);
+            if (!TextViewRut.getText().toString().isEmpty())
+                record.setPerson_document(TextViewRut.getText().toString());
             record.setSync(0);
-            record.setPort_registry(comboLanded.getSelectedItem().toString());
+            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
             record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
+            if (!TextViewStatus.getText().toString().isEmpty())
+                switch (TextViewStatus.getText().toString()) {
+                    case "PUERTO EMBARQUE NO PERTENECE":
+                        record.setReason(1);
+                        break;
+                    case "PUERTO DESEMBARQUE NO PERTENECE":
+                        record.setReason(2);
+                        break;
+                    case "PERSONA NO SE ENCUENTRA EN MANIFIESTO":
+                        record.setReason(3);
+                        break;
+                    case "VIAJE NO CORRESPONDE":
+                        record.setReason(4);
+                        break;
+                    default:
+                        record.setReason(-1);//for no reason
+                }
+            record.setPermitted(-1);
 
             //finally add record
             db.add_record(record);
@@ -773,6 +791,7 @@ public class MainActivity extends AppCompatActivity
      * @return
      */
     public String PUT(Record record, String url, OkHttpClient client) {
+        Log.e("DEBUG", "Estoy en Put");
         String result = "";
         String json = "";
         JSONObject jsonObject = new JSONObject();
@@ -780,28 +799,104 @@ public class MainActivity extends AppCompatActivity
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
         try {
+            url = url + "/registers/" + record.getMongo_id_register();
             jsonObject.accumulate("person", record.getMongo_id_person());
             jsonObject.accumulate("seaport", record.getPort_registry());
             jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
             jsonObject.accumulate("state", record.getInput() + "");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
-            if (record.getPermitted() == -1)//if is rejected
-                jsonObject.accumulate("reason", record.getReason());
-            if (record.getTicket() != 0) {
-                url = url + "/manualSell/58f91e398cb1fd2f6c31ef8c";
-                jsonObject.accumulate("ticket", record.getTicket());
-            } else
-                url = url + "/registers/"+record.getMongo_id_register();
+
 
             json = jsonObject.toString();
 
             RequestBody body = RequestBody.create(JSON, json);
 
-            // create object okhttp
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("Content-type", "application/json")
                     .put(body)
+                    .build();
+
+            //PUT using okhttp
+            Response response = client.newCall(request).execute();
+
+            String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
+            // 10. convert inputstream to string
+            if (tmp != null) {
+                if (response.isSuccessful()) {
+                    // if has sync=0 its becouse its an offline record to be will synchronized.
+                    if (record.getSync() == 0) {
+                        db.update_record(record.getId());
+                    }
+                }
+            } else {
+                result = String.valueOf(response.code());
+            }
+            //result its the json to sent
+            if (result.startsWith("http://"))
+                result = "204"; //no content
+        } catch (
+                UnsupportedEncodingException e
+                )
+
+        {
+            e.printStackTrace();
+            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
+        } catch (
+                JSONException e
+                )
+
+        {
+            e.printStackTrace();
+            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
+        } catch (
+                IOException e
+                )
+
+        {
+            e.printStackTrace();
+            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
+        }
+
+        // 11. return result
+        return result;
+    }
+
+    public String POST(Record record, String url, OkHttpClient client) {
+        Log.e("DEBUG", "Estoy en Post");
+        String result = "";
+        String json = "";
+        JSONObject jsonObject = new JSONObject();
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        final MediaType JSON
+                = MediaType.parse("application/json; charset=utf-8");
+        try {
+            if (record.getTicket() != 0) {
+                url = url + "/manualSell/";//manual registers
+               // jsonObject.accumulate("ticket", record.getTicket());
+                jsonObject.accumulate("documentId", record.getPerson_document());
+                jsonObject.accumulate("name", record.getPerson_name());
+                jsonObject.accumulate("origin", record.getOrigin());
+                jsonObject.accumulate("destination", record.getDestination()); //falta
+                jsonObject.accumulate("itinerary", db.selectFirst("select id_mongo from routes where id=(select route_id from config order by id desc limit 1)"));
+
+
+            } else if (record.getPermitted() == -1) {//denied registers
+                url = url + "/registers/deniedRegister";
+                jsonObject.accumulate("documentId", record.getPerson_document());
+                jsonObject.accumulate("deniedReason", record.getReason());
+                jsonObject.accumulate("origin", record.getPort_registry()); //falta
+                jsonObject.accumulate("itinerary", db.selectFirst("select id_mongo from routes where id=(select route_id from config order by id desc limit 1)"));
+            }
+
+            json = jsonObject.toString();
+
+            RequestBody body = RequestBody.create(JSON, json);
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("Content-type", "application/json")
+                    .post(body)
                     .build();
 
             //POST using okhttp
@@ -824,13 +919,13 @@ public class MainActivity extends AppCompatActivity
                 result = "204"; //no content
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
+            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
         } catch (JSONException e) {
             e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
+            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
+            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
         }
 
         // 11. return result
@@ -856,7 +951,10 @@ public class MainActivity extends AppCompatActivity
                     .build();
             for (int i = 0; i < newRecord.size(); i++) {
                 Record record = newRecord.get(i);
-                PUT(record, url, client);
+                if (record.getPermitted() == 1)
+                    PUT(record, url, client);
+                else if (record.getPermitted() == -1|| record.getTicket() != 0)//for denied registers
+                    POST(record, url, client);
             }
             return postReturn;
         }

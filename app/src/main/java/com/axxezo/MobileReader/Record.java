@@ -14,7 +14,7 @@ public class Record {
     String origin;
     String destination;
     String port_registry;
-    String reason;
+    int reason;
     String mongo_id_person;
     String mongo_id_manifest;
     String mongo_id_register;
@@ -29,7 +29,7 @@ public class Record {
 
     }
 
-    public Record(int id, String datetime, String person_document, String person_name, String origin, String destination, String port_registry, String reason, String mongo_id_person, String mongo_id_manifest, String mongo_id_register, int ticket, int input, int sync, int permitted) {
+    public Record(int id, String datetime, String person_document, String person_name, String origin, String destination, String port_registry, int reason, String mongo_id_person, String mongo_id_manifest, String mongo_id_register, int ticket, int input, int sync, int permitted) {
         this.id = id;
         this.datetime = datetime;
         this.person_document = person_document;
@@ -160,11 +160,11 @@ public class Record {
         this.ticket = ticket;
     }
 
-    public String getReason() {
+    public int getReason() {
         return reason;
     }
 
-    public void setReason(String reason) {
+    public void setReason(int reason) {
         this.reason = reason;
     }
 }

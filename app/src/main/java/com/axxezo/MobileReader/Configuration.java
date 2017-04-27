@@ -170,8 +170,9 @@ public class Configuration extends AppCompatActivity {
         try {
 
             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
+            db.insert("insert or replace  into config(route_id) values('"+selectionSpinnerRoute+"')");
             // cambiar insert pot update
-            db.updateConfig(selectionSpinnerRoute);
+            //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
             db.insertJSON(new getAPIInformation(URL, id_api_route).execute().get(), "ports"); //insert ports of route selected
 
@@ -186,7 +187,7 @@ public class Configuration extends AppCompatActivity {
         //load size of manifest
         String select_counts = db.selectFirst("select count(id) from manifest");
         if (!select_counts.isEmpty()) {
-            Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(select_counts) + " personas a la base de datos", Toast.LENGTH_LONG).show();
+            Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(select_counts) + " personas en el manifiesto", Toast.LENGTH_LONG).show();
         }
     }
 
