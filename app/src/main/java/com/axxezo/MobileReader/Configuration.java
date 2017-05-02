@@ -85,11 +85,7 @@ public class Configuration extends AppCompatActivity {
         try {
             DatabaseHelper db = DatabaseHelper.getInstance(this);
             db.insertJSON(new getAPIInformation().execute().get(), "routes");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (JSONException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         loadComboboxRoutes();
@@ -107,7 +103,7 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setClickable(false);
                 reset.execute();
                 if (status.equals("200"))
-                    Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT);
+                    Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT).show();
                 finish();
                 //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                 //startActivity(intent);
@@ -126,8 +122,11 @@ public class Configuration extends AppCompatActivity {
         ArrayList<String> routes = db.selectAsList("select name from routes", 0);
         if (routes != null)
             routes.add(0, "<ELIJA UNA RUTA>");
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, routes);
+        ArrayAdapter<String> adapter = null;
+        if (routes != null) {
+            adapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_spinner_item, routes);
+        }
         //combobox_route.setTag();
         //set adapter to spinner
         combobox_route.setAdapter(adapter);
@@ -140,12 +139,11 @@ public class Configuration extends AppCompatActivity {
                     String nameElement = combobox_route.getSelectedItem().toString();
                     Cursor idElementSelected =db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
                     Log.e("debug",idElementSelected.getInt(1)+"");
-                    if (idElementSelected!=null&&idElementSelected.getCount()>0) {
+                    if (idElementSelected.getCount() > 0) {
                         selectionSpinnerRoute = idElementSelected.getString(1);
                         id_api_route=idElementSelected.getString(0);
                     }
-                    if(idElementSelected!=null)
-                        idElementSelected.close();
+                    idElementSelected.close();
                 }
 
             }
@@ -256,7 +254,7 @@ public class Configuration extends AppCompatActivity {
      * @throws IOException
      */
     public String getRoutes() throws IOException {
-        URL url = new URL(URL + "/itineraries?date="+getCurrentDateTime("yyyy-MM-dd").toString());
+        URL url = new URL(URL + "/itineraries?date="+ getCurrentDateTime("yyyy-MM-dd"));
         String content = null;
         HttpURLConnection conn = null;
         try {
@@ -340,8 +338,6 @@ public class Configuration extends AppCompatActivity {
                 content = String.valueOf(getData);
             } else
                 content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-            me.printStackTrace();
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -406,8 +402,7 @@ public class Configuration extends AppCompatActivity {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
         DateFormat date = new SimpleDateFormat(format);
-        String localTime = date.format(currentLocalTime);
-        return localTime;
+        return date.format(currentLocalTime);
     }
      @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
