@@ -77,6 +77,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
@@ -154,7 +155,6 @@ public class MainActivity extends AppCompatActivity
     private String updateTimePeople;
     public ArrayAdapter<String> adapter;
 
-
     /********
      * Timers Asyntask
      ****/
@@ -162,13 +162,11 @@ public class MainActivity extends AppCompatActivity
     private int timer_sendRecordsAPI;
     private int timer_asyncUpdatePeopleState;
 
-
     /*****
      * Asyntask declarations.....
      */
     private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
     private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest; //asyntask to update in realtime new people inserts in manifest
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -201,15 +199,22 @@ public class MainActivity extends AppCompatActivity
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         //AxxezoAPI = "http://192.168.1.102:9001/api";
 
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
             fab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     mVibrator.vibrate(100);
-                    if (!TextViewRut.getText().toString().trim().isEmpty())
+                    if (TextViewRut.getText().toString().isEmpty()) {
+                        TextViewRut.setHint("Ingrese Rut");
+                        TextViewRut.setHintTextColor(Color.RED);
+                        TextViewRut.requestFocus();
+                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.showSoftInput(TextViewRut, InputMethodManager.SHOW_IMPLICIT);
+                    } else {
+                        reset();
                         PeopleValidator(TextViewRut.getText().toString().trim(), "", "", 17);
+                    }
                 }
             });
         }
@@ -357,7 +362,6 @@ public class MainActivity extends AppCompatActivity
             exitApp();
         }
 
-
         // then close the drawer Layout
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer != null) {
@@ -458,7 +462,6 @@ public class MainActivity extends AppCompatActivity
                     }
                     PeopleValidator(barcodeStr, "", "", barcodeType);
                 }
-
             } catch (NullPointerException e) {
                 e.printStackTrace();
                 log.writeLog(getApplicationContext(), "Main:line 408", "ERROR", e.getMessage());
@@ -549,6 +552,7 @@ public class MainActivity extends AppCompatActivity
                             AsyncTask_updatePeopleManifest = new asyncTask_updatePeopleManifest();
                             AsyncTask_updatePeopleManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         } catch (Exception e) {
+                            e.printStackTrace();
                             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
                         }
                     }
@@ -600,6 +604,7 @@ public class MainActivity extends AppCompatActivity
                 total_temp = count_after - count_before;
             }
         } catch (android.database.SQLException | JSONException | ExecutionException | InterruptedException e) {
+            e.printStackTrace();
             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         }
         return total_temp;
@@ -699,18 +704,27 @@ public class MainActivity extends AppCompatActivity
         //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
         person = db.validatePerson(rut);
 
-        if (valid && person != null) {
+        if (person.getString(1) != null) {
+            TextViewFullname.setText(person.getString(1));
+            record.setPerson_name(person.getString(1));
+            record.setPerson_name(person.getString(1));
+            record.setPerson_document(rut);
+        } else {
+            record.setPerson_name("");
+        }
+        record.setSync(0);
+        record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
+        record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
+        TextViewRut.setText(rut);
+
+        if (valid) {
             new LoadSound(2).execute();
             imageview.setImageResource(R.drawable.img_true);
-            if (person.getString(1) != null) TextViewFullname.setText(person.getString(1));
-            TextViewRut.setText(rut);
             TextViewStatus.setText("");
 
             //fill record
             record.setPermitted(1);
-            if (person.getString(1) != null) record.setPerson_name(person.getString(1));
-            else record.setPerson_name("");
-            record.setPerson_document(rut);
+
             if (is_input) {
                 record.setInput(1);
                 db.updatePeopleManifest(rut, 1);
@@ -718,29 +732,21 @@ public class MainActivity extends AppCompatActivity
                 record.setInput(2);
                 db.updatePeopleManifest(rut, 2);
             }
-            record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
-            record.setSync(0);
+
             //record.setPort_registry(comboLanded.getSelectedItem().toString());
-            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
+
             record.setOrigin(person.getString(2));
             record.setDestination(person.getString(3));
             record.setMongo_id_person(person.getString(5));
             record.setMongo_id_manifest(db.selectFirst("select manifest_id from config"));
             record.setMongo_id_register(person.getString(6));
-
-            //finally add record
-            db.add_record(record);
-        } else if (!valid) {
+        } else {
             new LoadSound(3).execute();
             imageview.setImageResource(R.drawable.img_false);
-            TextViewRut.setText(rut);
+
             if (is_input) record.setInput(1);
             else record.setInput(2);
-            if (!TextViewRut.getText().toString().isEmpty())
-                record.setPerson_document(TextViewRut.getText().toString());
-            record.setSync(0);
-            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
-            record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
+
             if (!TextViewStatus.getText().toString().isEmpty())
                 switch (TextViewStatus.getText().toString()) {
                     case "PUERTO EMBARQUE NO PERTENECE":
@@ -759,13 +765,9 @@ public class MainActivity extends AppCompatActivity
                         record.setReason(-1);//for no reason
                 }
             record.setPermitted(-1);
-
-            //finally add record
-            db.add_record(record);
         }
-
-        if (person != null)
-            person.close();
+        db.add_record(record);
+        person.close();
     }
 
     public void makeToast(String msg) {
@@ -951,7 +953,7 @@ public class MainActivity extends AppCompatActivity
         protected void onPostExecute(Integer integer) {
             if (integer > 0) {
                 TextViewManifestUpdate.setTextColor(Color.WHITE);
-                TextViewManifestUpdate.setText("Manifiesto: " + getCurrentDateTime("dd-MM-yyyy HH:mm"));
+                TextViewManifestUpdate.setText("Manifiesto actualizado: " + getCurrentDateTime("dd-MM-yyyy HH:mm"));
             }
         }
     }
