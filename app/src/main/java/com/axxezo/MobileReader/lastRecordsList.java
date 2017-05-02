@@ -37,6 +37,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
     private int PendingCount;
     private int EmbarkedCount;
     private int LandedCount;
+    private int ManualSellCount;
     private Spinner combo_origin;
     private Spinner combo_destination;
     private cardsSpinnerAdapter spinner_adapter_origin;
@@ -96,8 +97,6 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 String spinner_origin_name_selection = spinner_origin_selected.equals("< TODOS >") ? spinner_origin_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_origin_selected + "'");
                 String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
                 //Here we use the Filtering Feature which we implemented in our Adapter class.
-                Log.e("mongo_id origin", spinner_origin_name_selection);
-                Log.e("mongo_id destination", spinner_destination_name_selection);
                 adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
                     @Override
                     public void onFilterComplete(int count) {
@@ -105,8 +104,6 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                         recyclerView.setAdapter(adapter);
                     }
                 });
-
-
             }
 
             @Override
@@ -125,7 +122,8 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                         "\nTotal Tramo: " + getStatusFromManifest(1, spinner_origin_selected, spinner_destination_selected) +
                         "\nEmbarcados: " + getStatusFromManifest(3, spinner_origin_selected, spinner_destination_selected) +
                         "\nDesembarcados: " + getStatusFromManifest(4, spinner_origin_selected, spinner_destination_selected) +
-                        "\nPendientes : " + getStatusFromManifest(2, spinner_origin_selected, spinner_destination_selected);
+                        "\nPendientes : " + getStatusFromManifest(2, spinner_origin_selected, spinner_destination_selected) +
+                        "\nCompras a bordo : " + getStatusFromManifest(5, spinner_origin_selected, spinner_destination_selected);
                 Snackbar snack = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null);
                 View view1 = snack.getView();
@@ -195,20 +193,28 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         if (origin.equals("< TODOS >") && destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest)," +
-                    "(select count(*) from manifest where is_inside=0),(select count(*) from manifest where is_inside=1)," +
-                    "(select count(*) from manifest where is_inside=2)");
+                    "(select count(*) from manifest where is_inside=0)," +
+                    "(select count(*) from manifest where is_inside=1)," +
+                    "(select count(*) from manifest where is_inside=2)," +
+                    "(select count(*) from manifest where is_inside=1 and boletus is not null)");
         } else if (origin.equals("< TODOS >") && !destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest where destination=(select id_mongo from ports where name='" + destination + "'))," +
-                    "(select count(*) from manifest where is_inside=0 and destination=(select id_mongo from ports where name='" + destination + "')),(select count(*) from manifest where is_inside=1 and destination=(select id_mongo from ports where name='" + destination + "'))," +
-                    "(select count(*) from manifest where is_inside=2 and destination=(select id_mongo from ports where name='" + destination + "'))");
+                    "(select count(*) from manifest where is_inside=0 and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=1 and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=2 and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=1 and boletus is not null and destination=(select id_mongo from ports where name='\" + destination + \"'))");
         } else if (!origin.equals("< TODOS >") && destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest where origin=(select id_mongo from ports where name='" + origin + "'))," +
-                    "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "')),(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "'))," +
-                    "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "'))");
+                    "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "'))," +
+                    "(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "'))," +
+                    "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "'))," +
+                    "(select count(*) from manifest where is_inside=1 and boletus is not null and origin=(select id_mongo from ports where name='\" + origin + \"'))");
         } else { //last case when
             select_counts = db.select("select (select count(*) from manifest where origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
-                    "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "')),(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
-                    "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))");
+                    "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
+                    "(select count(*) from manifest where is_inside=1 and boletus is not null and origin=(select id_mongo from ports where name='\" + origin + \"') and destination=(select id_mongo from ports where name='\" + destination + \"'))");
         }
 
         int count = 0;
@@ -217,6 +223,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
             PendingCount = select_counts.getInt(1);
             EmbarkedCount = select_counts.getInt(2);
             LandedCount = select_counts.getInt(3);
+            ManualSellCount = select_counts.getInt(4);
         }
         switch (position) {
             case 1:
@@ -230,6 +237,9 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 break;
             case 4:
                 count = LandedCount;
+                break;
+            case 5:
+                count = ManualSellCount;
                 break;
         }
         if (select_counts != null)
