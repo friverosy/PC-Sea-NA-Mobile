@@ -58,7 +58,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String MANIFEST_PORT = "port";
     private static final String MANIFEST_BOLETUS = "boletus";
 
-
     //people
     private static final String PERSON_ID = "id";
     private static final String PERSON_MONGO_ID = "id_mongo";
@@ -67,6 +66,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String PERSON_NATIONALITY = "nationality";
     private static final String PERSON_AGE = "age";
     private static final String PERSON_REGISTER_ID = "id_register";
+
     //routes
     private static final String ROUTE_ID = "id";
     private static final String ROUTE_NAME = "name";
@@ -127,7 +127,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "NavieraAustral";
 
     // SQL statement to create the differents tables
-    String CREATE_PEOPLE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PEOPLE + " ( " +
+    private String CREATE_PEOPLE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PEOPLE + " ( " +
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PERSON_DOCUMENT + " TEXT NOT NULL UNIQUE, " +
             PERSON_MONGO_ID + " TEXT, " +
@@ -138,7 +138,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // "CONSTRAINT "+PERSON_DOCUMENT+" UNIQUE ("+PERSON_DOCUMENT+")); ";
 
-    String CREATE_MANIFEST_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MANIFEST + " ( " +
+    private String CREATE_MANIFEST_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MANIFEST + " ( " +
             MANIFEST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             MANIFEST_PEOPLE_ID + " TEXT NOT NULL UNIQUE, " +
             MANIFEST_ORIGIN + " TEXT, " +
@@ -147,23 +147,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             MANIFEST_PORT + " INTEGER, " +
             MANIFEST_BOLETUS + " TEXT); ";
 
-    String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
+    private String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
             ROUTE_NAME + " TEXT, " +
             ROUTE_SAILING_DATE + " TEXT," +
             ROUTE_MONGO_ID + " TEXT);";
 
-    String CREATE_PORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PORTS + " ( " +
+    private String CREATE_PORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PORTS + " ( " +
             PORT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             PORT_ID_API + " INTEGER, " +
             PORT_ID_MONGO + " TEXT, " +
             PORT_NAME + " TEXT); ";
 
-    String CREATE_TRANSPORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_SHIPS + " ( " +
+    private String CREATE_TRANSPORTS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_SHIPS + " ( " +
             SHIP_ID + " INTEGER PRIMARY KEY, " +
             SHIP_NAME + " TEXT);";
 
-    String CREATE_RECORDS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_RECORDS + " ( " +
+    private String CREATE_RECORDS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_RECORDS + " ( " +
             RECORD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             RECORD_DATETIME + " TEXT, " +
             RECORD_PERSON_DOC + " INTEGER, " +
@@ -180,11 +180,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             RECORD_REASON + " INTEGER, " +
             RECORD_MONGO_ID_REGISTER + " TEXT); ";
 
-    String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
+    private String CREATE_HOURS_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_HOURS + " ( " +
             HOUR_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             HOUR_NAME + " TEXT);";
 
-    String CREATE_CONFIG_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_CONFIG + " ( " +
+    private String CREATE_CONFIG_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_CONFIG + " ( " +
             "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
             CONFIG_ROUTE_ID + " INTEGER, " +
             CONFIG_ROUTE_NAME + " INTEGER, " +
@@ -256,7 +256,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     }
 
                 } else
-                    Log.i("json content", json.toString());
+                    Log.i("json content", json);
                 break;
             case "manifest":
                 if (!json.isEmpty() && json.length() > 3) {
@@ -350,7 +350,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
         }
-        cursor.close();
+        if (cursor != null) {
+            cursor.close();
+        }
         return firstElement;
     }
 
@@ -559,6 +561,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (android.database.SQLException e) {
             e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        }
+        if (cursor != null) {
+            cursor.close();
         }
         return list;
     }

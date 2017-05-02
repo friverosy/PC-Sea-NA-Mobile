@@ -203,23 +203,29 @@ public class MainActivity extends AppCompatActivity
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mVibrator.vibrate(100);
-                if (!TextViewRut.getText().toString().trim().isEmpty())
-                    PeopleValidator(TextViewRut.getText().toString().trim(), "", "", 17);
-            }
-        });
+        if (fab != null) {
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mVibrator.vibrate(100);
+                    if (!TextViewRut.getText().toString().trim().isEmpty())
+                        PeopleValidator(TextViewRut.getText().toString().trim(), "", "", 17);
+                }
+            });
+        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
+        if (drawer != null) {
+            drawer.addDrawerListener(toggle);
+        }
         toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        if (navigationView != null) {
+            navigationView.setNavigationItemSelectedListener(this);
+        }
 
         // set by default
         //is_input = true;
@@ -269,7 +275,7 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-
+                // Do nothing
             }
         });
     }
@@ -354,7 +360,9 @@ public class MainActivity extends AppCompatActivity
 
         // then close the drawer Layout
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        if (drawer != null) {
+            drawer.closeDrawer(GravityCompat.START);
+        }
         return true;
     }
 
@@ -452,6 +460,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
             } catch (NullPointerException e) {
+                e.printStackTrace();
                 log.writeLog(getApplicationContext(), "Main:line 408", "ERROR", e.getMessage());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -464,14 +473,13 @@ public class MainActivity extends AppCompatActivity
      * Return current local datetime in PDA, in format that specifies in string format
      *
      * @param format= how you want to receive the datetime,Ex:"dd-MM-yyyy HH:mm:SS"
-     * @return= return String with the current datetime
+     * @return return String with the current datetime
      */
     public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
         DateFormat date = new SimpleDateFormat(format);
-        String localTime = date.format(currentLocalTime);
-        return localTime;
+        return date.format(currentLocalTime);
     }
 
     /**
@@ -589,16 +597,9 @@ public class MainActivity extends AppCompatActivity
                 db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route)).execute().get(), "manifest");
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
             if (count_before != count_after) {
-                int total = count_after - count_before;
-                total_temp = total;
+                total_temp = count_after - count_before;
             }
-        } catch (android.database.SQLException e) {
-            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
-        } catch (JSONException e) {
-            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
-        } catch (InterruptedException e) {
-            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
-        } catch (ExecutionException e) {
+        } catch (android.database.SQLException | JSONException | ExecutionException | InterruptedException e) {
             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         }
         return total_temp;
@@ -900,13 +901,7 @@ public class MainActivity extends AppCompatActivity
             //result its the json to sent
             if (result.startsWith("http://"))
                 result = "204"; //no content
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
-        } catch (JSONException e) {
-            e.printStackTrace();
-            log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
-        } catch (IOException e) {
+        } catch (JSONException | IOException e) {
             e.printStackTrace();
             log.writeLog(getApplicationContext(), "Main: POST method", "ERROR", e.getMessage());
         }
