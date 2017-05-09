@@ -114,7 +114,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         addPersonCards();
         getStatusFromManifest(1, spinner_origin_selected, spinner_destination_selected);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
-        FloatingActionButton fab_search = (FloatingActionButton) findViewById(R.id.fab_search);
+        //FloatingActionButton fab_search = (FloatingActionButton) findViewById(R.id.fab_search);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -276,8 +276,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
             });
 
     }
-
-
+    
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 
