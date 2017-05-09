@@ -131,7 +131,31 @@ public class manual_registration extends AppCompatActivity {
                     String origin_mongo_id=db.selectFirst("select id_mongo from ports where name='"+origin.getSelectedItem().toString().trim()+"'");
                     String destination_mongo_id=db.selectFirst("select id_mongo from ports where name='"+destination.getSelectedItem().toString().trim()+"'");
                     String port = db.selectFirst("select id_api from ports where name='" + selected_origin + "'");
-                    db.insert("insert into people(document,name) values('" + dni.getText().toString().toUpperCase() + "','" + name.getText().toString().toUpperCase() + "')");
+                    String dniStr = dni.getText().toString().toUpperCase();
+
+                    /*String rutValidator = barcodeStr.substring(0, 8);
+                    rutValidator = rutValidator.replace(" ", "");
+                    rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                    char dv = barcodeStr.substring(8, 9).charAt(0);
+                    boolean isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
+                    if (isvalid)
+                        barcodeStr = rutValidator;
+                    else { //try validate rut size below 10.000.000
+                        rutValidator = barcodeStr.substring(0, 7);
+                        rutValidator = rutValidator.replace(" ", "");
+                        rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                        dv = barcodeStr.substring(7, 8).charAt(0);
+                        isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
+                        if (isvalid)
+                            barcodeStr = rutValidator;
+                        else {
+                            log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
+                            barcodeStr = "";
+                            TextViewStatus.setText("RUT INVALIDO");
+                        }
+                    }*/
+
+                    db.insert("insert into people(document,name) values('" + dniStr + "','" + name.getText().toString().toUpperCase() + "')");
                     db.insert("insert into manifest(id_people,origin,destination,port,boletus,is_inside) values('" + dni.getText().toString().toUpperCase() + "','" + origin_mongo_id + "','" + destination_mongo_id + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString())+ "','" +1+ "')");
                     Record record = new Record();
                     record.setDatetime(getCurrentDateTime("yyy-MM-dd HH:mm:ss.S"));
@@ -161,5 +185,21 @@ public class manual_registration extends AppCompatActivity {
         DateFormat date = new SimpleDateFormat("dd-MM-yyyy hh:MM:ss");
         String localTime = date.format(currentLocalTime);
         return localTime;
+    }
+
+    /**
+     * method that validate old and new chilean national identity card
+     *
+     * @param rut=number without check digit
+     * @param dv=        only check digit
+     * @return true if the dni number is correct or false if dni number doesn´t match with check digit
+     */
+    public boolean ValidarRut(int rut, char dv) {
+        dv = dv == 'k' ? dv = 'K' : dv;
+        int m = 0, s = 1;
+        for (; rut != 0; rut /= 10) {
+            s = (s + rut % 10 * (9 - m++ % 6)) % 11;
+        }
+        return dv == (char) (s != 0 ? s + 47 : 75);
     }
 }

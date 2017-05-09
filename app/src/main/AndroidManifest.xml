@@ -41,7 +41,8 @@
         <activity
             android:name=".manual_registration"
             android:label="Registro Manual" />
-        <activity  android:name=".log_show"></activity>
+        <activity android:name=".log_show" />
+        <activity android:name=".CloseTrip"></activity>
     </application>
 
 </manifest>

@@ -237,15 +237,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
-                            Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("refId"), jsonArray.getJSONObject(i).getString("name").toUpperCase(),
-                                    jsonArray.getJSONObject(i).getString("depart"), jsonArray.getJSONObject(i).getString("_id"));
-                            values.put(ROUTE_ID, routes.getID());
-                            values.put(ROUTE_NAME, routes.getName().trim());
-                            values.put(ROUTE_SAILING_DATE, routes.getSailing_date());
-                            values.put(ROUTE_MONGO_ID, routes.getId_mongo());
-                            db.insert(TABLE_ROUTES, // table
-                                    null, //nullColumnHack
-                                    values); // key/value -> keys = column names/ values = column values
+                            if (jsonArray.getJSONObject(i).getBoolean("active")){
+                                Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("refId"), jsonArray.getJSONObject(i).getString("name").toUpperCase(),
+                                        jsonArray.getJSONObject(i).getString("depart"), jsonArray.getJSONObject(i).getString("_id"));
+                                values.put(ROUTE_ID, routes.getID());
+                                values.put(ROUTE_NAME, routes.getName().trim());
+                                values.put(ROUTE_SAILING_DATE, routes.getSailing_date());
+                                values.put(ROUTE_MONGO_ID, routes.getId_mongo());
+                                db.insert(TABLE_ROUTES, // table
+                                        null, //nullColumnHack
+                                        values); // key/value -> keys = column names/ values = column values
+                            }
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {

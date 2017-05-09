@@ -212,7 +212,6 @@ public class MainActivity extends AppCompatActivity
                         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                         imm.showSoftInput(TextViewRut, InputMethodManager.SHOW_IMPLICIT);
                     } else {
-                        reset();
                         PeopleValidator(TextViewRut.getText().toString().trim(), "", "", 17);
                     }
                 }
@@ -413,6 +412,13 @@ public class MainActivity extends AppCompatActivity
                     } else if (rawCode.equals("CONFIG-AXX-6rVLydzn651RsZZ3dqWk")) {//configuration QR
                         Intent loadLog = new Intent(getApplicationContext(), log_show.class);
                         startActivity(loadLog);
+                    }else if (rawCode.equals("close trip now")) {
+                        if (comboLanded.getCount() > 0) {
+                            Intent closeTrip = new Intent(getApplicationContext(), CloseTrip.class);
+                            startActivity(closeTrip);
+                        } else {
+                            makeToast("No hay viaje configurado para cerrar");
+                        }
                     } else if (barcodeStr.startsWith("https://")) { // Its a new DNI Cards.
                         barcodeStr = barcodeStr.substring(
                                 barcodeStr.indexOf("RUN=") + 4,
@@ -704,13 +710,13 @@ public class MainActivity extends AppCompatActivity
         //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
         person = db.validatePerson(rut);
 
-        if (person.getString(1) != null) {
+        record.setPerson_document(rut);
+        if (person.getCount() > 0 && person.getString(1) != null) {
             TextViewFullname.setText(person.getString(1));
             record.setPerson_name(person.getString(1));
-            record.setPerson_name(person.getString(1));
-            record.setPerson_document(rut);
         } else {
             record.setPerson_name("");
+            TextViewFullname.setText("");
         }
         record.setSync(0);
         record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
@@ -794,7 +800,6 @@ public class MainActivity extends AppCompatActivity
      * @return
      */
     public String PUT(Record record, String url, OkHttpClient client) {
-        Log.e("DEBUG", "Estoy en Put");
         String result = "";
         String json = "";
         JSONObject jsonObject = new JSONObject();
@@ -809,8 +814,8 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("state", record.getInput() + "");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
 
-
             json = jsonObject.toString();
+            Log.d(url, json);
 
             RequestBody body = RequestBody.create(JSON, json);
 
@@ -825,6 +830,7 @@ public class MainActivity extends AppCompatActivity
 
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
             // 10. convert inputstream to string
+            Log.d("---Response---", tmp);
             if (tmp != null) {
                 if (response.isSuccessful()) {
                     // if has sync=0 its becouse its an offline record to be will synchronized.
@@ -848,7 +854,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     public String POST(Record record, String url, OkHttpClient client) {
-        Log.e("DEBUG", "Estoy en Post");
         String result = "";
         String json = "";
         JSONObject jsonObject = new JSONObject();
@@ -856,26 +861,25 @@ public class MainActivity extends AppCompatActivity
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
         try {
+            jsonObject.accumulate("documentId", record.getPerson_document());
+            jsonObject.accumulate("itinerary", db.selectFirst("select id_mongo from routes where id=(select route_id from config order by id desc limit 1)"));
+            jsonObject.accumulate("date", record.getDatetime());
             if (record.getTicket() != 0) {
-                url = url + "/manualSell/";//manual registers
+                url = url + "/registers/manualSell/";//manual registers
                 Log.e("URL",url);
                 // jsonObject.accumulate("ticket", record.getTicket());
-                jsonObject.accumulate("documentId", record.getPerson_document());
                 jsonObject.accumulate("name", record.getPerson_name());
                 jsonObject.accumulate("origin", record.getOrigin());
-                jsonObject.accumulate("destination", record.getDestination()); //falta
-                jsonObject.accumulate("itinerary", db.selectFirst("select id_mongo from routes where id=(select route_id from config order by id desc limit 1)"));
-
-
+                jsonObject.accumulate("destination", record.getDestination());
+                jsonObject.accumulate("ticketId", record.getTicket());
             } else if (record.getPermitted() == -1) {//denied registers
                 url = url + "/registers/deniedRegister";
-                jsonObject.accumulate("documentId", record.getPerson_document());
                 jsonObject.accumulate("deniedReason", record.getReason());
                 jsonObject.accumulate("origin", record.getPort_registry()); //falta
-                jsonObject.accumulate("itinerary", db.selectFirst("select id_mongo from routes where id=(select route_id from config order by id desc limit 1)"));
             }
 
             json = jsonObject.toString();
+            Log.d(url, json);
 
             RequestBody body = RequestBody.create(JSON, json);
 
@@ -890,6 +894,7 @@ public class MainActivity extends AppCompatActivity
 
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
             // 10. convert inputstream to string
+            Log.d("----POST response---", tmp);
             if (tmp != null) {
                 if (response.isSuccessful()) {
                     // if has sync=0 its becouse its an offline record to be will synchronized.
@@ -999,8 +1004,6 @@ public class MainActivity extends AppCompatActivity
                 if (!content.equals("[]"))
                     updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
             }
-        } catch (MalformedURLException me) {
-            me.printStackTrace();
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }

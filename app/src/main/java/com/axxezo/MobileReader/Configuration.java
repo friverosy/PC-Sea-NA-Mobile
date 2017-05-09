@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dd.CircularProgressButton;
@@ -57,6 +58,7 @@ public class Configuration extends AppCompatActivity {
     private String status;
     private String id_api_route;
     private boolean onclick = false;
+    private TextView route;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +73,7 @@ public class Configuration extends AppCompatActivity {
         loadButton = (CircularProgressButton) findViewById(R.id.button_loadManifest);
         manifest_load_ports = -1;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        route = (TextView) findViewById(R.id.textView);
         status = "";
 
         token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
@@ -119,7 +122,7 @@ public class Configuration extends AppCompatActivity {
         final DatabaseHelper db = DatabaseHelper.getInstance(this);
         //create adapter from combobox_route
         combobox_route.setClickable(true);
-        ArrayList<String> routes = db.selectAsList("select name from routes", 0);
+        final ArrayList<String> routes = db.selectAsList("select name from routes", 0);
         if (routes != null)
             routes.add(0, "<ELIJA UNA RUTA>");
         ArrayAdapter<String> adapter = null;
@@ -138,14 +141,13 @@ public class Configuration extends AppCompatActivity {
                 if (combobox_route.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_route.getSelectedItem().toString();
                     Cursor idElementSelected =db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
-                    Log.e("debug",idElementSelected.getInt(1)+"");
                     if (idElementSelected.getCount() > 0) {
                         selectionSpinnerRoute = idElementSelected.getString(1);
                         id_api_route=idElementSelected.getString(0);
                     }
+                    route.setText("Viaje "+selectionSpinnerRoute+" Seleccionado");
                     idElementSelected.close();
                 }
-
             }
 
             @Override
@@ -168,7 +170,7 @@ public class Configuration extends AppCompatActivity {
         try {
 
             db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
-            db.insert("insert or replace into config(route_id,manifest_id) values('"+selectionSpinnerRoute+"','"+id_api_route+"')");//jhy
+            db.insert("insert or replace into config (route_id,manifest_id) values ('"+selectionSpinnerRoute+"','"+id_api_route+"')");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
@@ -242,8 +244,9 @@ public class Configuration extends AppCompatActivity {
         }
 
         protected void onPostExecute(String result) {
-            if (onclick)
+            if (onclick) {
                 loadButton.setProgress(100);
+            }
         }
     }
 
