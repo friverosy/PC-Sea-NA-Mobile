@@ -412,7 +412,7 @@ public class MainActivity extends AppCompatActivity
                     } else if (rawCode.equals("CONFIG-AXX-6rVLydzn651RsZZ3dqWk")) {//configuration QR
                         Intent loadLog = new Intent(getApplicationContext(), log_show.class);
                         startActivity(loadLog);
-                    }else if (rawCode.equals("close trip now")) {
+                    } else if (rawCode.equals("close trip now")) {
                         if (comboLanded.getCount() > 0) {
                             Intent closeTrip = new Intent(getApplicationContext(), CloseTrip.class);
                             startActivity(closeTrip);
@@ -670,6 +670,7 @@ public class MainActivity extends AppCompatActivity
         Cursor person = null;
         Record record = new Record(); // Object to be sended to API Axxezo.
         DatabaseHelper db = DatabaseHelper.getInstance(this);
+        Cursor validation = null;
         rut = rut.trim().toUpperCase();
         if (comboLanded.getChildCount() == 0) { //1.-validations
             TextViewStatus.setText("PORFAVOR CONFIGURE EL MANIFIESTO PRIMERO");
@@ -678,34 +679,44 @@ public class MainActivity extends AppCompatActivity
             TextViewRut.setText(rut);
             if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
                 if (id_itinerary.trim().equals(db.selectFirst("select route_id from config where route_id='" + id_itinerary + "'").trim())) {
-                    if (!db.selectFirst("select id_people from manifest where id_people='" + rut + "'").isEmpty()) {
+                    validation = db.select("select p.name,m.origin from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
+                    if (validation.getCount()!=0) {
                         if (mySwitch.isChecked()) {
-                            if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
+                            if ((validation.getString(0)).trim().equals(selectedSpinnerLanded.trim()))
                                 valid = true;
                             else
-                                TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
-                        } else if ((db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'")).trim().equals(selectedSpinnerLanded.trim()))
-                            valid = true;
-                        else
-                            TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
+                                TextViewStatus.setText("PUERTO EMBARQUE ES " + validation.getString(0));
+                        } else {
+                            validation = db.select("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'");
+                            if (validation.getString(0).trim().equals(selectedSpinnerLanded.trim()))
+                                valid = true;
+                            else
+                                TextViewStatus.setText("PUERTO DESEMBARQUE ES " + validation.getString(0));
+                        }
                     } else
                         TextViewStatus.setText("PERSONA NO SE ENCUENTRA EN MANIFIESTO");
                 } else
                     TextViewStatus.setText("VIAJE NO CORRESPONDE");
             } else if (type == 28 && id_itinerary == "" || type == 17) { //old dni and new dni validations
-                if (!db.selectFirst("select id_people from manifest where id_people='" + rut + "'").isEmpty()) {
+                validation = db.select("select p.name,m.id_people from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
+                if (validation.getCount()!=0) {
                     if (mySwitch.isChecked()) {
-                        if (!selectedSpinnerLanded.equals(db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'"))) {
-                            TextViewStatus.setText("PUERTO EMBARQUE NO PERTENECE");
+                        if (!selectedSpinnerLanded.equals(validation.getString(0))) {
+                            TextViewStatus.setText("PUERTO EMBARQUE ES " + validation.getString(0));
                         } else
                             valid = true;
-                    } else if (!selectedSpinnerLanded.equals(db.selectFirst("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'"))) {
-                        TextViewStatus.setText("PUERTO DESEMBARQUE NO PERTENECE");
-                    } else
-                        valid = true;
+                    } else {
+                        validation = db.select("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'");
+                        if (!selectedSpinnerLanded.equals(validation.getString(0))) {
+                            TextViewStatus.setText("PUERTO DESEMBARQUE ES " + validation.getString(0));
+                        } else
+                            valid = true;
+                    }
                 } else
                     TextViewStatus.setText("PERSONA NO SE ENCUENTRA EN MANIFIESTO");
             }
+            if (validation != null)
+                validation.close();
         }
         //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
         person = db.validatePerson(rut);
@@ -844,7 +855,7 @@ public class MainActivity extends AppCompatActivity
             //result its the json to sent
             if (result.startsWith("http://"))
                 result = "204"; //no content
-        } catch (JSONException | IOException e){
+        } catch (JSONException | IOException e) {
             e.printStackTrace();
             log.writeLog(getApplicationContext(), "Main: PUT method", "ERROR", e.getMessage());
         }
@@ -866,7 +877,7 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("date", record.getDatetime());
             if (record.getTicket() != 0) {
                 url = url + "/registers/manualSell/";//manual registers
-                Log.e("URL",url);
+                Log.e("URL", url);
                 // jsonObject.accumulate("ticket", record.getTicket());
                 jsonObject.accumulate("name", record.getPerson_name());
                 jsonObject.accumulate("origin", record.getOrigin());
