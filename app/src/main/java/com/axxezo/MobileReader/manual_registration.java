@@ -116,47 +116,47 @@ public class manual_registration extends AppCompatActivity {
                     ticket_no.requestFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(ticket_no, InputMethodManager.SHOW_IMPLICIT);
-                } else if (dni.getText().toString().isEmpty()) {
+                }
+                if (dni.getText().toString().isEmpty()) {
                     dni.setError("Falta ingresar DNI");
                     dni.requestFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(dni, InputMethodManager.SHOW_IMPLICIT);
-                } else if (name.getText().toString().isEmpty()){
+                }
+                if (dni.getText().toString().contains("-")){
+                    dni.setError("Ingrese DNI sin digito verificador");
+                    dni.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(dni, InputMethodManager.SHOW_IMPLICIT);
+                } if (name.getText().toString().isEmpty()) {
                     name.setError("Falta ingresar Nombre");
                     name.requestFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(name, InputMethodManager.SHOW_IMPLICIT);
-                } else {
-                    // String origin =selected_origin;
+                }
+                if(!name.getText().toString().isEmpty()&&!dni.getText().toString().contains("-")&&!dni.getText().toString().isEmpty()&&!ticket_no.getText().toString().isEmpty()){
                     String origin_mongo_id=db.selectFirst("select id_mongo from ports where name='"+origin.getSelectedItem().toString().trim()+"'");
                     String destination_mongo_id=db.selectFirst("select id_mongo from ports where name='"+destination.getSelectedItem().toString().trim()+"'");
                     String port = db.selectFirst("select id_api from ports where name='" + selected_origin + "'");
                     String dniStr = dni.getText().toString().toUpperCase();
-
-                    /*String rutValidator = barcodeStr.substring(0, 8);
-                    rutValidator = rutValidator.replace(" ", "");
-                    rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                    char dv = barcodeStr.substring(8, 9).charAt(0);
-                    boolean isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
-                    if (isvalid)
-                        barcodeStr = rutValidator;
-                    else { //try validate rut size below 10.000.000
-                        rutValidator = barcodeStr.substring(0, 7);
-                        rutValidator = rutValidator.replace(" ", "");
-                        rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                        dv = barcodeStr.substring(7, 8).charAt(0);
-                        isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
-                        if (isvalid)
-                            barcodeStr = rutValidator;
-                        else {
-                            log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
-                            barcodeStr = "";
-                            TextViewStatus.setText("RUT INVALIDO");
-                        }
-                    }*/
-
                     db.insert("insert into people(document,name) values('" + dniStr + "','" + name.getText().toString().toUpperCase() + "')");
-                    db.insert("insert into manifest(id_people,origin,destination,port,boletus,is_inside) values('" + dni.getText().toString().toUpperCase() + "','" + origin_mongo_id + "','" + destination_mongo_id + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString())+ "','" +1+ "')");
+                    Cursor cursor = db.select("select origin,destination from manifest WHERE id_people='" + dni.getText().toString() + "'");
+                    if (cursor.getCount() > 0) { //when person is in manifest with origin and destination, only insert in case that one or another is different to origin/destination inserted
+                        if (!cursor.getString(0).equals(origin_mongo_id) || !cursor.getString(1).equals(destination_mongo_id)) {
+                            db.insert("insert into manifest(id_people,origin,destination,port,boletus,is_inside,is_manual_sell) values('" + dni.getText().toString().toUpperCase() + "','" + origin_mongo_id + "','" + destination_mongo_id + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString()) + "','" + 1+"','" +1+"')");
+                            Toast.makeText(getApplicationContext(), "Persona Registrada Correctamente", Toast.LENGTH_SHORT).show();
+                        }
+                        else if (cursor.getString(0).equals(origin_mongo_id) || cursor.getString(1).equals(destination_mongo_id))
+                            Toast.makeText(getApplicationContext(),"Persona ya se encuentra en Manifiesto",Toast.LENGTH_LONG).show();
+                    } else if (cursor.getCount() == 0) {
+                        db.insert("insert into manifest(id_people,origin,destination,port,boletus,is_inside,is_manual_sell) values('" + dni.getText().toString().toUpperCase() + "','" + origin_mongo_id + "','" + destination_mongo_id + "','" + port + "','" + Integer.parseInt(ticket_no.getText().toString()) + "','" + 1 + "','" + 1+ "')");
+                        Toast.makeText(getApplicationContext(), "Persona Registrada Correctamente", Toast.LENGTH_SHORT).show();
+                    }
+
+
+                    if (cursor != null)
+                        cursor.close();
+
                     Record record = new Record();
                     record.setDatetime(getCurrentDateTime("yyy-MM-dd HH:mm:ss.S"));
                     record.setPerson_document(dni.getText().toString().toUpperCase());
@@ -167,10 +167,10 @@ public class manual_registration extends AppCompatActivity {
                     record.setPermitted(0);
                     record.setMongo_id_manifest(db.selectFirst("select id_mongo from routes where id=(select route_id from config)"));
                     db.add_record(record);
-                    Toast.makeText(getApplicationContext(),"Persona Registrada Correctamente",Toast.LENGTH_SHORT).show();
                     finish();
                     //new RegisterTask(record).execute();
-                }
+                }else
+                    Toast.makeText(getApplicationContext(), "Verifique los campos solicitados e intente nuevamente", Toast.LENGTH_SHORT).show();
             }
         });
         if (getOriginandDestination != null)
@@ -182,24 +182,9 @@ public class manual_registration extends AppCompatActivity {
     public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("dd-MM-yyyy hh:MM:ss");
+        DateFormat date = new SimpleDateFormat(format);
         String localTime = date.format(currentLocalTime);
         return localTime;
     }
 
-    /**
-     * method that validate old and new chilean national identity card
-     *
-     * @param rut=number without check digit
-     * @param dv=        only check digit
-     * @return true if the dni number is correct or false if dni number doesn´t match with check digit
-     */
-    public boolean ValidarRut(int rut, char dv) {
-        dv = dv == 'k' ? dv = 'K' : dv;
-        int m = 0, s = 1;
-        for (; rut != 0; rut /= 10) {
-            s = (s + rut % 10 * (9 - m++ % 6)) % 11;
-        }
-        return dv == (char) (s != 0 ? s + 47 : 75);
-    }
 }

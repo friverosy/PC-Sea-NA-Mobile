@@ -129,7 +129,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 View view1 = snack.getView();
                 TextView information = (TextView) view1.findViewById(android.support.design.R.id.snackbar_text);
                 information.setTextColor(Color.WHITE);
-                information.setMaxLines(6);
+                information.setMaxLines(7);
                 snack.show();
             }
         });
@@ -196,25 +196,25 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                     "(select count(*) from manifest where is_inside=0)," +
                     "(select count(*) from manifest where is_inside=1)," +
                     "(select count(*) from manifest where is_inside=2)," +
-                    "(select count(*) from manifest where is_inside=1 and boletus is not null)");
+                    "(select count(*) from manifest where is_inside=1 and is_manual_sell=1)");
         } else if (origin.equals("< TODOS >") && !destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest where destination=(select id_mongo from ports where name='" + destination + "'))," +
                     "(select count(*) from manifest where is_inside=0 and destination=(select id_mongo from ports where name='" + destination + "'))," +
                     "(select count(*) from manifest where is_inside=1 and destination=(select id_mongo from ports where name='" + destination + "'))," +
                     "(select count(*) from manifest where is_inside=2 and destination=(select id_mongo from ports where name='" + destination + "'))," +
-                    "(select count(*) from manifest where is_inside=1 and boletus is not null and destination=(select id_mongo from ports where name='\" + destination + \"'))");
+                    "(select count(*) from manifest where is_manual_sell=1 and destination=(select id_mongo from ports where name='" + destination + "'))");
         } else if (!origin.equals("< TODOS >") && destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest where origin=(select id_mongo from ports where name='" + origin + "'))," +
                     "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "'))," +
                     "(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "'))," +
                     "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "'))," +
-                    "(select count(*) from manifest where is_inside=1 and boletus is not null and origin=(select id_mongo from ports where name='\" + origin + \"'))");
+                    "(select count(*) from manifest where is_manual_sell=1 and origin=(select id_mongo from ports where name='" + origin + "'))");
         } else { //last case when
             select_counts = db.select("select (select count(*) from manifest where origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
                     "(select count(*) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
                     "(select count(*) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
                     "(select count(*) from manifest where is_inside=2 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))," +
-                    "(select count(*) from manifest where is_inside=1 and boletus is not null and origin=(select id_mongo from ports where name='\" + origin + \"') and destination=(select id_mongo from ports where name='\" + destination + \"'))");
+                    "(select count(*) from manifest where is_manual_sell=1 and origin=(select id_mongo from ports where name='" + origin + "') and destination=(select id_mongo from ports where name='" + destination + "'))");
         }
 
         int count = 0;

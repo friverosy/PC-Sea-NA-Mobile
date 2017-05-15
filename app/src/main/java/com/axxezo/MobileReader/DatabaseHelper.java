@@ -57,6 +57,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String MANIFEST_ISINSIDE = "is_inside";
     private static final String MANIFEST_PORT = "port";
     private static final String MANIFEST_BOLETUS = "boletus";
+    private static final String MANIFEST_MANUAL_SELL = "is_manual_sell";
 
     //people
     private static final String PERSON_ID = "id";
@@ -97,8 +98,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_IS_PERMITTED = "permitted";
     private static final String RECORD_TICKET = "ticket";
     private static final String RECORD_REASON = "reason";
-    private static final String RECORD_MONGO_ID_MANIFEST ="mongo_id_manifest";
-    private static final String RECORD_MONGO_ID_REGISTER ="mongo_id_register";
+    private static final String RECORD_MONGO_ID_MANIFEST = "mongo_id_manifest";
+    private static final String RECORD_MONGO_ID_REGISTER = "mongo_id_register";
 
     //hours
     private static final String HOUR_ID = "id";
@@ -113,7 +114,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     //set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE, PERSON_REGISTER_ID};
-    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON,RECORD_MONGO_ID_MANIFEST, RECORD_MONGO_ID_REGISTER};
+    private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON, RECORD_MONGO_ID_MANIFEST, RECORD_MONGO_ID_REGISTER};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
     private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
@@ -134,18 +135,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             PERSON_NAME + " TEXT, " +
             PERSON_NATIONALITY + " TEXT, " +
             PERSON_AGE + " INTEGER, " +
-            PERSON_REGISTER_ID +" TEXT);";
+            PERSON_REGISTER_ID + " TEXT);";
 
     // "CONSTRAINT "+PERSON_DOCUMENT+" UNIQUE ("+PERSON_DOCUMENT+")); ";
 
     private String CREATE_MANIFEST_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MANIFEST + " ( " +
             MANIFEST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            MANIFEST_PEOPLE_ID + " TEXT NOT NULL UNIQUE, " +
+            MANIFEST_PEOPLE_ID + " TEXT NOT NULL, " +
             MANIFEST_ORIGIN + " TEXT, " +
             MANIFEST_DESTINATION + " TEXT," +
             MANIFEST_ISINSIDE + " INTEGER DEFAULT 0, " +
             MANIFEST_PORT + " INTEGER, " +
-            MANIFEST_BOLETUS + " TEXT); ";
+            MANIFEST_BOLETUS + " TEXT, " +
+            MANIFEST_MANUAL_SELL + " INTEGER DEFAULT 0 );";
 
     private String CREATE_ROUTES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_ROUTES + " ( " +
             ROUTE_ID + " INTEGER PRIMARY KEY, " +
@@ -237,7 +239,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
-                            if (jsonArray.getJSONObject(i).getBoolean("active")){
+                            if (jsonArray.getJSONObject(i).getBoolean("active")) {
                                 Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("refId"), jsonArray.getJSONObject(i).getString("name").toUpperCase(),
                                         jsonArray.getJSONObject(i).getString("depart"), jsonArray.getJSONObject(i).getString("_id"));
                                 values.put(ROUTE_ID, routes.getID());
@@ -273,7 +275,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         for (int i = 0; i < jsonArray.length(); i++) {
                             try {
                                 People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("registerId"));
-                                navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0);
+                                navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"),0,jsonArray.getJSONObject(i).getBoolean("isOnboard")?1:0);
 
                                 String doc;
                                 doc = people.getDocument().toUpperCase();
@@ -282,8 +284,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 String name = removeAccent(people.getName().toUpperCase());
                                 db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
                                         doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
-                                db.execSQL("insert or ignore into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + ") VALUES('" +
-                                        doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "')");
+                                Cursor cursor = null;
+                                cursor = db.rawQuery("select origin,destination from manifest WHERE id_people='" + doc + "'", null);
+                                if (cursor.getCount() > 0) { //when person is in manifest with origin and destination, only insert in case that one or another is different to origin/destination inserted
+                                    cursor.moveToFirst();
+                                    if (!cursor.getString(0).equals(manifest.getOrigin()) && !cursor.getString(1).equals(manifest.getDestination()))
+                                        db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE +","+MANIFEST_MANUAL_SELL+") VALUES('" +
+                                                doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "')");
+                                } else if (cursor.getCount() == 0)
+                                    db.execSQL("insert into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE +","+MANIFEST_MANUAL_SELL+") VALUES('" +
+                                            doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "')");
+                                if (cursor != null)
+                                    cursor.close();
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
@@ -316,7 +328,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 db.insert(TABLE_PORTS, // table
                                         null, //nullColumnHack
                                         values); // key/value -> keys = column names/ values = column values
-                            }catch (Exception e) {
+                            } catch (Exception e) {
                                 e.printStackTrace();
                                 log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
                             }
@@ -374,7 +386,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String row = "";
         try {
             cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination," +
-                    "m.boletus,p.id_mongo,"+PERSON_REGISTER_ID+" from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+                    "m.boletus,p.id_mongo," + PERSON_REGISTER_ID + " from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
         } catch (android.database.SQLException e) {
             e.printStackTrace();
@@ -469,9 +481,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (android.database.SQLException e) {
             e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-        }
-        finally {
-            if(cursor!=null)
+        } finally {
+            if (cursor != null)
                 cursor.close();
         }
         // 5. return
@@ -503,12 +514,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         else Log.e("Error updating record", String.valueOf(id));
     }
 
-    public void updatePeopleManifest(String rut, int input) {
+    public void updatePeopleManifest(String rut,String origin,String destination, int input) {
         SQLiteDatabase db = this.getWritableDatabase();
         log_app log = new log_app();
         try {
             db.beginTransactionNonExclusive();
-            db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut + "'");
+            db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut + "' and origin='"+origin+"' and destination='"+destination+"'");
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
             e.printStackTrace();

@@ -197,7 +197,7 @@ public class MainActivity extends AppCompatActivity
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
-        //AxxezoAPI = "http://192.168.1.102:9001/api";
+       // AxxezoAPI = "http://192.168.1.102:9001/api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
@@ -744,10 +744,10 @@ public class MainActivity extends AppCompatActivity
 
             if (is_input) {
                 record.setInput(1);
-                db.updatePeopleManifest(rut, 1);
+                db.updatePeopleManifest(rut,person.getString(2),person.getString(3),1);
             } else {
                 record.setInput(2);
-                db.updatePeopleManifest(rut, 2);
+                db.updatePeopleManifest(rut,person.getString(2),person.getString(3),2);
             }
 
             //record.setPort_registry(comboLanded.getSelectedItem().toString());
@@ -945,6 +945,8 @@ public class MainActivity extends AppCompatActivity
                     .writeTimeout(0, TimeUnit.SECONDS)
                     .readTimeout(0, TimeUnit.SECONDS)
                     .build();
+            if (client.readTimeoutMillis()>0)
+                Log.e("debug",client.readTimeoutMillis()+"");
             for (int i = 0; i < newRecord.size(); i++) {
                 Record record = newRecord.get(i);
                 if (record.getPermitted() == 1)
@@ -969,7 +971,7 @@ public class MainActivity extends AppCompatActivity
         protected void onPostExecute(Integer integer) {
             if (integer > 0) {
                 TextViewManifestUpdate.setTextColor(Color.WHITE);
-                TextViewManifestUpdate.setText("Manifiesto actualizado: " + getCurrentDateTime("dd-MM-yyyy HH:mm"));
+                TextViewManifestUpdate.setText("Manifiesto actualizado: " + getCurrentDateTime("HH:mm") + " hrs.");
             }
         }
     }
@@ -1169,19 +1171,21 @@ public class MainActivity extends AppCompatActivity
                 JSONObject person_information;
                 String getInside;
                 String dni_json;
+                String origin;
                 for (int i = 0; i < jsonArray.length(); i++) {
                     try {
                         person_information = jsonArray.getJSONObject(i);
                         dni_json = person_information.getString("documentId");
+                        origin=person_information.getString("origin");
                         if (dni_json.contains("-"))
                             dni_json = dni_json.substring(0, dni_json.indexOf("-"));
                         getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
                         //Log.e(dni_json, person_information.getString("state"));
 
-                        if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state")))) {
+                        if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state")))&&!origin.isEmpty()) {
                             //Log.d(dni_json + " " + getInside, person_information.getString("state"));
                             db.insert("update manifest set is_inside='" + person_information.getString("state") +
-                                    "' where id_people='" + dni_json.trim().toUpperCase() + "'");
+                                    "' where id_people='" + dni_json.trim().toUpperCase() + "' and origin='"+origin+"'");
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
