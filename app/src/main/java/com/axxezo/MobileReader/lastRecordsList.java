@@ -257,6 +257,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
         Log.e("mongo_id origin", spinner_origin_name_selection);
         Log.e("mongo_id destination", spinner_destination_name_selection);
+
         //Here we use the Filtering Feature which we implemented in our Adapter class.
         if (find.getVisibility() == View.GONE || find.getVisibility() == View.INVISIBLE)
             adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {

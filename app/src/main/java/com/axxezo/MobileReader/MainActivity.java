@@ -167,6 +167,7 @@ public class MainActivity extends AppCompatActivity
      */
     private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
     private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest; //asyntask to update in realtime new people inserts in manifest
+    private AsyncUpdateStateManifest AsynTask_UpdateStateManifest;// asyntask to update states of people insert in manifest table;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -193,11 +194,11 @@ public class MainActivity extends AppCompatActivity
         //asign timers to Asyntask
         timer_sendRecordsAPI = 10000;           //67000
         timer_asyncUpdateManifest = 12000;     //120000
-        timer_asyncUpdatePeopleState = 30000;   //30000
+        timer_asyncUpdatePeopleState = 1000;   //30000
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
-       // AxxezoAPI = "http://192.168.1.102:9001/api";
+        // AxxezoAPI = "http://192.168.1.102:9001/api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
@@ -572,14 +573,15 @@ public class MainActivity extends AppCompatActivity
     private void asyncUpdateManifestState() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
-
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            new AsyncUpdateStateManifest().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            AsynTask_UpdateStateManifest = new AsyncUpdateStateManifest();
+                            AsynTask_UpdateStateManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            Log.e("Asyntask status",AsynTask_UpdateStateManifest.getStatus()+"");
                         } catch (Exception e) {
                             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
                         }
@@ -680,7 +682,7 @@ public class MainActivity extends AppCompatActivity
             if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
                 if (id_itinerary.trim().equals(db.selectFirst("select route_id from config where route_id='" + id_itinerary + "'").trim())) {
                     validation = db.select("select p.name,m.origin from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
-                    if (validation.getCount()!=0) {
+                    if (validation.getCount() != 0) {
                         if (mySwitch.isChecked()) {
                             if ((validation.getString(0)).trim().equals(selectedSpinnerLanded.trim()))
                                 valid = true;
@@ -699,7 +701,7 @@ public class MainActivity extends AppCompatActivity
                     TextViewStatus.setText("VIAJE NO CORRESPONDE");
             } else if (type == 28 && id_itinerary == "" || type == 17) { //old dni and new dni validations
                 validation = db.select("select p.name,m.id_people from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
-                if (validation.getCount()!=0) {
+                if (validation.getCount() != 0) {
                     if (mySwitch.isChecked()) {
                         if (!selectedSpinnerLanded.equals(validation.getString(0))) {
                             TextViewStatus.setText("PUERTO EMBARQUE ES " + validation.getString(0));
@@ -744,10 +746,10 @@ public class MainActivity extends AppCompatActivity
 
             if (is_input) {
                 record.setInput(1);
-                db.updatePeopleManifest(rut,person.getString(2),person.getString(3),1);
+                db.updatePeopleManifest(rut, person.getString(2), person.getString(3), 1);
             } else {
                 record.setInput(2);
-                db.updatePeopleManifest(rut,person.getString(2),person.getString(3),2);
+                db.updatePeopleManifest(rut, person.getString(2), person.getString(3), 2);
             }
 
             //record.setPort_registry(comboLanded.getSelectedItem().toString());
@@ -945,8 +947,6 @@ public class MainActivity extends AppCompatActivity
                     .writeTimeout(0, TimeUnit.SECONDS)
                     .readTimeout(0, TimeUnit.SECONDS)
                     .build();
-            if (client.readTimeoutMillis()>0)
-                Log.e("debug",client.readTimeoutMillis()+"");
             for (int i = 0; i < newRecord.size(); i++) {
                 Record record = newRecord.get(i);
                 if (record.getPermitted() == 1)
@@ -980,7 +980,14 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected Void doInBackground(Void... params) {
-            getUpdateStates();
+            //set in 1000 miliseconds to timeout connection
+            final OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(1, TimeUnit.SECONDS)
+                    .writeTimeout(0, TimeUnit.SECONDS)
+                    .readTimeout(0, TimeUnit.SECONDS)
+                    .build();
+
+            getUpdateStates(client);
             return null;
         }
     }
@@ -1132,7 +1139,7 @@ public class MainActivity extends AppCompatActivity
     /**
      * get list from api, then, take each documentId and find this in manifest table, if found it, compare state that is entering with state in db
      */
-    public void getUpdateStates() {
+    public void getUpdateStates(OkHttpClient client) {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         Cursor itinerary = db.select("select route_id from config");
         if (itinerary.getCount() > 0) {
@@ -1140,29 +1147,32 @@ public class MainActivity extends AppCompatActivity
             log_app log = new log_app();
             String result = "";
             InputStream inputStream;
-            HttpClient httpclient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet(url);
-            HttpResponse httpResponse = null;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .get()
+                    .build();
+            Response response = null;
             JSONArray jsonArray = null;
 
+            Log.e("timeout get",client.readTimeoutMillis()+"");
             //1.- obtaining json array with states from endpoint
             try {
-                httpResponse = httpclient.execute(httpGet);
-                inputStream = httpResponse.getEntity().getContent();
-                if (inputStream != null) {
+                response = client.newCall(request).execute();
+                if (response != null) {
                     try {
-                        result = convertInputStreamToString(inputStream);
+                        result = response.body().string();
                         jsonArray = new JSONArray(result);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 } else {
-                    result = String.valueOf(httpResponse.getStatusLine().getStatusCode());
+                    result = response.code() + "";
                 }
-                if (inputStream != null)
-                    inputStream.close();
+                if (response != null)
+                    response.close();
             } catch (IOException e) {
-                log.writeLog(getApplicationContext(), "Main line:1373", "ERROR", e.getMessage());
+                log.writeLog(getApplicationContext(), "Main line:1172", "ERROR", e.getMessage());
+                AsynTask_UpdateStateManifest.cancel(true);
                 Log.e("status", "OFFLINE");
             }
 
@@ -1176,16 +1186,16 @@ public class MainActivity extends AppCompatActivity
                     try {
                         person_information = jsonArray.getJSONObject(i);
                         dni_json = person_information.getString("documentId");
-                        origin=person_information.getString("origin");
+                        origin = person_information.getString("origin");
                         if (dni_json.contains("-"))
                             dni_json = dni_json.substring(0, dni_json.indexOf("-"));
                         getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
                         //Log.e(dni_json, person_information.getString("state"));
 
-                        if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state")))&&!origin.isEmpty()) {
+                        if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state"))) && !origin.isEmpty()) {
                             //Log.d(dni_json + " " + getInside, person_information.getString("state"));
                             db.insert("update manifest set is_inside='" + person_information.getString("state") +
-                                    "' where id_people='" + dni_json.trim().toUpperCase() + "' and origin='"+origin+"'");
+                                    "' where id_people='" + dni_json.trim().toUpperCase() + "' and origin='" + origin + "'");
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
