@@ -33,13 +33,15 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     private ArrayList<Cards> filteredmDataSet;
     private ArrayList<Integer> positions;
     private cardsFilter cardsfilter;
+    private Context context;
 
-    public customViewPeople(ArrayList<Cards> mDataSet) {
+    public customViewPeople(ArrayList<Cards> mDataSet, Context context) {
         this.mDataSet = mDataSet;
         this.filteredmDataSet = mDataSet;
         for (int i = 0; i < this.mDataSet.size(); i++) {
             positions.add(mDataSet.get(i).getIsInside());
         }
+        this.context = context;
     }
 
 
@@ -52,14 +54,14 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
     @Override
     public void onBindViewHolder(final UserViewHolder holder, int position) {
-        DatabaseHelper db=DatabaseHelper.getInstance(holder.itemView.getContext());
-        Cursor origin_destination=db.select("select (select name from ports where id_mongo='"+mDataSet.get(position).getOrigin()+"'),(select name from ports where id_mongo='"+mDataSet.get(position).getDestination()+"')");
+        DatabaseHelper db = DatabaseHelper.getInstance(holder.itemView.getContext());
+        Cursor origin_destination = db.select("select (select name from ports where id_mongo='" + mDataSet.get(position).getOrigin() + "'),(select name from ports where id_mongo='" + mDataSet.get(position).getDestination() + "')");
         holder.people_Name.setText(mDataSet.get(position).getName().trim());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
 //        holder.people_destination.setText(mDataSet.get(position).getDestination());
-        holder.textViewExpand.setText("Nombre    :"+mDataSet.get(position).getName() + "\n" +"DNI            :"+mDataSet.get(position).getDocument() + "\n" + "Origen      :" +origin_destination.getString(0)+ "\n"+"Destino    :"+origin_destination.getString(1));
+        holder.textViewExpand.setText("Nombre    :" + mDataSet.get(position).getName() + "\n" + "DNI            :" + mDataSet.get(position).getDocument() + "\n" + "Origen      :" + origin_destination.getString(0) + "\n" + "Destino    :" + origin_destination.getString(1));
         holder.textViewExpand.setBackgroundColor(Color.parseColor("#E6E6E6"));
-        if(origin_destination!=null)
+        if (origin_destination != null)
             origin_destination.close();
         //set random values to inside
         //int random= (int) ((Math.random() * 2) + 1);
@@ -68,17 +70,17 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             case 0:
                 holder.icon_entry.setText("");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_blank));
-               // holder.spinner_state.setSelection(0);
+                // holder.spinner_state.setSelection(0);
                 break;
             case 1:
                 holder.icon_entry.setText("E");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_embarked));
-               // holder.spinner_state.setSelection(1);
+                // holder.spinner_state.setSelection(1);
                 break;
             case 2:
                 holder.icon_entry.setText("D");
                 holder.icon_entry.setBackground(holder.icon_entry.getContext().getResources().getDrawable(R.drawable.circular_textview_landed));
-               // holder.spinner_state.setSelection(2);
+                // holder.spinner_state.setSelection(2);
                 break;
         }
        /* holder.spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -168,43 +170,40 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
 
         @Override
         protected FilterResults performFiltering(CharSequence constraint) {
-
+            DatabaseHelper db = DatabaseHelper.getInstance(context);
             final FilterResults results = new FilterResults();
             ArrayList<Cards> filterList = new ArrayList<Cards>();
-            if (!mDataSet.isEmpty()) {
-                if (constraint.length() == 0) {
+            if (constraint.length() == 0) {
+                filterList.addAll(filteredmDataSet);
+            } else {
+                final String[] parts = constraint.toString().split("\\,");
+                String filterPatternOrigin = "";
+                String filterPatternDestination = "";
+                filterPatternOrigin = parts[0].trim();
+                filterPatternDestination = parts[1].trim();
+                Log.e("origin", filterPatternOrigin);
+                Log.e("destination", filterPatternDestination);
+                if (filterPatternOrigin.equals("< TODOS >") && filterPatternDestination.equals("< TODOS >"))
                     filterList.addAll(filteredmDataSet);
-                } else {
-                    final String[] parts = constraint.toString().split("\\,");
-                    String filterPatternOrigin = "";
-                    String filterPatternDestination = "";
-                    if (parts[0].equals("< TODOS >") || parts[1].equals("< TODOS >")) {
-                        filterPatternOrigin = parts[0].trim();
-                        filterPatternDestination = parts[1].trim();
-                        if (parts[0].equals("< TODOS >") && parts[1].equals("< TODOS >"))
-                            filterList.addAll(filteredmDataSet);
-                        else
-                            for (final Cards cards : filteredmDataSet) {
-                                if (parts[0].equals("< TODOS >")) {
-                                    if (cards.getDestination().contains(filterPatternDestination))
-                                        filterList.add(cards);
-                                } else if (parts[1].equals("< TODOS >"))
-                                    if (cards.getOrigin().contains(filterPatternOrigin))
-                                        filterList.add(cards);
-                            }
-                    }
-                    if (!parts[0].isEmpty() || !parts[1].isEmpty()) {
-                        filterPatternOrigin = parts[0].trim();
-                        filterPatternDestination = parts[1].trim();
-                        //Log.e("error", "origin:" + parts[0] + " destination" + parts[1]);
-                        for (final Cards cards : filteredmDataSet) {
-                            if (cards.getOrigin().contains(filterPatternOrigin) && cards.getDestination().contains(filterPatternDestination)) {
+                else if (parts[0].equals("< TODOS >") || parts[1].equals("< TODOS >")) {
+
+                    for (final Cards cards : filteredmDataSet) {
+                        if (parts[0].equals("< TODOS >")) {
+                            if (cards.getDestination().contains(filterPatternDestination))
                                 filterList.add(cards);
-                            }
+                        } else if (parts[1].equals("< TODOS >")) {
+                            if (cards.getOrigin().contains(filterPatternOrigin))
+                                filterList.add(cards);
                         }
                     }
-                    //Log.e("LIST","list size: "+filterList.size());
+                }else if (!parts[0].isEmpty() || !parts[1].isEmpty()) {
+                    for (final Cards cards : filteredmDataSet) {
+                        if (cards.getOrigin().contains(filterPatternOrigin) && cards.getDestination().contains(filterPatternDestination)) {
+                            filterList.add(cards);
+                        }
+                    }
                 }
+                //Log.e("LIST","list size: "+filterList.size());
             }
             results.values = filterList;
             return results;

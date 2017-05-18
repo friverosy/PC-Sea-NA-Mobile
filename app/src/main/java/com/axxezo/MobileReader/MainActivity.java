@@ -194,11 +194,13 @@ public class MainActivity extends AppCompatActivity
         //asign timers to Asyntask
         timer_sendRecordsAPI = 10000;           //67000
         timer_asyncUpdateManifest = 12000;     //120000
-        timer_asyncUpdatePeopleState = 1000;   //30000
+        timer_asyncUpdatePeopleState = 10000000;   //30000
 
         //asign url api axxezo
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
+        //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
+
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
@@ -581,7 +583,7 @@ public class MainActivity extends AppCompatActivity
                         try {
                             AsynTask_UpdateStateManifest = new AsyncUpdateStateManifest();
                             AsynTask_UpdateStateManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                            Log.e("Asyntask status",AsynTask_UpdateStateManifest.getStatus()+"");
+                            // Log.e("Asyntask status",AsynTask_UpdateStateManifest.getStatus()+"");
                         } catch (Exception e) {
                             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
                         }
@@ -1154,7 +1156,7 @@ public class MainActivity extends AppCompatActivity
             Response response = null;
             JSONArray jsonArray = null;
 
-            Log.e("timeout get",client.readTimeoutMillis()+"");
+            // Log.e("timeout get",client.readTimeoutMillis()+"");
             //1.- obtaining json array with states from endpoint
             try {
                 response = client.newCall(request).execute();

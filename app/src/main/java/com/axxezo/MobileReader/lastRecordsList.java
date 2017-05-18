@@ -58,7 +58,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
         users = new ArrayList<>();
-        adapter = new customViewPeople(users);
+        adapter = new customViewPeople(users,this);
         adapter.notifyDataSetChanged();
         recyclerView.setAdapter(adapter);
         //adapter.getFilter().filter();
@@ -83,34 +83,29 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
         spinner_origin_selected = combo_origin.getItemAtPosition(0).toString();
         combo_origin.setOnItemSelectedListener(this);
 
-        //fill destination with same combinations of ports
-        spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOriginAndDestination);
+        //fill origin combobox
+        ArrayList<String> select_origin_manifest = db.selectAsList("select distinct p.name from ports as p left join manifest as m on p.id_mongo=m.origin and p.id_mongo=m.destination", 0);
+        ArrayList<String> listOrigin = new ArrayList();
+        listOrigin.addAll(select_origin_manifest);
+        listOrigin.add(0, "< TODOS >");
+        spinner_adapter_origin = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOrigin);
+        spinner_adapter_origin.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        combo_origin.setAdapter(spinner_adapter_origin);
+        spinner_origin_selected = combo_origin.getItemAtPosition(0).toString();
+        combo_origin.setOnItemSelectedListener(this);
+
+        //fill destination combobox
+        ArrayList<String> select_destination_manifest = db.selectAsList("select distinct p.name from ports as p left join manifest as m on p.id_mongo=m.origin and p.id_mongo=m.destination", 0);
+        ArrayList<String> listDestination = new ArrayList();
+        listDestination.addAll(select_destination_manifest);
+        listDestination.add(0, "< TODOS >");
+        spinner_adapter_destination = new cardsSpinnerAdapter(this, android.R.layout.simple_spinner_dropdown_item, listDestination);
         spinner_adapter_destination.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         combo_destination.setAdapter(spinner_adapter_destination);
         spinner_destination_selected = combo_destination.getItemAtPosition(0).toString();
-        combo_destination.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
-                spinner_destination_selected = parent.getItemAtPosition(position).toString();
+        combo_destination.setOnItemSelectedListener(this);
+        combo_origin.setOnItemSelectedListener(this);
 
-                String spinner_origin_name_selection = spinner_origin_selected.equals("< TODOS >") ? spinner_origin_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_origin_selected + "'");
-                String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
-                //Here we use the Filtering Feature which we implemented in our Adapter class.
-                adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
-                    @Override
-                    public void onFilterComplete(int count) {
-                        adapter.notifyDataSetChanged();
-                        recyclerView.setAdapter(adapter);
-                    }
-                });
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
         addPersonCards();
         getStatusFromManifest(1, spinner_origin_selected, spinner_destination_selected);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_lastRecords);
@@ -133,35 +128,6 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                 snack.show();
             }
         });
-        /*fab_search.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mVibrator.vibrate(100);
-                find.setVisibility(View.GONE);
-                find.setVisibility(View.VISIBLE);
-                RelativeLayout coor = (RelativeLayout) findViewById(R.id.relative_layout);
-                ViewGroup.LayoutParams params = coor.getLayoutParams();
-// Changes the height and width to the specified *pixels*
-                params.width=500;
-                params.height =100;
-                coor.setLayoutParams(params);
-               /* CoordinatorLayout coor = (CoordinatorLayout) findViewById(R.id.content_last_records_list);
-                find.setLayoutParams(new LinearLayout.LayoutParams(
-                        CoordinatorLayout.LayoutParams.MATCH_PARENT,
-                        CoordinatorLayout.LayoutParams.WRAP_CONTENT));
-                CoordinatorLayout.LayoutParams params1= new CoordinatorLayout.LayoutParams(CoordinatorLayout.LayoutParams.MATCH_PARENT, CoordinatorLayout.LayoutParams.WRAP_CONTENT);
-
-                find.setText("asdasdasdasdasd");
-                if (coor.getChildCount() == 8) {
-                  //  params1.rule
-                    coor.addView(find);
-                }
-                Log.e("lenght"," "+coor.getChildCount());*/
-
-
-       //     }
-        //});
-
     }
 
     private void addPersonCards() {
@@ -250,34 +216,24 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        Cards cards = new Cards();
-        DatabaseHelper db = DatabaseHelper.getInstance(this);
-        spinner_origin_selected = parent.getItemAtPosition(position).toString();
-        String spinner_origin_name_selection = spinner_origin_selected.equals("< TODOS >") ? spinner_origin_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_origin_selected + "'");
-        String spinner_destination_name_selection = spinner_destination_selected.equals("< TODOS >") ? spinner_destination_selected : db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
-        Log.e("mongo_id origin", spinner_origin_name_selection);
-        Log.e("mongo_id destination", spinner_destination_name_selection);
-
+        spinner_origin_selected = combo_origin.getSelectedItem().toString();
+        spinner_destination_selected = combo_destination.getSelectedItem().toString();
+        Log.e("origin",spinner_origin_selected);
+        Log.e("destination",spinner_destination_selected);
+        DatabaseHelper db = DatabaseHelper.getInstance(getBaseContext());
+        String origin = spinner_origin_selected.equals("< TODOS >")?"< TODOS >":db.selectFirst("select id_mongo from ports where name='"+spinner_origin_selected+"'");
+        String destination =spinner_destination_selected.equals("< TODOS >")?"< TODOS >":db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");
         //Here we use the Filtering Feature which we implemented in our Adapter class.
-        if (find.getVisibility() == View.GONE || find.getVisibility() == View.INVISIBLE)
-            adapter.getFilter().filter((CharSequence) spinner_origin_name_selection + "," + spinner_destination_name_selection, new Filter.FilterListener() {
-                @Override
-                public void onFilterComplete(int count) {
-                    adapter.notifyDataSetChanged();
-                    recyclerView.setAdapter(adapter);
-                }
-            });
-        if (find.getVisibility() == View.VISIBLE)
-            adapter.getFilter().filter((CharSequence) find.getText() + ",", new Filter.FilterListener() {
-                @Override
-                public void onFilterComplete(int count) {
-                    adapter.notifyDataSetChanged();
-                    recyclerView.setAdapter(adapter);
-                }
-            });
+        adapter.getFilter().filter((CharSequence) origin + "," + destination, new Filter.FilterListener() {
+            @Override
+            public void onFilterComplete(int count) {
+                adapter.notifyDataSetChanged();
+                recyclerView.setAdapter(adapter);
+            }
+        });
 
     }
-    
+
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 

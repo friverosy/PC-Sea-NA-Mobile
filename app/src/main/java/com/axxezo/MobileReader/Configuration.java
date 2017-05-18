@@ -1,20 +1,15 @@
 package com.axxezo.MobileReader;
 
-import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -34,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -49,11 +43,11 @@ public class Configuration extends AppCompatActivity {
     private String selectionSpinnerRoute;
     String hour;
     private Vibrator mVibrator;
-    private String URL;
+    private String AxxezoAPI;
     private String token_navieraAustral;
     private String token_transportesAustral;
     private CircularProgressButton loadButton;
-    private String AxxezoAPI;
+    //private String AxxezoAPI;
     private int manifest_load_ports;
     private String status;
     private String id_api_route;
@@ -78,11 +72,11 @@ public class Configuration extends AppCompatActivity {
 
         token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
         token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-        //URL = "http://ticket.bsale.cl/control_api";
-        URL = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
-        //URL = "http://192.168.1.102:9000/api";
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         //AxxezoAPI = "http://192.168.1.102:9000/api";
-        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/";
+
+        //test tzu 18/05/2017
+        //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api/";
 
         //inserts in db
         try {
@@ -169,12 +163,12 @@ public class Configuration extends AppCompatActivity {
 
         try {
 
-            db.insertJSON(new getAPIInformation(URL, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
+            db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
             db.insert("insert or replace into config (route_id,manifest_id) values ('"+selectionSpinnerRoute+"','"+id_api_route+"')");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
-            db.insertJSON(new getAPIInformation(URL, id_api_route).execute().get(), "ports"); //insert ports of route selected
+            db.insertJSON(new getAPIInformation(AxxezoAPI, id_api_route).execute().get(), "ports"); //insert ports of route selected
 
         } catch (JSONException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -257,7 +251,7 @@ public class Configuration extends AppCompatActivity {
      * @throws IOException
      */
     public String getRoutes() throws IOException {
-        URL url = new URL(URL + "/itineraries?date="+ getCurrentDateTime("yyyy-MM-dd"));
+        URL url = new URL(AxxezoAPI + "/itineraries?date="+ getCurrentDateTime("yyyy-MM-dd"));
         String content = null;
         HttpURLConnection conn = null;
         try {
@@ -286,7 +280,7 @@ public class Configuration extends AppCompatActivity {
 
                 @Override
                 public void run() {
-                    Toast.makeText(getApplicationContext(), "Existe un problema con la conexion de internet, verifique e intente nuevamente", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor", Toast.LENGTH_LONG).show();
                 }
             });
         }
@@ -371,7 +365,7 @@ public class Configuration extends AppCompatActivity {
      * @return int that contains http status of this operation (when status 200 is OK)
      */
     public String GETReset() {
-        String url = AxxezoAPI + "/states/removeAll";
+        String url = AxxezoAPI + "states/removeAll";
         String result = "";
         InputStream inputStream;
         HttpClient httpclient = new DefaultHttpClient();
