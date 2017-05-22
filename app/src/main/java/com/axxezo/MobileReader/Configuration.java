@@ -1,17 +1,22 @@
 package com.axxezo.MobileReader;
 
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.DatePicker;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +40,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 public class Configuration extends AppCompatActivity {
@@ -53,6 +60,8 @@ public class Configuration extends AppCompatActivity {
     private String id_api_route;
     private boolean onclick = false;
     private TextView route;
+    private TextView dataPicker;
+    final Calendar myCalendar = Calendar.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,25 +77,17 @@ public class Configuration extends AppCompatActivity {
         manifest_load_ports = -1;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         route = (TextView) findViewById(R.id.textView);
+        dataPicker = (TextView) findViewById(R.id.datetime_picker);
         status = "";
 
         token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
         token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
+        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         //AxxezoAPI = "http://192.168.1.102:9000/api";
 
         //test tzu 18/05/2017
-        //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api/";
+        AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
 
-        //inserts in db
-        try {
-            DatabaseHelper db = DatabaseHelper.getInstance(this);
-            db.insertJSON(new getAPIInformation().execute().get(), "routes");
-        } catch (JSONException | InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-        loadComboboxRoutes();
-        final resetEndPoint reset = new resetEndPoint();
         //button
         loadButton.setIndeterminateProgressMode(true);
         loadButton.setOnClickListener(new View.OnClickListener() {
@@ -94,21 +95,66 @@ public class Configuration extends AppCompatActivity {
             public void onClick(View v) {
                 //simulateSuccessProgress(loadButton);
                 onclick = true;
-                // if ((combobox_route != null && combobox_route.getSelectedItem() != null) && !combobox_route.getSelectedItem().equals("")) {
                 mVibrator.vibrate(100);
                 loadManifest();
                 loadButton.setClickable(false);
-                reset.execute();
                 if (status.equals("200"))
                     Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT).show();
                 finish();
                 //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                 //startActivity(intent);
                 setResult(RESULT_OK, null);
+
+            }
+        });
+        try {
+            DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+            db.insertJSON(new getAPIInformation(updateLabel()).execute().get(), "routes");
+        } catch (JSONException | InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        loadComboboxRoutes();
+        final DatePickerDialog.OnDateSetListener date = new DatePickerDialog.OnDateSetListener() {
+
+            @Override
+            public void onDateSet(DatePicker view, int year, int monthOfYear,
+                                  int dayOfMonth) {
+                // TODO Auto-generated method stub
+                myCalendar.set(Calendar.YEAR, year);
+                myCalendar.set(Calendar.MONTH, monthOfYear);
+                myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                updateLabel();
+                try {
+                    DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+                    db.insertJSON(new getAPIInformation(updateLabel()).execute().get(), "routes");
+                } catch (JSONException | InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+                loadComboboxRoutes();
+            }
+
+        };
+
+        dataPicker.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                new DatePickerDialog(Configuration.this, date, myCalendar
+                        .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
+                        myCalendar.get(Calendar.DAY_OF_MONTH)).show();
             }
         });
     }
+    private String updateLabel() {
+        String myFormat = "dd/MM/yyyy";
+        String dateTimeDBformat="yyyy-MM-dd";
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
+        SimpleDateFormat DBformat = new SimpleDateFormat(dateTimeDBformat, Locale.getDefault());
 
+        dataPicker.setText(sdf.format(myCalendar.getTime()));
+        return DBformat.format(myCalendar.getTime());
+    }
     /**
      * fill combobox, obtaining information content in table "routes"
      */
@@ -134,12 +180,12 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setClickable(true);
                 if (combobox_route.getSelectedItemPosition() != 0) {
                     String nameElement = combobox_route.getSelectedItem().toString();
-                    Cursor idElementSelected =db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
+                    Cursor idElementSelected = db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
                     if (idElementSelected.getCount() > 0) {
                         selectionSpinnerRoute = idElementSelected.getString(1);
-                        id_api_route=idElementSelected.getString(0);
+                        id_api_route = idElementSelected.getString(0);
                     }
-                    route.setText("Viaje "+selectionSpinnerRoute+" Seleccionado");
+                    route.setText("Viaje " + selectionSpinnerRoute + " Seleccionado");
                     idElementSelected.close();
                 }
             }
@@ -163,8 +209,8 @@ public class Configuration extends AppCompatActivity {
 
         try {
 
-            db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute).execute().get(), "manifest");
-            db.insert("insert or replace into config (route_id,manifest_id) values ('"+selectionSpinnerRoute+"','"+id_api_route+"')");//jhy
+            db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute,updateLabel()).execute().get(), "manifest");
+            db.insert("insert or replace into config (route_id,manifest_id) values ('" + selectionSpinnerRoute + "','" + id_api_route + "')");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
@@ -187,20 +233,21 @@ public class Configuration extends AppCompatActivity {
         private String token;
         private int flag = -1;
         private String route;
-        private String id_api_bsale;
-        private
+        private String datetime;
 
-        getAPIInformation() {//routes
+        private getAPIInformation(String datetime) {//routes
             getInformation = "";
             flag = 0;
+            this.datetime=datetime;
         }
 
-        getAPIInformation(String URL, String token, String id_mongo_route) {//manifest
+        getAPIInformation(String URL, String token, String id_mongo_route,String datetime) {//manifest
             this.URL = URL;
             this.token = token;
             this.route = id_mongo_route;
             getInformation = "";
             flag = 1;
+            this.datetime=datetime;
         }
 
         getAPIInformation(String URL, String id_api_bsale) {//ports
@@ -216,7 +263,7 @@ public class Configuration extends AppCompatActivity {
             try {
                 switch (flag) {
                     case 0:
-                        getInformation = getRoutes();
+                        getInformation = getRoutes(datetime);
                         break;
                     case 1:
                         getInformation = getManifest(URL, token, route);
@@ -250,13 +297,13 @@ public class Configuration extends AppCompatActivity {
      * @return content in string, but it really is json array
      * @throws IOException
      */
-    public String getRoutes() throws IOException {
-        URL url = new URL(AxxezoAPI + "/itineraries?date="+ getCurrentDateTime("yyyy-MM-dd"));
+    public String getRoutes(String format) throws IOException {
+        URL url = new URL(AxxezoAPI + "/itineraries?date=" + format);
         String content = null;
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN",token_navieraAustral);
+            conn.setRequestProperty("TOKEN", token_navieraAustral);
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(2000);
             conn.connect();
@@ -318,8 +365,8 @@ public class Configuration extends AppCompatActivity {
         return content;
     }
 
-    public String getPorts(String Url, String  id_mongo_route) throws IOException {
-        URL url = new URL(Url+"/itineraries/"+id_mongo_route+"/seaports");
+    public String getPorts(String Url, String id_mongo_route) throws IOException {
+        URL url = new URL(Url + "/itineraries/" + id_mongo_route + "/seaports");
         String content = "";
         HttpURLConnection conn = null;
         try {
@@ -381,19 +428,6 @@ public class Configuration extends AppCompatActivity {
         return result;
     }
 
-    private class resetEndPoint extends AsyncTask<String, String, String> {
-
-        @Override
-        protected String doInBackground(String... params) {
-            return status = GETReset();
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            status = s;
-        }
-
-    }
 
     public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
@@ -401,10 +435,11 @@ public class Configuration extends AppCompatActivity {
         DateFormat date = new SimpleDateFormat(format);
         return date.format(currentLocalTime);
     }
-     @Override
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(resultCode==RESULT_OK){
+        if (resultCode == RESULT_OK) {
             Intent refresh = new Intent(this, MainActivity.class);
             startActivity(refresh);
             this.finish();

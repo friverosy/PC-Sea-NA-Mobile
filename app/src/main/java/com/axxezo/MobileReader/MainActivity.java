@@ -58,6 +58,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.device.ScanManager;
 import android.graphics.Color;
@@ -151,6 +152,7 @@ public class MainActivity extends AppCompatActivity
     private Switch mySwitch;
     private Spinner comboLanded;
     private String selectedSpinnerLanded;
+    private int selectedIntSpinnerLanded;
     private log_app log;
     private String updateTimePeople;
     public ArrayAdapter<String> adapter;
@@ -187,19 +189,20 @@ public class MainActivity extends AppCompatActivity
         mp3Permitted = MediaPlayer.create(MainActivity.this, R.raw.good);
         mp3Error = MediaPlayer.create(MainActivity.this, R.raw.error);
         mySwitch = (Switch) findViewById(R.id.mySwitch);
+        selectedIntSpinnerLanded = -1;
         log = new log_app();
         selectedSpinnerLanded = "";
         updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
 
         //asign timers to Asyntask
-        timer_sendRecordsAPI = 10000;           //67000
-        timer_asyncUpdateManifest = 12000;     //120000
-        timer_asyncUpdatePeopleState = 10000000;   //30000
+        timer_sendRecordsAPI = 30000;               //30 sec=30.000
+        timer_asyncUpdateManifest = 120000;              //2 min=120.000
+        timer_asyncUpdatePeopleState = 15000;              //15 sec=15.000
 
         //asign url api axxezo
-        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
+        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
-        //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
+        AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -253,6 +256,22 @@ public class MainActivity extends AppCompatActivity
         asyncUpdateManifestinTime();
         asyncUpdateManifestState(); //pending change values from string to integer
         getWindow().getDecorView().findViewById(R.id.content_main).invalidate();
+
+
+        //load spinner selected in sharedPreference method
+
+        /*SharedPreferences sharedPref = getSharedPreferences("userPreference",MODE_PRIVATE);
+        int spinnerValue = sharedPref.getInt("userChoiceSpinner",-1);
+        if(spinnerValue != -1)
+            // set the value of the spinner
+        Log.e("estoy aqui","estoy cargando sharedPreference");
+            comboLanded.setSelection(spinnerValue);*/
+       /* if (savedInstanceState != null) {
+            comboLanded.setSelection(savedInstanceState.getInt("combolanded", 0));
+            // do this for each of your text views
+        }*/
+
+
     }
 
     public void fillSpinner() {
@@ -829,6 +848,8 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("state", record.getInput() + "");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
 
+            Log.e("debug", url.toString());
+
             json = jsonObject.toString();
             Log.d(url, json);
 
@@ -1253,4 +1274,12 @@ public class MainActivity extends AppCompatActivity
             return null;
         }
     }
+
+   /* protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (comboLanded != null && comboLanded.getCount() > 0)
+
+            outState.putInt("combolanded", selectedIntSpinnerLanded);
+        Log.e("state spinner", "" + selectedIntSpinnerLanded);
+    }*/
 }
