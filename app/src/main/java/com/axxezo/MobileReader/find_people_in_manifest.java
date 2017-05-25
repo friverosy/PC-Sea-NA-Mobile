@@ -1,11 +1,8 @@
 package com.axxezo.MobileReader;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
-import android.device.ScanManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
@@ -29,9 +26,7 @@ import java.util.ArrayList;
 
 public class find_people_in_manifest extends AppCompatActivity {
 
-    private final static String SCAN_ACTION = "urovo.rcv.message";//action
     private Vibrator mVibrator;
-    private ScanManager mScanManager;
     private SoundPool soundpool = null;
     private String barcodeStr;
     private boolean isScaning = false;
@@ -92,101 +87,6 @@ public class find_people_in_manifest extends AppCompatActivity {
 
 
     }
-
-    private BroadcastReceiver mScanReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            // TODO Auto-generated method stub
-            if (mp3Error.isPlaying()) mp3Error.stop();
-            if (mp3Dennied.isPlaying()) mp3Dennied.stop();
-            if (mp3Permitted.isPlaying()) mp3Permitted.stop();
-
-            isScaning = false;
-            //soundpool.play(soundid, 1, 1, 0, 0, 1);
-
-            mVibrator.vibrate(100);
-            reset("");
-
-            byte[] barcode = intent.getByteArrayExtra("barocode");
-            int barocodelen = intent.getIntExtra("length", 0);
-            byte barcodeType = intent.getByteExtra("barcodeType", (byte) 0);
-            Log.i("codetype", String.valueOf(barcodeType));
-            barcodeStr = new String(barcode, 0, barocodelen);
-            String rawCode = barcodeStr;
-            Log.d("---", rawCode);
-
-            int flag = 0; // 0 for end without k, 1 with k
-            People person = new People();
-
-            if (barcodeType == 28) { // QR code
-                if (barcodeStr.contains("client_code")) {
-                    // Its a ticket
-                    try {
-                        Log.d("barcode", barcodeStr);
-                        JSONObject json = new JSONObject(barcodeStr);
-                        String doc = json.getString("client_code");
-                        doc = doc.substring(0, doc.length() - 2);
-                        person.setDocument(doc);
-                        barcodeStr = doc;
-                        //send the text to edittext
-                        find_people.setText(barcodeStr);
-                        findInManifest(barcodeStr);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                } else if(rawCode.startsWith("https://")) {
-                    // Its a DNI Card.
-                    barcodeStr = barcodeStr.substring(
-                            barcodeStr.indexOf("RUN=") + 4,
-                            barcodeStr.indexOf("&type"));
-                    // Remove DV.
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.indexOf("-"));
-                    find_people.setText(barcodeStr);
-                    findInManifest(barcodeStr);
-                }
-
-            } else if (barcodeType == 17) { // PDF417
-                // 1.- validate if the rut is > 10 millions
-                String rutValidator = barcodeStr.substring(0, 8);
-                rutValidator = rutValidator.replace(" ", "");
-                rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                char dv = barcodeStr.substring(8, 9).charAt(0);
-                boolean isValid = rutValidator(Integer.parseInt(rutValidator), dv);
-                if (isValid)
-                    barcodeStr = rutValidator;
-                else { //try validate rut size below 10.000.000
-                    rutValidator = barcodeStr.substring(0, 7);
-                    rutValidator = rutValidator.replace(" ", "");
-                    rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                    dv = barcodeStr.substring(7, 8).charAt(0);
-                    isValid = rutValidator(Integer.parseInt(rutValidator), dv);
-                    if (isValid)
-                        barcodeStr = rutValidator;
-                    else {
-                        log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
-                        barcodeStr = "";
-                    }
-                }
-
-                // Get name from DNI.
-                String[] array = rawCode.split("\\s+"); // Split by whitespace.
-                try {
-                    find_people.setText(array[1].substring(0, array[1].indexOf("CHL")));
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    find_people.setText(array[2].substring(0, array[2].indexOf("CHL")));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    find_people.setText("");
-                }
-                findInManifest(barcodeStr);
-            }
-
-            Log.i("Cooked Barcode", barcodeStr);
-        }
-    };
-
     public boolean rutValidator(int rut, char dv) {
         dv = dv == 'k' ? dv = 'K' : dv;
         int m = 0, s = 1;
@@ -198,10 +98,6 @@ public class find_people_in_manifest extends AppCompatActivity {
 
     public void reset(String content) {
         try {
-            initScan();
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(SCAN_ACTION);
-            registerReceiver(mScanReceiver, filter);
             //show_dni.setText("");
             show_name.setText(content);
             show_origin.setText(content);
@@ -213,44 +109,6 @@ public class find_people_in_manifest extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
-    private void initScan() {
-        // TODO Auto-generated method stub
-        mScanManager = new ScanManager();
-        mScanManager.openScanner();
-
-        mScanManager.switchOutputMode(0);
-        soundpool = new SoundPool(1, AudioManager.STREAM_NOTIFICATION, 100); // MODE_RINGTONE
-    }
-
-    @Override
-    protected void onDestroy() {
-        // TODO Auto-generated method stub
-        super.onDestroy();
-    }
-
-    @Override
-    protected void onPause() {
-        // TODO Auto-generated method stub
-        super.onPause();
-        if (mScanManager != null) {
-            mScanManager.stopDecode();
-            isScaning = false;
-        }
-        unregisterReceiver(mScanReceiver);
-    }
-
-    @Override
-    protected void onResume() {
-        // TODO Auto-generated method stub
-        super.onResume();
-        initScan();
-        // sendRecordstoAPI();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(SCAN_ACTION);
-        registerReceiver(mScanReceiver, filter);
-    }
-
     public void findInManifest(String document) {
         Cursor get_selected_dni = db.select("select ma.id_people,(select name from ports where id_mongo=ma.origin),(select name from ports where id_mongo=ma.destination), p.name  from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'");
         if (get_selected_dni!=null&&get_selected_dni.getCount() > 0) {

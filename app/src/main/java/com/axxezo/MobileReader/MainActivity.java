@@ -58,15 +58,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.device.ScanManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.StrictMode;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -136,14 +133,9 @@ public class MainActivity extends AppCompatActivity
 
     private static String token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
     private static String token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-    private TextView TextViewFullname;
-    private EditText TextViewRut;
-    private TextView TextViewStatus;
     private TextView TextViewManifestUpdate;
     private ImageView imageview;
-    private final static String SCAN_ACTION = "urovo.rcv.message";//action
     private Vibrator mVibrator;
-    private ScanManager mScanManager;
     private String barcodeStr;
     private boolean isScaning = false;
     MediaPlayer mp3Dennied;
@@ -182,9 +174,6 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        TextViewFullname = (TextView) findViewById(R.id.fullname);
-        TextViewRut = (EditText) findViewById(R.id.rut);
-        TextViewStatus = (TextView) findViewById(status);
         TextViewManifestUpdate = (TextView) findViewById(R.id.textView_lastManifestUpdate);
         comboLanded = (Spinner) findViewById(R.id.spinner_setLanded);
         imageview = (ImageView) findViewById(R.id.imageView);
@@ -195,7 +184,7 @@ public class MainActivity extends AppCompatActivity
         selectedIntSpinnerLanded = -1;
         log = new log_app();
         selectedSpinnerLanded = "";
-        TextViewTimePeople="";
+        TextViewTimePeople = "";
 
 
         //asign timers to Asyntask
@@ -208,25 +197,6 @@ public class MainActivity extends AppCompatActivity
         // AxxezoAPI = "http://192.168.1.102:9001/api";
         AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
 
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        if (fab != null) {
-            fab.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    mVibrator.vibrate(100);
-                    if (TextViewRut.getText().toString().isEmpty()) {
-                        TextViewRut.setHint("Ingrese Rut");
-                        TextViewRut.setHintTextColor(Color.RED);
-                        TextViewRut.requestFocus();
-                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.showSoftInput(TextViewRut, InputMethodManager.SHOW_IMPLICIT);
-                    } else {
-                        PeopleValidator(TextViewRut.getText().toString().trim(), "", "", 17);
-                    }
-                }
-            });
-        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -410,110 +380,6 @@ public class MainActivity extends AppCompatActivity
      * receive the information of barcod read and proccess that, once that extract dni of qr or barcode, send this to validate
      * in method PeopleValidator
      */
-    private BroadcastReceiver mScanReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            // TODO Auto-generated method stub
-            try {
-                new LoadSound(4).execute();
-                isScaning = false;
-                mVibrator.vibrate(100);
-                reset();
-
-                byte[] barcode = intent.getByteArrayExtra("barocode");
-                int barocodelen = intent.getIntExtra("length", 0);
-                byte barcodeType = intent.getByteExtra("barcodeType", (byte) 0);
-                barcodeStr = new String(barcode, 0, barocodelen);
-                String rawCode = barcodeStr;
-
-                int flag = 0; // 0 for end without k, 1 with k
-                People person = new People();
-
-                if (barcodeType == 28) { // QR code
-                    if (barcodeStr.contains("client_code") && barcodeStr.contains("id_itinerary")) {
-                        try { // Its a ticket
-                            JSONObject json = new JSONObject(barcodeStr);
-                            String doc = json.getString("client_code");
-
-                            if (doc.contains("-")) {
-                                doc = doc.substring(0, doc.indexOf("-"));
-                            }
-                            person.setDocument(doc);
-                            barcodeStr = doc;
-                            PeopleValidator(doc, json.getString("id_itinerary"), json.getString("port"), barcodeType);
-                        } catch (JSONException e) {
-                            log.writeLog(getApplicationContext(), "Main:line 368", "ERROR", e.getMessage());
-                        }
-                    } else if (rawCode.equals("CONFIG-AXX-6rVLydzn651RsZZ3dqWk")) {//configuration QR
-                        Intent loadLog = new Intent(getApplicationContext(), log_show.class);
-                        startActivity(loadLog);
-                    } else if (rawCode.equals("close trip now")) {
-                        if (comboLanded.getCount() > 0) {
-                            Intent closeTrip = new Intent(getApplicationContext(), CloseTrip.class);
-                            startActivity(closeTrip);
-                        } else {
-                            makeToast("No hay viaje configurado para cerrar");
-                        }
-                    } else if (barcodeStr.startsWith("https://")) { // Its a new DNI Cards.
-                        barcodeStr = barcodeStr.substring(
-                                barcodeStr.indexOf("RUN=") + 4,
-                                barcodeStr.indexOf("&type"));
-                        // Remove DV.
-                        barcodeStr = barcodeStr.substring(0, barcodeStr.indexOf("-"));
-                        PeopleValidator(barcodeStr, "", "", barcodeType);
-                    } else if (!barcodeStr.contains("id_itinerary")) {
-                        new LoadSound(1).execute();
-                        TextViewFullname.setText("");
-                        TextViewStatus.setText("QR INVALIDO");
-                        imageview.setImageResource(R.drawable.img_false);
-                    }
-                }
-                if (barcodeType == 17) { // PDF417->old dni
-                    // 1.- validate if the rut is > 10 millions
-                    String rutValidator = barcodeStr.substring(0, 8);
-                    rutValidator = rutValidator.replace(" ", "");
-                    rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                    char dv = barcodeStr.substring(8, 9).charAt(0);
-                    boolean isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
-                    if (isvalid)
-                        barcodeStr = rutValidator;
-                    else { //try validate rut size below 10.000.000
-                        rutValidator = barcodeStr.substring(0, 7);
-                        rutValidator = rutValidator.replace(" ", "");
-                        rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
-                        dv = barcodeStr.substring(7, 8).charAt(0);
-                        isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
-                        if (isvalid)
-                            barcodeStr = rutValidator;
-                        else {
-                            log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
-                            barcodeStr = "";
-                            TextViewStatus.setText("RUT INVALIDO");
-                        }
-                    }
-                    // Get name from DNI.
-                    String[] array = rawCode.split("\\s+"); // Split by whitespace.
-                    try {
-                        TextViewFullname.setText(array[1].substring(0, array[1].indexOf("CHL")));
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        TextViewFullname.setText(array[2].substring(0, array[2].indexOf("CHL")));
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        TextViewFullname.setText("");
-                    }
-                    PeopleValidator(barcodeStr, "", "", barcodeType);
-                }
-            } catch (NullPointerException e) {
-                e.printStackTrace();
-                log.writeLog(getApplicationContext(), "Main:line 408", "ERROR", e.getMessage());
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.writeLog(getApplicationContext(), "Main:line 411", "ERROR", e.getMessage());
-            }
-        }
-    };
 
     /**
      * Return current local datetime in PDA, in format that specifies in string format
@@ -544,13 +410,6 @@ public class MainActivity extends AppCompatActivity
         return dv == (char) (s != 0 ? s + 47 : 75);
     }
 
-    private void initScan() {
-        // TODO Auto-generated method stub
-        mScanManager = new ScanManager();
-        mScanManager.openScanner();
-        mScanManager.switchOutputMode(0);
-    }
-
     @Override
     protected void onDestroy() {
         // TODO Auto-generated method stub
@@ -563,11 +422,6 @@ public class MainActivity extends AppCompatActivity
         // TODO Auto-generated method stub
         super.onPause();
         fillSpinner();
-        if (mScanManager != null) {
-            mScanManager.stopDecode();
-            isScaning = false;
-        }
-        unregisterReceiver(mScanReceiver);
         //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
@@ -575,10 +429,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         // TODO Auto-generated method stub
         super.onResume();
-        initScan();
         IntentFilter filter = new IntentFilter();
-        filter.addAction(SCAN_ACTION);
-        registerReceiver(mScanReceiver, filter);
         fillSpinner();
     }
 
@@ -666,7 +517,7 @@ public class MainActivity extends AppCompatActivity
                         format = new SimpleDateFormat("HH:mm");
                         String date = format.format(newDate);
                         if (!date.isEmpty() || !date.equals("null") || date != null)
-                            TextViewTimePeople=date;
+                            TextViewTimePeople = date;
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
@@ -680,21 +531,6 @@ public class MainActivity extends AppCompatActivity
         Log.e("asynctask", "insertnewpeoplemanifest");
         return total_temp;
     }
-
-    public void reset() {
-        try {
-            initScan();
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(SCAN_ACTION);
-            registerReceiver(mScanReceiver, filter);
-            TextViewFullname.setText("Nombre");
-            TextViewRut.setText("Nº Documento");
-            TextViewStatus.setText("");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void sendRecordstoAPI() { //send records to api
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -720,141 +556,6 @@ public class MainActivity extends AppCompatActivity
             }
         };
         timer.schedule(task, 0, timer_sendRecordsAPI);  // 360000= 6 minutes, 7 minutes=420000
-    }
-
-    /**
-     * PeopleValidator, contains all validations of qr and pdf417 code, receive
-     *
-     * @param rut=          dni number extract in method broadcastReceivere
-     * @param id_itinerary= travel id, use to validate person in table manifest
-     * @param port=         embark person port
-     * @param type=         indicate the type of code read
-     */
-    public void PeopleValidator(String rut, String id_itinerary, String port, int type) {
-        boolean valid = false;
-        Cursor person = null;
-        Record record = new Record(); // Object to be sended to API Axxezo.
-        DatabaseHelper db = DatabaseHelper.getInstance(this);
-        Cursor validation = null;
-        rut = rut.trim().toUpperCase();
-        if (comboLanded.getChildCount() == 0) { //1.-validations
-            TextViewStatus.setText("PORFAVOR CONFIGURE EL MANIFIESTO PRIMERO");
-            new LoadSound(4).execute();
-        } else {
-            TextViewRut.setText(rut);
-            if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
-                if (id_itinerary.trim().equals(db.selectFirst("select route_id from config where route_id='" + id_itinerary + "'").trim())) {
-                    validation = db.select("select p.name,m.origin from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
-                    if (validation.getCount() != 0) {
-                        if (mySwitch.isChecked()) {
-                            if ((validation.getString(0)).trim().equals(selectedSpinnerLanded.trim()))
-                                valid = true;
-                            else
-                                TextViewStatus.setText("PUERTO EMBARQUE ES " + validation.getString(0));
-                        } else {
-                            validation = db.select("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'");
-                            if (validation.getString(0).trim().equals(selectedSpinnerLanded.trim()))
-                                valid = true;
-                            else
-                                TextViewStatus.setText("PUERTO DESEMBARQUE ES " + validation.getString(0));
-                        }
-                    } else
-                        TextViewStatus.setText("PERSONA NO SE ENCUENTRA EN MANIFIESTO");
-                } else
-                    TextViewStatus.setText("VIAJE NO CORRESPONDE");
-            } else if (type == 28 && id_itinerary == "" || type == 17) { //old dni and new dni validations
-                validation = db.select("select p.name,m.id_people from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
-                if (validation.getCount() != 0) {
-                    if (mySwitch.isChecked()) {
-                        if (!selectedSpinnerLanded.equals(validation.getString(0))) {
-                            TextViewStatus.setText("PUERTO EMBARQUE ES " + validation.getString(0));
-                        } else
-                            valid = true;
-                    } else {
-                        validation = db.select("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'");
-                        if (!selectedSpinnerLanded.equals(validation.getString(0))) {
-                            TextViewStatus.setText("PUERTO DESEMBARQUE ES " + validation.getString(0));
-                        } else
-                            valid = true;
-                    }
-                } else
-                    TextViewStatus.setText("PERSONA NO SE ENCUENTRA EN MANIFIESTO");
-            }
-            if (validation != null)
-                validation.close();
-        }
-        //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
-        if (valid) {
-            person = db.validatePerson(rut);
-            record.setPerson_document(rut);
-            if (person.getCount() > 0 && person.getString(1) != null) {
-                TextViewFullname.setText(person.getString(1));
-                record.setPerson_name(person.getString(1));
-            } else {
-                record.setPerson_name("");
-                TextViewFullname.setText("");
-            }
-            record.setSync(0);
-            record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
-            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
-            TextViewRut.setText(rut);
-
-            new LoadSound(2).execute();
-            imageview.setImageResource(R.drawable.img_true);
-            TextViewStatus.setText("");
-
-            //fill record
-            record.setPermitted(1);
-
-            if (is_input) {
-                record.setInput(1);
-                db.updatePeopleManifest(rut, person.getString(2), person.getString(3), 1);
-            } else {
-                record.setInput(2);
-                db.updatePeopleManifest(rut, person.getString(2), person.getString(3), 2);
-            }
-
-            //record.setPort_registry(comboLanded.getSelectedItem().toString());
-
-            record.setOrigin(person.getString(2));
-            record.setDestination(person.getString(3));
-            record.setMongo_id_person(person.getString(5));
-            record.setMongo_id_manifest(db.selectFirst("select manifest_id from config"));
-            record.setMongo_id_register(person.getString(6));
-        } else {
-            record.setPerson_document(rut);
-            TextViewFullname.setText("");
-            new LoadSound(3).execute();
-            imageview.setImageResource(R.drawable.img_false);
-
-            if (is_input) record.setInput(1);
-            else record.setInput(2);
-
-            if (!TextViewStatus.getText().toString().isEmpty())
-                switch (TextViewStatus.getText().toString()) {
-                    case "PUERTO EMBARQUE NO PERTENECE":
-                        record.setReason(1);
-                        break;
-                    case "PUERTO DESEMBARQUE NO PERTENECE":
-                        record.setReason(2);
-                        break;
-                    case "PERSONA NO SE ENCUENTRA EN MANIFIESTO":
-                        record.setReason(3);
-                        break;
-                    case "VIAJE NO CORRESPONDE":
-                        record.setReason(4);
-                        break;
-                    case "PORFAVOR CONFIGURE EL MANIFIESTO PRIMERO":
-                        record.setReason(5);
-                        break;
-                    default:
-                        record.setReason(-1);//for no reason
-                }
-            record.setPermitted(-1);
-        }
-        db.add_record(record);
-        if (person != null)
-            person.close();
     }
 
     public void makeToast(String msg) {

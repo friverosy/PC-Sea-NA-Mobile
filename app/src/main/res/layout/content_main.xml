@@ -54,28 +54,17 @@
 
         <TextView
             android:id="@+id/fullname"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:ems="10"
+            android:lines="6"
             android:inputType="textPersonName"
-            android:text="Nombre"
+            android:text="Version solo para Visualizar"
             android:textAlignment="center"
             android:textColor="@android:color/white"
-            android:textSize="26sp"
             android:textStyle="bold"
-            android:layout_width="300dp" />
-
-        <EditText
-            android:id="@+id/rut"
+            android:singleLine="false"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:inputType="textPersonName"
-            android:hint="Nº Documento"
-            android:textColorHint="@android:color/white"
-            android:textColor="@android:color/white"
-            android:textAlignment="center"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="22sp" />
 
         <TextView
             android:id="@+id/status"
