@@ -40,7 +40,6 @@ public class find_people_in_manifest extends AppCompatActivity {
     private TextView show_name;
     private TextView show_origin;
     private TextView show_destination;
-    private TextView show_hour;
     private ImageView image_authorized;
     private Button button_find_in_manifest;
     MediaPlayer mp3Dennied;
@@ -68,18 +67,11 @@ public class find_people_in_manifest extends AppCompatActivity {
         mp3Dennied = MediaPlayer.create(this, R.raw.bad);
         mp3Permitted = MediaPlayer.create(this, R.raw.good);
         mp3Error = MediaPlayer.create(this, R.raw.error);
-        db = new DatabaseHelper(this);
+        db = DatabaseHelper.getInstance(this);
         button_find_in_manifest = (Button) findViewById(R.id.button_manual_search);
         button_find_in_manifest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //code down keyboard when press this button
-                InputMethodManager inputManager = (InputMethodManager)
-                        getSystemService(Context.INPUT_METHOD_SERVICE);
-
-                inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
-                        InputMethodManager.HIDE_NOT_ALWAYS);
-
                 mVibrator.vibrate(100);
                 findInManifest(find_people.getText().toString().toUpperCase().trim());
             }
@@ -214,7 +206,6 @@ public class find_people_in_manifest extends AppCompatActivity {
             show_name.setText(content);
             show_origin.setText(content);
             show_destination.setText(content);
-            show_hour.setText(content);
             //find_people.setText("");
             image_authorized.setImageResource(0);
 

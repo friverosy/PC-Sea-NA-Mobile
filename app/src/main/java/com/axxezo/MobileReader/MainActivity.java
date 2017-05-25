@@ -66,6 +66,7 @@ import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -109,6 +110,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -155,6 +157,7 @@ public class MainActivity extends AppCompatActivity
     private int selectedIntSpinnerLanded;
     private log_app log;
     private String updateTimePeople;
+    private String TextViewTimePeople;
     public ArrayAdapter<String> adapter;
 
     /********
@@ -192,7 +195,8 @@ public class MainActivity extends AppCompatActivity
         selectedIntSpinnerLanded = -1;
         log = new log_app();
         selectedSpinnerLanded = "";
-        updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
+        TextViewTimePeople="";
+
 
         //asign timers to Asyntask
         timer_sendRecordsAPI = 30000;               //30 sec=30.000
@@ -271,6 +275,17 @@ public class MainActivity extends AppCompatActivity
             // do this for each of your text views
         }*/
 
+
+        //handle update manifest in real time
+
+
+        // dont open this code, the app crash, but in the error show me number of open cursors.
+        /*StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects()
+                .penaltyLog()
+                .penaltyDeath()
+                .build());*/
 
     }
 
@@ -567,6 +582,13 @@ public class MainActivity extends AppCompatActivity
         fillSpinner();
     }
 
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.d("estoy en", "onRestart");
+
+    }
+
     private void asyncUpdateManifestinTime() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -602,7 +624,6 @@ public class MainActivity extends AppCompatActivity
                         try {
                             AsynTask_UpdateStateManifest = new AsyncUpdateStateManifest();
                             AsynTask_UpdateStateManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                            // Log.e("Asyntask status",AsynTask_UpdateStateManifest.getStatus()+"");
                         } catch (Exception e) {
                             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
                         }
@@ -626,16 +647,37 @@ public class MainActivity extends AppCompatActivity
         int total_temp = 0;
         try {
             String id_route = db.selectFirst("select route_id from config");
-            if (id_route != null && !id_route.equals(""))
+            if (id_route != null && !id_route.isEmpty() && !id_route.equals("null"))
                 db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route)).execute().get(), "manifest");
+            else
+                log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest, route_id esta nulo o vacio, no se pudo ejecutar proceso asyncrono");
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
             if (count_before != count_after) {
                 total_temp = count_after - count_before;
+            }
+            if (total_temp > 0) {
+                db.insert("update config set date_last_update='" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "' where id=1");
+                updateTimePeople = db.selectFirst("select date_last_update from config");
+                if (!updateTimePeople.isEmpty() && updateTimePeople != null && !updateTimePeople.equals("null")) {
+                    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                    Date newDate = null;
+                    try {
+                        newDate = format.parse(updateTimePeople);
+                        format = new SimpleDateFormat("HH:mm");
+                        String date = format.format(newDate);
+                        if (!date.isEmpty() || !date.equals("null") || date != null)
+                            TextViewTimePeople=date;
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                }
             }
         } catch (android.database.SQLException | JSONException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
             log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest" + e.getMessage());
         }
+        Log.e("asynctask", "insertnewpeoplemanifest");
         return total_temp;
     }
 
@@ -742,22 +784,21 @@ public class MainActivity extends AppCompatActivity
                 validation.close();
         }
         //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
-        person = db.validatePerson(rut);
-
-        record.setPerson_document(rut);
-        if (person.getCount() > 0 && person.getString(1) != null) {
-            TextViewFullname.setText(person.getString(1));
-            record.setPerson_name(person.getString(1));
-        } else {
-            record.setPerson_name("");
-            TextViewFullname.setText("");
-        }
-        record.setSync(0);
-        record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
-        record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
-        TextViewRut.setText(rut);
-
         if (valid) {
+            person = db.validatePerson(rut);
+            record.setPerson_document(rut);
+            if (person.getCount() > 0 && person.getString(1) != null) {
+                TextViewFullname.setText(person.getString(1));
+                record.setPerson_name(person.getString(1));
+            } else {
+                record.setPerson_name("");
+                TextViewFullname.setText("");
+            }
+            record.setSync(0);
+            record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
+            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
+            TextViewRut.setText(rut);
+
             new LoadSound(2).execute();
             imageview.setImageResource(R.drawable.img_true);
             TextViewStatus.setText("");
@@ -781,6 +822,8 @@ public class MainActivity extends AppCompatActivity
             record.setMongo_id_manifest(db.selectFirst("select manifest_id from config"));
             record.setMongo_id_register(person.getString(6));
         } else {
+            record.setPerson_document(rut);
+            TextViewFullname.setText("");
             new LoadSound(3).execute();
             imageview.setImageResource(R.drawable.img_false);
 
@@ -801,13 +844,17 @@ public class MainActivity extends AppCompatActivity
                     case "VIAJE NO CORRESPONDE":
                         record.setReason(4);
                         break;
+                    case "PORFAVOR CONFIGURE EL MANIFIESTO PRIMERO":
+                        record.setReason(5);
+                        break;
                     default:
                         record.setReason(-1);//for no reason
                 }
             record.setPermitted(-1);
         }
         db.add_record(record);
-        person.close();
+        if (person != null)
+            person.close();
     }
 
     public void makeToast(String msg) {
@@ -984,17 +1031,18 @@ public class MainActivity extends AppCompatActivity
     public class asyncTask_updatePeopleManifest extends AsyncTask<Void, Void, Integer> {
         private int update_manifest_count;
 
-
         @Override
         protected Integer doInBackground(Void... params) {
             return update_manifest_count = Asyntask_insertNewPeopleManifest();
+
         }
 
         @Override
         protected void onPostExecute(Integer integer) {
+            Log.e("integer", integer + "");
             if (integer > 0) {
                 TextViewManifestUpdate.setTextColor(Color.WHITE);
-                TextViewManifestUpdate.setText("Manifiesto actualizado: " + getCurrentDateTime("HH:mm") + " hrs.");
+                TextViewManifestUpdate.setText("Manifiesto actualizado: " + TextViewTimePeople + " hrs.");
             }
         }
     }
@@ -1005,7 +1053,7 @@ public class MainActivity extends AppCompatActivity
         protected Void doInBackground(Void... params) {
             //set in 1000 miliseconds to timeout connection
             final OkHttpClient client = new OkHttpClient.Builder()
-                    .connectTimeout(1, TimeUnit.SECONDS)
+                    .connectTimeout(2, TimeUnit.SECONDS)
                     .writeTimeout(0, TimeUnit.SECONDS)
                     .readTimeout(0, TimeUnit.SECONDS)
                     .build();
@@ -1028,10 +1076,13 @@ public class MainActivity extends AppCompatActivity
      */
     public String Asyntask_insertNewPeopleManifest(String Url, int ID_route) throws IOException {
         //http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary=1824&date=2017-04-14T10:44:00
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        updateTimePeople = db.selectFirst("select date_last_update from config");
         URL url = new URL(Url + "/manifests?itinerary=" + ID_route + "&date=" + updateTimePeople);
         String content = "";
         HttpURLConnection conn = null;
         try {
+            Log.e("URL async_new People", url.toString());
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("TOKEN", token_navieraAustral);
             conn.setRequestMethod("GET");
@@ -1044,8 +1095,6 @@ public class MainActivity extends AppCompatActivity
                 content = String.valueOf(getData);
             } else {
                 content = convertInputStreamToString(getData);
-                if (!content.equals("[]"))
-                    updateTimePeople = getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss");
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -1119,16 +1168,13 @@ public class MainActivity extends AppCompatActivity
     public class getAPIInformation extends AsyncTask<String, Void, String> {
         private String URL;
         private String getInformation;
-        private String token;
         private int flag = -1;
         private int route;
         private int port;
 
         getAPIInformation(String URL, int route) {//manifest
             this.URL = URL;
-            this.token = token;
             this.route = route;
-            this.port = port;
             getInformation = "";
             flag = 0;
         }
@@ -1169,7 +1215,6 @@ public class MainActivity extends AppCompatActivity
             String url = AxxezoAPI + "/registers/status?itinerary=" + itinerary.getInt(0);
             log_app log = new log_app();
             String result = "";
-            InputStream inputStream;
             Request request = new Request.Builder()
                     .url(url)
                     .get()
@@ -1177,6 +1222,8 @@ public class MainActivity extends AppCompatActivity
             Response response = null;
             JSONArray jsonArray = null;
 
+            if (itinerary != null)
+                itinerary.close();
             // Log.e("timeout get",client.readTimeoutMillis()+"");
             //1.- obtaining json array with states from endpoint
             try {
@@ -1227,7 +1274,7 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
-        itinerary.close();
+
     }
 
     /**
@@ -1275,11 +1322,22 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-   /* protected void onSaveInstanceState(Bundle outState) {
+    @Override
+    protected void onStop() {
+        super.onStop();
+        killAyntask(true);
+    }
+
+    /* protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (comboLanded != null && comboLanded.getCount() > 0)
 
             outState.putInt("combolanded", selectedIntSpinnerLanded);
         Log.e("state spinner", "" + selectedIntSpinnerLanded);
     }*/
+    private void killAyntask(boolean state) {
+        Asynctask_sendRecord.cancel(state); //asyntask that send data to api axxezo
+        AsyncTask_updatePeopleManifest.cancel(state);//asyntask to update in realtime new people inserts in manifest
+        AsynTask_UpdateStateManifest.cancel(state);// asyntask to update states of people insert in manifest table;
+    }
 }

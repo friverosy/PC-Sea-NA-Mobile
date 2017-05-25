@@ -111,6 +111,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String CONFIG_ROUTE_NAME = "route_name";
     private static final String CONFIG_DATE = "date";
     private static final String CONFIG_MANIFEST_ID = "manifest_id";
+    private static final String CONFIG_DATE_LAST_UPDATE = "date_last_update";
 
 
     //set table colums
@@ -193,7 +194,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             CONFIG_ROUTE_ID + " INTEGER, " +
             CONFIG_ROUTE_NAME + " INTEGER, " +
             CONFIG_DATE + " TEXT, " +
-            CONFIG_MANIFEST_ID + " TEXT);";
+            CONFIG_MANIFEST_ID + " TEXT, "+
+            CONFIG_DATE_LAST_UPDATE + " TEXT); ";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -282,7 +284,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
                                         doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
                                 Cursor cursor = null;
-                                Log.e("debug", "reservationStatus" + manifest.getReservationStatus());
                                 cursor = db.rawQuery("select origin,destination from manifest WHERE id_people='" + doc + "'", null);
                                 if (cursor.getCount() > 0) { //when person is in manifest with origin and destination, only insert in case that one or another is different to origin/destination inserted
                                     cursor.moveToFirst();
@@ -332,6 +333,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                                Log.e("ports",e.getMessage());
                             }
                             values.clear();
                         }
@@ -586,7 +588,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " + TABLE_RECORDS +
                 " WHERE " + RECORD_SYNC + "=0;", null);
-        return cursor.getCount();
+        int count=cursor.getCount();
+        if(cursor!=null)
+            cursor.close();
+        return count;
     }
 
 

@@ -30,6 +30,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,6 +44,11 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class Configuration extends AppCompatActivity {
 
@@ -127,6 +133,10 @@ public class Configuration extends AppCompatActivity {
                 try {
                     DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
                     db.insertJSON(new getAPIInformation(updateLabel()).execute().get(), "routes");
+                    int countRoutes = Integer.parseInt(db.selectFirst("select count(id) from routes"));
+                    if (countRoutes == 0) {
+                        Toast.makeText(getApplicationContext(), "No existen rutas para el dia seleccionado o no se han cargado. Reintente", Toast.LENGTH_LONG).show();
+                    }
                 } catch (JSONException | InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
@@ -206,11 +216,14 @@ public class Configuration extends AppCompatActivity {
         db.insert("delete from sqlite_sequence where name='MANIFEST'");
         db.insert("delete from config");
         db.insert("delete from sqlite_sequence where name='CONFIG'");
+        db.insert("delete from sqlite_sequence where name='PEOPLE'");
+        db.insert("delete from ports");
+        db.insert("delete from sqlite_sequence where name='PORTS'");
 
         try {
 
             db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute,updateLabel()).execute().get(), "manifest");
-            db.insert("insert or replace into config (route_id,manifest_id) values ('" + selectionSpinnerRoute + "','" + id_api_route + "')");//jhy
+            db.insert("insert or replace into config (route_id,manifest_id,date_last_update) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "')");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
@@ -260,16 +273,21 @@ public class Configuration extends AppCompatActivity {
 
         @Override
         protected String doInBackground(String... strings) {
+            final OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(2, TimeUnit.SECONDS)
+                    .writeTimeout(0, TimeUnit.SECONDS)
+                    .readTimeout(0, TimeUnit.SECONDS)
+                    .build();
             try {
                 switch (flag) {
                     case 0:
-                        getInformation = getRoutes(datetime);
+                        getInformation = getRoutes(datetime,client);
                         break;
                     case 1:
-                        getInformation = getManifest(URL, token, route);
+                        getInformation = getManifest(URL, token, route,client);
                         break;
                     case 2:
-                        getInformation = getPorts(URL, route);
+                        getInformation = getPorts(URL, route,client);
                         break;
                 }
 
@@ -285,9 +303,10 @@ public class Configuration extends AppCompatActivity {
         }
 
         protected void onPostExecute(String result) {
-            if (onclick) {
+            if (onclick)
                 loadButton.setProgress(100);
-            }
+            else
+                loadButton.setProgress(0);
         }
     }
 
@@ -297,113 +316,101 @@ public class Configuration extends AppCompatActivity {
      * @return content in string, but it really is json array
      * @throws IOException
      */
-    public String getRoutes(String format) throws IOException {
+    public String getRoutes(String format, OkHttpClient client) throws IOException {
         URL url = new URL(AxxezoAPI + "/itineraries?date=" + format);
-        String content = null;
-        HttpURLConnection conn = null;
+        Log.d("routes url", url.toString());
+        String content = "";
+        log_app log = new log_app();
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        Response response = null;
         try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", token_navieraAustral);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
+            response = client.newCall(request).execute();
+            if (response != null) {
+                content = response.body().string();
+                Log.e("content", content);
             } else
-                content = convertInputStreamToString(getData);
+                content = response.code() + "";
         } catch (IOException e) {
-            e.printStackTrace();
-            Log.e("class config, line 443", e.getMessage());
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content == null || content.length() <= 2) { //[]
-            content = "204"; // No content
+            final String error = e.getMessage();
+            log.writeLog(getApplicationContext(), "Configuration:line 333", "ERROR", e.getMessage());
             runOnUiThread(new Runnable() {
 
                 @Override
                 public void run() {
-                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor " + error, Toast.LENGTH_LONG).show();
                 }
             });
         }
+        if (response != null)
+            response.close();
         return content;
     }
 
-    public String getManifest(String Url, String Token, String id_mongo_route) throws IOException {
+    public String getManifest(String Url, String Token, String id_mongo_route, OkHttpClient client) throws IOException {
         //"http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary="
         URL url = new URL(Url + "/manifests?itinerary=" + id_mongo_route);
         String content = "";
-        HttpURLConnection conn = null;
+        log_app log = new log_app();
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        Response response = null;
         try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
+            response = client.newCall(request).execute();
+            if (response != null) {
+                content = response.body().string();
             } else
-                content = convertInputStreamToString(getData);
+                content = response.code() + "";
         } catch (IOException e) {
-            e.printStackTrace();
+            final String error = e.getMessage();
+            log.writeLog(getApplicationContext(), "Configuration:line 366", "ERROR", e.getMessage());
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor " + error, Toast.LENGTH_LONG).show();
+                }
+            });
         }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d("Manifes Server response", content);
+        if (response != null)
+            response.close();
         return content;
     }
 
-    public String getPorts(String Url, String id_mongo_route) throws IOException {
+    public String getPorts(String Url, String id_mongo_route, OkHttpClient client) throws IOException {
         URL url = new URL(Url + "/itineraries/" + id_mongo_route + "/seaports");
         String content = "";
-        HttpURLConnection conn = null;
+        log_app log = new log_app();
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        Response response = null;
         try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", token_navieraAustral);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200 && connStatus != 201) {
-                content = String.valueOf(getData);
+            response = client.newCall(request).execute();
+            if (response != null) {
+                content = response.body().string();
             } else
-                content = convertInputStreamToString(getData);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
+                content = response.code() + "";
+            Log.e("ports content", content);
+        } catch (IOException e) {
+            final String error = e.getMessage();
+            log.writeLog(getApplicationContext(), "Configuration:line 333", "ERROR", e.getMessage());
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor " + error, Toast.LENGTH_LONG).show();
+                }
+            });
         }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
+        if (response != null)
+            response.close();
         return content;
-    }
-
-
-    private static String convertInputStreamToString(InputStream inputStream) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        String line;
-        String result = "";
-        while ((line = bufferedReader.readLine()) != null)
-            result += line;
-
-        inputStream.close();
-        return result;
     }
 
     /**
@@ -445,5 +452,31 @@ public class Configuration extends AppCompatActivity {
             this.finish();
         }
     }
+
+    public static void deleteCache(Context context) {
+        try {
+            File dir = context.getCacheDir();
+            deleteDir(dir);
+        } catch (Exception e) {
+        }
+    }
+
+    public static boolean deleteDir(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++) {
+                boolean success = deleteDir(new File(dir, children[i]));
+                if (!success) {
+                    return false;
+                }
+            }
+            return dir.delete();
+        } else if (dir != null && dir.isFile()) {
+            return dir.delete();
+        } else {
+            return false;
+        }
+    }
+
 
 }
