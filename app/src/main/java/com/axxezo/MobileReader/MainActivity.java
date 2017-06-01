@@ -68,8 +68,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.StrictMode;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
+import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -166,6 +169,7 @@ public class MainActivity extends AppCompatActivity
     private int timer_asyncUpdateManifest;
     private int timer_sendRecordsAPI;
     private int timer_asyncUpdatePeopleState;
+    private int timer_asyncDeletePeopleManifest;
 
     /*****
      * Asyntask declarations.....
@@ -173,6 +177,7 @@ public class MainActivity extends AppCompatActivity
     private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
     private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest; //asyntask to update in realtime new people inserts in manifest
     private AsyncUpdateStateManifest AsynTask_UpdateStateManifest;// asyntask to update states of people insert in manifest table;
+   // private AsyncUpdateStateManifest AsynTask_UpdateDeletePerson;// asyntask to update states of people insert in manifest table;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,18 +200,19 @@ public class MainActivity extends AppCompatActivity
         selectedIntSpinnerLanded = -1;
         log = new log_app();
         selectedSpinnerLanded = "";
-        TextViewTimePeople="";
+        TextViewTimePeople = "";
 
 
         //asign timers to Asyntask
-        timer_sendRecordsAPI = 30000;               //30 sec=30.000
-        timer_asyncUpdateManifest = 120000;              //2 min=120.000
-        timer_asyncUpdatePeopleState = 15000;              //15 sec=15.000
-
+        timer_sendRecordsAPI = 30000;                       //30 sec=30.000
+        timer_asyncUpdateManifest = 120000;                 //2 min =120.000
+        timer_asyncUpdatePeopleState = 15000;               //15 sec=15.000
+        timer_asyncDeletePeopleManifest=420000;             //7 min =420000
         //asign url api axxezo
         //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
-        AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
+        //AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -227,6 +233,29 @@ public class MainActivity extends AppCompatActivity
                 }
             });
         }
+        //second fab, to show information about travel
+        FloatingActionButton fab2 = (FloatingActionButton) findViewById(R.id.fab2);
+        if (fab2 != null)
+            fab2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+                    String switchState = mySwitch.isChecked() ? "Embarque" : "Desembarque";
+                    String text = "Ruta: " + db.selectFirst("select route_name from config") +
+                            "\nItinerario: " + db.selectFirst("select route_id from config") +
+                            "\nPasajeros Puerto: " + selectedSpinnerLanded +
+                            "\nPasajeros Embarcados:" + db.selectFirst("select count(id) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + selectedSpinnerLanded + "')") +
+                            "\nPasajeros Pendientes:" + db.selectFirst("select count(id) from manifest where is_inside=0 and origin =(select id_mongo from ports where name='" + selectedSpinnerLanded + "')") +
+                            "\nUltima Actualizacion Manifiesto: " + TextViewTimePeople;
+                    Snackbar snack = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
+                            .setAction("Action", null);
+                    View view1 = snack.getView();
+                    TextView information = (TextView) view1.findViewById(android.support.design.R.id.snackbar_text);
+                    information.setTextColor(Color.WHITE);
+                    information.setMaxLines(7);
+                    snack.show();
+                }
+            });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -260,32 +289,25 @@ public class MainActivity extends AppCompatActivity
         asyncUpdateManifestinTime();
         asyncUpdateManifestState(); //pending change values from string to integer
         getWindow().getDecorView().findViewById(R.id.content_main).invalidate();
+       /* DatabaseHelper db=DatabaseHelper.getInstance(this);
+        db.insert("update config set date_last_update='" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "' where id=1");
+        updateTimePeople = db.selectFirst("select date_last_update from config");
+        if (!updateTimePeople.isEmpty() && updateTimePeople != null && !updateTimePeople.equals("null")) {
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            Date newDate = null;
+            try {
+                newDate = format.parse(updateTimePeople);
+                format = new SimpleDateFormat("HH:mm");
+                String date = format.format(newDate);
+                if (!date.isEmpty() || !date.equals("null") || date != null)
+                    TextViewTimePeople = date;
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
 
-
-        //load spinner selected in sharedPreference method
-
-        /*SharedPreferences sharedPref = getSharedPreferences("userPreference",MODE_PRIVATE);
-        int spinnerValue = sharedPref.getInt("userChoiceSpinner",-1);
-        if(spinnerValue != -1)
-            // set the value of the spinner
-        Log.e("estoy aqui","estoy cargando sharedPreference");
-            comboLanded.setSelection(spinnerValue);*/
-       /* if (savedInstanceState != null) {
-            comboLanded.setSelection(savedInstanceState.getInt("combolanded", 0));
-            // do this for each of your text views
         }*/
 
 
-        //handle update manifest in real time
-
-
-        // dont open this code, the app crash, but in the error show me number of open cursors.
-        /*StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-                .detectLeakedSqlLiteObjects()
-                .detectLeakedClosableObjects()
-                .penaltyLog()
-                .penaltyDeath()
-                .build());*/
 
     }
 
@@ -356,7 +378,7 @@ public class MainActivity extends AppCompatActivity
         }
         if (id == R.id.action_settings) {
             Intent intent = new Intent(this, Configuration.class);
-            startActivity(intent);
+            startActivityForResult(intent, 0);
         }
         if (id == R.id.action_manual_registration) {
             Intent intent = new Intent(this, manual_registration.class);
@@ -380,7 +402,7 @@ public class MainActivity extends AppCompatActivity
         }
         if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, Configuration.class);
-            startActivity(intent);
+            startActivityForResult(intent, 0);
         }
         if (id == R.id.nav_records) {
             Intent intent = new Intent(this, lastRecordsList.class);
@@ -562,12 +584,17 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         // TODO Auto-generated method stub
         super.onPause();
-        fillSpinner();
+        //fillSpinner();
         if (mScanManager != null) {
             mScanManager.stopDecode();
             isScaning = false;
         }
         unregisterReceiver(mScanReceiver);
+        Log.d("estoy en ", "onPause");
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("spinnerSelection", comboLanded.getSelectedItemPosition());
+        editor.apply();
         //  s.ServerStop();//Remove if it needs to work with the screen off. Good practice: Server must stop.
     }
 
@@ -579,7 +606,15 @@ public class MainActivity extends AppCompatActivity
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
-        fillSpinner();
+        Log.d("estoy en ", "onResume");
+        //load spinner selected in sharedPreference method
+
+        SharedPreferences sharedPref = getSharedPreferences("userPreference",MODE_PRIVATE);
+        int spinnerValue = sharedPref.getInt("spinnerSelection",-1);
+        if(spinnerValue != -1) {// set the value of the spinner
+          //  Log.e("estoy aqui", "estoy cargando sharedPreference");
+            comboLanded.setSelection(spinnerValue);
+        }
     }
 
     @Override
@@ -612,7 +647,30 @@ public class MainActivity extends AppCompatActivity
 
         timer.schedule(task, 0, timer_asyncUpdateManifest);  // 5 min=300000 // 6 min =360000
     }
+ /*   private void asyncDeletePeopleinTime() {
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
 
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            AsyncTask_updatePeopleManifest = new asyncTask_updatePeopleManifest();
+                            AsyncTask_updatePeopleManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
+                        }
+                    }
+                });
+            }
+        };
+
+        timer.schedule(task, 0, timer_asyncDeletePeopleManifest);  // 5 min=300000 // 6 min =360000
+    }
+*/
     private void asyncUpdateManifestState() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -648,7 +706,7 @@ public class MainActivity extends AppCompatActivity
         try {
             String id_route = db.selectFirst("select route_id from config");
             if (id_route != null && !id_route.isEmpty() && !id_route.equals("null"))
-                db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route)).execute().get(), "manifest");
+                db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route),0).execute().get(), "manifest");
             else
                 log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest, route_id esta nulo o vacio, no se pudo ejecutar proceso asyncrono");
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
@@ -666,7 +724,7 @@ public class MainActivity extends AppCompatActivity
                         format = new SimpleDateFormat("HH:mm");
                         String date = format.format(newDate);
                         if (!date.isEmpty() || !date.equals("null") || date != null)
-                            TextViewTimePeople=date;
+                            TextViewTimePeople = date;
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
@@ -962,8 +1020,7 @@ public class MainActivity extends AppCompatActivity
             }
 
             json = jsonObject.toString();
-            Log.d(url, json);
-
+            Log.e(url, json);
             RequestBody body = RequestBody.create(JSON, json);
 
             Request request = new Request.Builder()
@@ -1039,11 +1096,10 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected void onPostExecute(Integer integer) {
-            Log.e("integer", integer + "");
-            if (integer > 0) {
+           /* if (integer > 0) {
                 TextViewManifestUpdate.setTextColor(Color.WHITE);
                 TextViewManifestUpdate.setText("Manifiesto actualizado: " + TextViewTimePeople + " hrs.");
-            }
+            }*/
         }
     }
 
@@ -1109,6 +1165,44 @@ public class MainActivity extends AppCompatActivity
         return content;
     }
 
+
+ /*
+    public String Asyntask_deletePeopleManifest(String Url, int ID_route) throws IOException {
+        //http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary=1824&date=2017-04-14T10:44:00
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        updateTimePeople = db.selectFirst("select date_last_update from config");
+        URL url = new URL(Url + "/manifests?itinerary=" + ID_route + "&date=" + updateTimePeople);
+        String content = "";
+        HttpURLConnection conn = null;
+        try {
+            Log.e("URL async_new People", url.toString());
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("TOKEN", token_navieraAustral);
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(2000);
+            conn.connect();
+
+            int connStatus = conn.getResponseCode();
+            InputStream getData = conn.getInputStream();
+            if (connStatus != 200) {
+                content = String.valueOf(getData);
+            } else {
+                content = convertInputStreamToString(getData);
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        if (conn != null) {
+            conn.disconnect();
+        }
+        if (content.length() <= 2) { //[]
+            content = "204"; // No content
+        }
+        //finally updating
+        return content;
+    }
+*/
+
     private static String convertInputStreamToString(InputStream inputStream) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
@@ -1168,15 +1262,15 @@ public class MainActivity extends AppCompatActivity
     public class getAPIInformation extends AsyncTask<String, Void, String> {
         private String URL;
         private String getInformation;
-        private int flag = -1;
+        private int flag;
         private int route;
         private int port;
 
-        getAPIInformation(String URL, int route) {//manifest
+        getAPIInformation(String URL, int route,int flag) {//manifest
             this.URL = URL;
             this.route = route;
             getInformation = "";
-            flag = 0;
+            this.flag = flag;
         }
 
         @Override
@@ -1325,7 +1419,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onStop() {
         super.onStop();
-        killAyntask(true);
     }
 
     /* protected void onSaveInstanceState(Bundle outState) {
@@ -1340,4 +1433,39 @@ public class MainActivity extends AppCompatActivity
         AsyncTask_updatePeopleManifest.cancel(state);//asyntask to update in realtime new people inserts in manifest
         AsynTask_UpdateStateManifest.cancel(state);// asyntask to update states of people insert in manifest table;
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            fillSpinner();
+            Log.e("estoy", "estoy en onactivityResult");
+        }
+    }
+    /*
+    public void deletePeopleManifest(){
+        DatabaseHelper db=DatabaseHelper.getInstance(this);
+        String id_route = db.selectFirst("select route_id from config");
+        try {
+            db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route),1).execute().get(), "manifest_update");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+    private class deletePeopleManifest extends AsyncTask<Void, Void, Void>{
+
+
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            deletePeopleManifest();
+            return null;
+        }
+    }
+*/
+
 }

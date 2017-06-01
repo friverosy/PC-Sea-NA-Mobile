@@ -6,12 +6,15 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.os.Vibrator;
+import android.provider.ContactsContract;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Config;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -92,7 +95,8 @@ public class Configuration extends AppCompatActivity {
         //AxxezoAPI = "http://192.168.1.102:9000/api";
 
         //test tzu 18/05/2017
-        AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
+        //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
         //button
         loadButton.setIndeterminateProgressMode(true);
@@ -106,10 +110,13 @@ public class Configuration extends AppCompatActivity {
                 loadButton.setClickable(false);
                 if (status.equals("200"))
                     Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT).show();
+
+                Intent refresh = getIntent();
+                refresh.putExtra("spinner","reload");
+                setResult(RESULT_OK,refresh);
                 finish();
-                //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                //startActivity(intent);
-                setResult(RESULT_OK, null);
+
+
 
             }
         });
@@ -223,7 +230,7 @@ public class Configuration extends AppCompatActivity {
         try {
 
             db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute,updateLabel()).execute().get(), "manifest");
-            db.insert("insert or replace into config (route_id,manifest_id,date_last_update) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "')");//jhy
+            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='"+selectionSpinnerRoute+"'))");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
@@ -333,6 +340,7 @@ public class Configuration extends AppCompatActivity {
                 Log.e("content", content);
             } else
                 content = response.code() + "";
+
         } catch (IOException e) {
             final String error = e.getMessage();
             log.writeLog(getApplicationContext(), "Configuration:line 333", "ERROR", e.getMessage());
@@ -442,17 +450,6 @@ public class Configuration extends AppCompatActivity {
         DateFormat date = new SimpleDateFormat(format);
         return date.format(currentLocalTime);
     }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            Intent refresh = new Intent(this, MainActivity.class);
-            startActivity(refresh);
-            this.finish();
-        }
-    }
-
     public static void deleteCache(Context context) {
         try {
             File dir = context.getCacheDir();
@@ -477,6 +474,5 @@ public class Configuration extends AppCompatActivity {
             return false;
         }
     }
-
 
 }

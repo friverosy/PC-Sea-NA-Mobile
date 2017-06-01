@@ -194,7 +194,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             CONFIG_ROUTE_ID + " INTEGER, " +
             CONFIG_ROUTE_NAME + " INTEGER, " +
             CONFIG_DATE + " TEXT, " +
-            CONFIG_MANIFEST_ID + " TEXT, "+
+            CONFIG_MANIFEST_ID + " TEXT, " +
             CONFIG_DATE_LAST_UPDATE + " TEXT); ";
 
     public DatabaseHelper(Context context) {
@@ -202,9 +202,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         this.context = context;
     }
 
+    public void DatabaseHelper() {
+        db.enableWriteAheadLogging();
+    }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.enableWriteAheadLogging();
         //first create the tables
         db.execSQL(CREATE_PEOPLE_TABLE);
         db.execSQL(CREATE_ROUTES_TABLE);
@@ -233,8 +236,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         log_app log = new log_app();
         JSONObject objectJson;
         JSONArray jsonArray;
+        //json="[{\"personId\":\"592c5265ba5f6d63dd7da5cd\",\"documentId\":\"10843179-2\",\"name\":\"LUIS HIJERRA\",\"origin\":\"58de6d99f853f2066f688f9d\",\"destination\":\"58de6d96f853f2066f688f88\",\"refId\":1914,\"manifestId\":\"592c5265ba5f6d63dd7da5cc\",\"registerId\":\"592c5265ba5f6d63dd7da5ce\",\"isOnboard\":false,\"reservationStatus\":-1}]";
         switch (table) {
             case "routes":
+                if (json.isEmpty() || json.equals("[]"))
+                    db.execSQL("delete from routes");
                 if (!json.isEmpty() && json.length() > 3) {
                     jsonArray = new JSONArray(json);
                     try {
@@ -333,7 +339,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-                                Log.e("ports",e.getMessage());
+                                Log.e("ports", e.getMessage());
                             }
                             values.clear();
                         }
@@ -357,15 +363,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = null;
         try {
+            db.beginTransactionNonExclusive();
             cursor = db.rawQuery(Query, null);
             cursor.moveToFirst();
             if (cursor.getCount() == 0)
                 return Query = "";
             else
                 firstElement = cursor.getString(0);
+            db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
             e.printStackTrace();
             log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+        } finally {
+            db.endTransaction();
         }
         if (cursor != null) {
             cursor.close();
@@ -588,8 +598,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + RECORD_ID + " FROM " + TABLE_RECORDS +
                 " WHERE " + RECORD_SYNC + "=0;", null);
-        int count=cursor.getCount();
-        if(cursor!=null)
+        int count = cursor.getCount();
+        if (cursor != null)
             cursor.close();
         return count;
     }
@@ -609,4 +619,43 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.endTransaction();
         }
     }
+    /*
+    case "manifest_delete":
+                if (!json.isEmpty() && json.length() > 3) {
+                    jsonArray = new JSONArray(json);
+                    try {
+                        db.beginTransactionNonExclusive();
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            try {
+                                if (jsonArray.getJSONObject(i).getInt("reservationStatus") == -1) {
+                                    navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0, jsonArray.getJSONObject(i).getInt("reservationStatus"));
+                                    String doc;
+                                    doc = jsonArray.getJSONObject(i).getString("documentId").toUpperCase();
+                                    if (doc.contains("-"))
+                                        doc = doc.substring(0, doc.length() - 2);
+                                    Cursor cursor = null;
+                                    cursor = db.rawQuery("select count(id) from manifest WHERE id_people='" + doc + "'", null);
+                                    if (cursor.getCount() > 0) { //when person is in manifest delete it
+                                       db.execSQL("delete from manifest where id_people='"+doc+"'");
+                                    }
+                                    if (cursor != null)
+                                        cursor.close();
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                            }
+                            db.setTransactionSuccessful();
+                        }
+                    } catch (android.database.SQLException e) {
+                        e.printStackTrace();
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                    } finally {
+                        db.endTransaction();
+                    }
+                } else
+                    Log.i("error", "Json empty!");
+                break;
+
+     */
 }

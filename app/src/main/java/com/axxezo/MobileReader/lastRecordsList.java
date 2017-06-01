@@ -133,7 +133,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
     private void addPersonCards() {
         try {
             DatabaseHelper db = DatabaseHelper.getInstance(this);
-            Cursor c = db.select("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document");
+            Cursor c = db.select("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document order by name asc");
             if (c != null) {
                 if (c.moveToFirst()) {
                     do {
