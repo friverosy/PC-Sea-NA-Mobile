@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity
     private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
     private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest; //asyntask to update in realtime new people inserts in manifest
     private AsyncUpdateStateManifest AsynTask_UpdateStateManifest;// asyntask to update states of people insert in manifest table;
-   // private AsyncUpdateStateManifest AsynTask_UpdateDeletePerson;// asyntask to update states of people insert in manifest table;
+    // private AsyncUpdateStateManifest AsynTask_UpdateDeletePerson;// asyntask to update states of people insert in manifest table;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -207,7 +207,7 @@ public class MainActivity extends AppCompatActivity
         timer_sendRecordsAPI = 30000;                       //30 sec=30.000
         timer_asyncUpdateManifest = 120000;                 //2 min =120.000
         timer_asyncUpdatePeopleState = 15000;               //15 sec=15.000
-        timer_asyncDeletePeopleManifest=420000;             //7 min =420000
+        timer_asyncDeletePeopleManifest = 420000;             //7 min =420000
         //asign url api axxezo
         //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
@@ -306,7 +306,6 @@ public class MainActivity extends AppCompatActivity
             }
 
         }*/
-
 
 
     }
@@ -550,6 +549,14 @@ public class MainActivity extends AppCompatActivity
         return date.format(currentLocalTime);
     }
 
+    public String getDeltasCurrentDateTime(String format) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR, -3);
+        Date currentLocalTime = cal.getTime();
+        DateFormat date = new SimpleDateFormat(format);
+        return date.format(currentLocalTime);
+    }
+
     /**
      * method that validate old and new chilean national identity card
      *
@@ -609,10 +616,10 @@ public class MainActivity extends AppCompatActivity
         Log.d("estoy en ", "onResume");
         //load spinner selected in sharedPreference method
 
-        SharedPreferences sharedPref = getSharedPreferences("userPreference",MODE_PRIVATE);
-        int spinnerValue = sharedPref.getInt("spinnerSelection",-1);
-        if(spinnerValue != -1) {// set the value of the spinner
-          //  Log.e("estoy aqui", "estoy cargando sharedPreference");
+        SharedPreferences sharedPref = getSharedPreferences("userPreference", MODE_PRIVATE);
+        int spinnerValue = sharedPref.getInt("spinnerSelection", -1);
+        if (spinnerValue != -1) {// set the value of the spinner
+            //  Log.e("estoy aqui", "estoy cargando sharedPreference");
             comboLanded.setSelection(spinnerValue);
         }
     }
@@ -647,30 +654,31 @@ public class MainActivity extends AppCompatActivity
 
         timer.schedule(task, 0, timer_asyncUpdateManifest);  // 5 min=300000 // 6 min =360000
     }
- /*   private void asyncDeletePeopleinTime() {
-        final Handler handler = new Handler();
-        Timer timer = new Timer();
 
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                handler.post(new Runnable() {
-                    public void run() {
-                        try {
-                            AsyncTask_updatePeopleManifest = new asyncTask_updatePeopleManifest();
-                            AsyncTask_updatePeopleManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
-                        }
-                    }
-                });
-            }
-        };
+    /*   private void asyncDeletePeopleinTime() {
+           final Handler handler = new Handler();
+           Timer timer = new Timer();
 
-        timer.schedule(task, 0, timer_asyncDeletePeopleManifest);  // 5 min=300000 // 6 min =360000
-    }
-*/
+           TimerTask task = new TimerTask() {
+               @Override
+               public void run() {
+                   handler.post(new Runnable() {
+                       public void run() {
+                           try {
+                               AsyncTask_updatePeopleManifest = new asyncTask_updatePeopleManifest();
+                               AsyncTask_updatePeopleManifest.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                           } catch (Exception e) {
+                               e.printStackTrace();
+                               log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "asyncUpdateManifestState() " + e.getMessage());
+                           }
+                       }
+                   });
+               }
+           };
+
+           timer.schedule(task, 0, timer_asyncDeletePeopleManifest);  // 5 min=300000 // 6 min =360000
+       }
+   */
     private void asyncUpdateManifestState() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -706,7 +714,7 @@ public class MainActivity extends AppCompatActivity
         try {
             String id_route = db.selectFirst("select route_id from config");
             if (id_route != null && !id_route.isEmpty() && !id_route.equals("null"))
-                db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route),0).execute().get(), "manifest");
+                db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route), 0).execute().get(), "manifest");
             else
                 log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest, route_id esta nulo o vacio, no se pudo ejecutar proceso asyncrono");
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
@@ -714,7 +722,7 @@ public class MainActivity extends AppCompatActivity
                 total_temp = count_after - count_before;
             }
             if (total_temp > 0) {
-                db.insert("update config set date_last_update='" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "' where id=1");
+                db.insert("update config set date_last_update='" + getDeltasCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "' where id=1");
                 updateTimePeople = db.selectFirst("select date_last_update from config");
                 if (!updateTimePeople.isEmpty() && updateTimePeople != null && !updateTimePeople.equals("null")) {
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -1266,7 +1274,7 @@ public class MainActivity extends AppCompatActivity
         private int route;
         private int port;
 
-        getAPIInformation(String URL, int route,int flag) {//manifest
+        getAPIInformation(String URL, int route, int flag) {//manifest
             this.URL = URL;
             this.route = route;
             getInformation = "";

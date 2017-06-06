@@ -120,6 +120,9 @@ public class Configuration extends AppCompatActivity {
 
             }
         });
+        //clear cache of sistem before fill routes spinner
+        deleteCache(this);
+
         try {
             DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
             db.insertJSON(new getAPIInformation(updateLabel()).execute().get(), "routes");
@@ -230,7 +233,7 @@ public class Configuration extends AppCompatActivity {
         try {
 
             db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute,updateLabel()).execute().get(), "manifest");
-            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='"+selectionSpinnerRoute+"'))");//jhy
+            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getDeltasCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='"+selectionSpinnerRoute+"'))");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
@@ -446,6 +449,13 @@ public class Configuration extends AppCompatActivity {
 
     public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
+        Date currentLocalTime = cal.getTime();
+        DateFormat date = new SimpleDateFormat(format);
+        return date.format(currentLocalTime);
+    }
+    public String getDeltasCurrentDateTime(String format) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR,-3);
         Date currentLocalTime = cal.getTime();
         DateFormat date = new SimpleDateFormat(format);
         return date.format(currentLocalTime);
