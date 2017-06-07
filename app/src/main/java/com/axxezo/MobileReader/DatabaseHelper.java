@@ -237,6 +237,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         JSONObject objectJson;
         JSONArray jsonArray;
         //json="[{\"personId\":\"592c5265ba5f6d63dd7da5cd\",\"documentId\":\"10843179-2\",\"name\":\"LUIS HIJERRA\",\"origin\":\"58de6d99f853f2066f688f9d\",\"destination\":\"58de6d96f853f2066f688f88\",\"refId\":1914,\"manifestId\":\"592c5265ba5f6d63dd7da5cc\",\"registerId\":\"592c5265ba5f6d63dd7da5ce\",\"isOnboard\":false,\"reservationStatus\":-1}]";
+        //json="[{\"personId\":\"592b64836d8eaeb6765f9bd1\",\"documentId\":\"17296288-2\",\"name\":\"JUAN PABLO MORALES \",\"origin\":\"58de6d99f853f2066f688f9d\",\"destination\":\"58de6d96f853f2066f688f88\",\"refId\":1914,\"manifestId\":\"592b64836d8eaeb6765f9bd0\",\"registerId\":\"592b64836d8eaeb6765f9bd2\",\"isOnboard\":false,\"reservationStatus\":-1,\"createdAt\":\"2017-05-29T00:00:03.107Z\"}]";
         switch (table) {
             case "routes":
                 if (json.isEmpty() || json.equals("[]"))
@@ -281,7 +282,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             try {
                                 People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("registerId"));
                                 navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0, jsonArray.getJSONObject(i).getInt("reservationStatus"));
-                                //navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0);
                                 String doc;
                                 doc = people.getDocument().toUpperCase();
                                 if (people.getDocument().contains("-"))
@@ -289,21 +289,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 String name = removeAccent(people.getName().toUpperCase());
                                 db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
                                         doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
-                                Cursor cursor = null;
-                                cursor = db.rawQuery("select origin,destination from manifest WHERE id_people='" + doc + "'", null);
-                                if (cursor.getCount() > 0) { //when person is in manifest with origin and destination, only insert in case that one or another is different to origin/destination inserted
-                                    cursor.moveToFirst();
-                                    if (!cursor.getString(0).equals(manifest.getOrigin()) && !cursor.getString(1).equals(manifest.getDestination())) {
-                                        db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL + ") VALUES('" +
-                                                doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
-                                    } else if (manifest.getReservationStatus() == -1) {
-                                        db.execSQL("delete from manifest where id_people='" + doc + "'");
-                                    }
-                                } else if (cursor.getCount() == 0 && manifest.getReservationStatus() != -1)
+                               if (manifest.getReservationStatus() != -1)
                                     db.execSQL("insert into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL + "," + MANIFEST_MANUAL_SELL + ") VALUES('" +
                                             doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
-                                if (cursor != null)
-                                    cursor.close();
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
@@ -320,8 +308,50 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 } else
                     Log.i("error", "Json empty!");
                 break;
-            case "ports":
+            case "manifest_updated":
                 if (!json.isEmpty() && json.length() > 3) {
+                    jsonArray = new JSONArray(json);
+                    try {
+                        db.beginTransactionNonExclusive();
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("registerId"));
+                            navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0, jsonArray.getJSONObject(i).getInt("reservationStatus"));
+                            String doc = jsonArray.getJSONObject(i).getString("documentId");
+                            if (!doc.isEmpty() && doc.contains("-"))
+                                doc = doc.substring(0, doc.length() - 2).toUpperCase();
+                            String name = removeAccent(people.getName().toUpperCase());
+                            Cursor cursor = db.rawQuery("select origin,destination from manifest WHERE id_people='" + doc + "'", null);
+                            if (cursor.getCount() > 0) {//people is in db
+                                cursor.moveToFirst();
+                                if (manifest.getReservationStatus() == -1)
+                                    db.execSQL("delete from manifest where id_people='" + doc + "'");
+                                else if (!cursor.getString(0).equals(manifest.getOrigin()) && !cursor.getString(1).equals(manifest.getDestination())) {
+                                    db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL+"," + MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
+                                            doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
+                                }
+                            }else {//new people in manifest
+                                db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +"," + MANIFEST_RESERVATION_STATUS+") VALUES('" +
+                                        doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
+                                db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
+                                        doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
+                            }
+                            if (cursor != null)
+                                cursor.close();
+                        }
+                        db.setTransactionSuccessful();
+                    } catch (android.database.SQLException e) {
+                        e.printStackTrace();
+                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                    } finally {
+                        db.endTransaction();
+                    }
+                } else
+                    Log.i("error", "Json empty!");
+                break;
+            case "ports":
+                if (!json.isEmpty() && json.length() > 3)
+
+                {
                     jsonArray = new JSONArray(json);
                     try {
                         db.beginTransactionNonExclusive();
@@ -355,6 +385,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 break;
 
         }
+
     }
 
     public String selectFirst(String Query) {

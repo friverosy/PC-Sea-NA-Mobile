@@ -207,7 +207,6 @@ public class MainActivity extends AppCompatActivity
         timer_sendRecordsAPI = 30000;                       //30 sec=30.000
         timer_asyncUpdateManifest = 120000;                 //2 min =120.000
         timer_asyncUpdatePeopleState = 15000;               //15 sec=15.000
-        timer_asyncDeletePeopleManifest = 420000;             //7 min =420000
         //asign url api axxezo
         //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
@@ -289,23 +288,8 @@ public class MainActivity extends AppCompatActivity
         asyncUpdateManifestinTime();
         asyncUpdateManifestState(); //pending change values from string to integer
         getWindow().getDecorView().findViewById(R.id.content_main).invalidate();
-       /* DatabaseHelper db=DatabaseHelper.getInstance(this);
-        db.insert("update config set date_last_update='" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "' where id=1");
-        updateTimePeople = db.selectFirst("select date_last_update from config");
-        if (!updateTimePeople.isEmpty() && updateTimePeople != null && !updateTimePeople.equals("null")) {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-            Date newDate = null;
-            try {
-                newDate = format.parse(updateTimePeople);
-                format = new SimpleDateFormat("HH:mm");
-                String date = format.format(newDate);
-                if (!date.isEmpty() || !date.equals("null") || date != null)
-                    TextViewTimePeople = date;
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-
-        }*/
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        updateTimePeople = db.selectFirst("select date_last_update from config").isEmpty() ? "" : db.selectFirst("select date_last_update from config");
 
 
     }
@@ -714,7 +698,7 @@ public class MainActivity extends AppCompatActivity
         try {
             String id_route = db.selectFirst("select route_id from config");
             if (id_route != null && !id_route.isEmpty() && !id_route.equals("null"))
-                db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route), 0).execute().get(), "manifest");
+                db.insertJSON(new getAPIInformation(AxxezoAPI, Integer.parseInt(id_route), 0).execute().get(), "manifest_updated");
             else
                 log.writeLog(getApplicationContext(), "MainActivity", "ERROR", "Asyntask_insertNewPeopleManifest, route_id esta nulo o vacio, no se pudo ejecutar proceso asyncrono");
             int count_after = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
@@ -1142,11 +1126,11 @@ public class MainActivity extends AppCompatActivity
         //http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary=1824&date=2017-04-14T10:44:00
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         updateTimePeople = db.selectFirst("select date_last_update from config");
-        URL url = new URL(Url + "/manifests?itinerary=" + ID_route + "&date=" + updateTimePeople);
+        URL url = new URL(Url + "/manifests?itinerary=" + ID_route);
         String content = "";
         HttpURLConnection conn = null;
         try {
-            Log.e("URL async_new People", url.toString());
+            Log.e("URL async cons People", url.toString());
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("TOKEN", token_navieraAustral);
             conn.setRequestMethod("GET");
