@@ -119,6 +119,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -551,9 +552,9 @@ public class MainActivity extends AppCompatActivity
 
     public String getDeltasCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.HOUR, -3);
         Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat(format);
+        SimpleDateFormat date = new SimpleDateFormat(format);
+        date.setTimeZone(TimeZone.getTimeZone("UTC"));
         return date.format(currentLocalTime);
     }
 

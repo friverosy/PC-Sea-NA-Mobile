@@ -46,6 +46,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -454,10 +455,11 @@ public class Configuration extends AppCompatActivity {
         return date.format(currentLocalTime);
     }
     public String getDeltasCurrentDateTime(String format) {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.HOUR,-3);
+        //cambiar horas a UTC
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
         Date currentLocalTime = cal.getTime();
         DateFormat date = new SimpleDateFormat(format);
+        date.setTimeZone(TimeZone.getTimeZone("UTC"));
         return date.format(currentLocalTime);
     }
     public static void deleteCache(Context context) {
