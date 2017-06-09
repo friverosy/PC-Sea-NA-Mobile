@@ -227,6 +227,7 @@ public class Configuration extends AppCompatActivity {
         db.insert("delete from sqlite_sequence where name='MANIFEST'");
         db.insert("delete from config");
         db.insert("delete from sqlite_sequence where name='CONFIG'");
+        db.insert("delete from people");
         db.insert("delete from sqlite_sequence where name='PEOPLE'");
         db.insert("delete from ports");
         db.insert("delete from sqlite_sequence where name='PORTS'");

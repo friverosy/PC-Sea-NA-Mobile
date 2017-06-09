@@ -132,7 +132,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // SQL statement to create the differents tables
     private String CREATE_PEOPLE_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_PEOPLE + " ( " +
             PERSON_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            PERSON_DOCUMENT + " TEXT NOT NULL UNIQUE, " +
+            PERSON_DOCUMENT + " TEXT NOT NULL, " +
             PERSON_MONGO_ID + " TEXT, " +
             PERSON_NAME + " TEXT, " +
             PERSON_NATIONALITY + " TEXT, " +
@@ -287,21 +287,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 if (people.getDocument().contains("-"))
                                     doc = doc.substring(0, doc.length() - 2);
                                 String name = removeAccent(people.getName().toUpperCase());
-                                db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
-                                        doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
                                 Cursor cursor = null;
                                 cursor = db.rawQuery("select origin,destination from manifest WHERE id_people='" + doc + "'", null);
                                 if (cursor.getCount() > 0) { //when person is in manifest with origin and destination, only insert in case that one or another is different to origin/destination inserted
                                     cursor.moveToFirst();
                                     if (!cursor.getString(0).equals(manifest.getOrigin()) && !cursor.getString(1).equals(manifest.getDestination())) {
-                                        db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL + ") VALUES('" +
+                                        db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +","+MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
                                                 doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
+                                        db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
+                                                doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
                                     } else if (manifest.getReservationStatus() == -1) {
                                         db.execSQL("delete from manifest where id_people='" + doc + "'");
+                                    } else if(cursor.getString(0).equals(manifest.getOrigin()) && cursor.getString(1).equals(manifest.getDestination())) {
+                                        db.execSQL("update people set id='"+people.getMongo_documentID()+"'");
+                                        db.execSQL("update people set mongo_id='"+people.getMongo_documentID()+"'");
                                     }
-                                } else if (cursor.getCount() == 0 && manifest.getReservationStatus() != -1)
-                                    db.execSQL("insert into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL + "," + MANIFEST_MANUAL_SELL + ") VALUES('" +
+                                } else if (cursor.getCount() == 0 && manifest.getReservationStatus() != -1) {
+                                    db.execSQL("insert into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +","+MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
                                             doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
+                                    db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
+                                            doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
+                                }
                                 if (cursor != null)
                                     cursor.close();
                             } catch (Exception e) {

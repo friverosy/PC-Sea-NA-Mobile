@@ -314,7 +314,7 @@ public class MainActivity extends AppCompatActivity
     public void fillSpinner() {
         //enable WAL mode in DB
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        db.setWriteAheadLoggingEnabled(true);
+        //db.setWriteAheadLoggingEnabled(true);
         //fill information in combobox
         Cursor getOriginandDestination = db.select("select name from ports order by name desc");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
@@ -956,6 +956,7 @@ public class MainActivity extends AppCompatActivity
                 = MediaType.parse("application/json; charset=utf-8");
         try {
             url = url + "/registers/" + record.getMongo_id_register();
+            Log.d("put", url);
             jsonObject.accumulate("person", record.getMongo_id_person());
             jsonObject.accumulate("seaport", record.getPort_registry());
             //jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
