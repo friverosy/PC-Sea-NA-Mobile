@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.media.Image;
 import android.provider.ContactsContract;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
@@ -19,6 +20,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Filter;
 import android.widget.Filterable;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,6 +58,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     public void onBindViewHolder(final UserViewHolder holder, int position) {
         DatabaseHelper db = DatabaseHelper.getInstance(holder.itemView.getContext());
         Cursor origin_destination = db.select("select (select name from ports where id_mongo='" + mDataSet.get(position).getOrigin() + "'),(select name from ports where id_mongo='" + mDataSet.get(position).getDestination() + "')");
+        int manual_sell = Integer.parseInt(db.selectFirst("select is_manual_sell from manifest where id_people='"+mDataSet.get(position).getDocument()+"'"));
         holder.people_Name.setText(mDataSet.get(position).getName().trim());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
 //        holder.people_destination.setText(mDataSet.get(position).getDestination());
@@ -63,9 +66,9 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         holder.textViewExpand.setBackgroundColor(Color.parseColor("#E6E6E6"));
         if (origin_destination != null)
             origin_destination.close();
-        //set random values to inside
-        //int random= (int) ((Math.random() * 2) + 1);
-        //mDataSet.get(position).setIsInside(random);
+        if(manual_sell==1){
+            holder.is_manual_sell.setBackground(holder.is_manual_sell.getContext().getResources().getDrawable(R.drawable.icon_manual_sell));
+        }
         switch (mDataSet.get(position).getIsInside()) {
             case 0:
                 holder.icon_entry.setText("");
@@ -136,7 +139,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         ExpandableTextView textViewExpand;
         TextView icon_entry;
         Spinner spinner_destination;
-        Spinner spinner_state;
+        ImageView is_manual_sell;
 
         UserViewHolder(final View itemView) {
             super(itemView);
@@ -147,6 +150,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             icon_entry = (TextView) itemView.findViewById(R.id.icon_entry);
             spinner_destination = (Spinner) itemView.findViewById(R.id.spinner_destination);
             textViewExpand = (ExpandableTextView) itemView.findViewById(R.id.textView_expand);
+            is_manual_sell=(ImageView) itemView.findViewById(R.id.is_manual_sell);
             //spinner_state = (Spinner) itemView.findViewById(R.id.spinner_state);
 
 
