@@ -298,10 +298,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                                 doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
                                     } else if (manifest.getReservationStatus() == -1) {
                                         db.execSQL("delete from manifest where id_people='" + doc + "'");
-                                    } else if(cursor.getString(0).equals(manifest.getOrigin()) && cursor.getString(1).equals(manifest.getDestination())) {
+                                    }
+                                    /*else if(cursor.getString(0).equals(manifest.getOrigin()) && cursor.getString(1).equals(manifest.getDestination())) {
                                         db.execSQL("update people set id='"+people.getMongo_documentID()+"'");
                                         db.execSQL("update people set mongo_id='"+people.getMongo_documentID()+"'");
-                                    }
+                                    }*/
                                 } else if (cursor.getCount() == 0 && manifest.getReservationStatus() != -1) {
                                     db.execSQL("insert into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +","+MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
                                             doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");

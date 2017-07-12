@@ -162,7 +162,7 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
                     "(select count(*) from manifest where is_inside=0)," +
                     "(select count(*) from manifest where is_inside=1)," +
                     "(select count(*) from manifest where is_inside=2)," +
-                    "(select count(*) from manifest where is_inside=1 and is_manual_sell=1)");
+                    "(select count(*) from manifest where is_manual_sell=1)");
         } else if (origin.equals("< TODOS >") && !destination.equals("< TODOS >")) {
             select_counts = db.select("select (select count(*) from manifest where destination=(select id_mongo from ports where name='" + destination + "'))," +
                     "(select count(*) from manifest where is_inside=0 and destination=(select id_mongo from ports where name='" + destination + "'))," +

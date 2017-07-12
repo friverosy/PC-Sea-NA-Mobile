@@ -82,7 +82,7 @@
             android:layout_alignBottom="@+id/textView_title_ticket_number"
             android:layout_alignStart="@+id/registration_input_DNI" />
 
-        <EditText
+        <com.axxezo.MobileReader.CustomEditText
             android:id="@+id/registration_input_DNI"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

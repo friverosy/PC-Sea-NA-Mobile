@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity
      * Asyntask declarations.....
      */
     private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
-    private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest; //asyntask to update in realtime new people inserts in manifest
+    private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest;//asyntask to update in realtime new people inserts in manifest
     private AsyncUpdateStateManifest AsynTask_UpdateStateManifest;// asyntask to update states of people insert in manifest table;
     // private AsyncUpdateStateManifest AsynTask_UpdateDeletePerson;// asyntask to update states of people insert in manifest table;
 
@@ -205,15 +205,15 @@ public class MainActivity extends AppCompatActivity
 
 
         //asign timers to Asyntask
-        timer_sendRecordsAPI = 30000;                       //30 sec=30.000
-        timer_asyncUpdateManifest = 120000;                 //2 min =120.000
-        timer_asyncUpdatePeopleState = 15000;               //15 sec=15.000
-        timer_asyncDeletePeopleManifest = 420000;             //7 min =420000
+        timer_sendRecordsAPI = 30000;                           //30 sec=30.000
+        timer_asyncUpdateManifest = 120000;                     //2 min =120.000
+        timer_asyncUpdatePeopleState = 15000;                   //15 sec=15.000
+        timer_asyncDeletePeopleManifest = 420000;               //7 min =420000
         //asign url api axxezo
-        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
         //AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);

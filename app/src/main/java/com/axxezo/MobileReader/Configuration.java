@@ -1,6 +1,7 @@
 package com.axxezo.MobileReader;
 
 import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -71,6 +72,8 @@ public class Configuration extends AppCompatActivity {
     private boolean onclick = false;
     private TextView route;
     private TextView dataPicker;
+    private ProgressDialog progressDialog;
+    private boolean asynctask_running=false;
     final Calendar myCalendar = Calendar.getInstance();
 
     @Override
@@ -92,12 +95,12 @@ public class Configuration extends AppCompatActivity {
 
         token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
         token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api";
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
         //AxxezoAPI = "http://192.168.1.102:9000/api";
 
         //test tzu 18/05/2017
         //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
         //button
         loadButton.setIndeterminateProgressMode(true);
@@ -222,6 +225,7 @@ public class Configuration extends AppCompatActivity {
      */
     public void loadManifest() {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
+        asynctask_running=false;
         //first delete the manifest table
         db.insert("delete from manifest");
         db.insert("delete from sqlite_sequence where name='MANIFEST'");
@@ -240,7 +244,7 @@ public class Configuration extends AppCompatActivity {
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
             db.insertJSON(new getAPIInformation(AxxezoAPI, id_api_route).execute().get(), "ports"); //insert ports of route selected
-
+            asynctask_running=true;
         } catch (JSONException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -487,5 +491,141 @@ public class Configuration extends AppCompatActivity {
             return false;
         }
     }
+
+    //To use the AsyncTask, it must be subclassed
+    private class LoadViewTask extends AsyncTask<Void, Integer, Void> {
+        //Before running code in separate thread
+        @Override
+        protected void onPreExecute() {
+            //Create a new progress dialog
+            progressDialog = new ProgressDialog(Configuration.this);
+            //Set the progress dialog to display a horizontal progress bar
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            //Set the dialog title to 'Loading...'
+            progressDialog.setTitle("Cargando...");
+            //Set the dialog message to 'Loading application View, please wait...'
+            progressDialog.setMessage("Enviando peticion al servidor...");
+            //This dialog can't be canceled by pressing the back key
+            progressDialog.setCancelable(false);
+            //This dialog isn't indeterminate
+            progressDialog.setIndeterminate(false);
+            //The maximum number of items is 100
+            progressDialog.setMax(100);
+            //Set the current progress to zero
+            progressDialog.setProgress(0);
+            //Display the progress dialog
+            progressDialog.show();
+            loadManifest();
+        }
+
+        //The code to be executed in a background thread.
+        @Override
+        protected Void doInBackground(Void... params) {
+            /* This is just a code that delays the thread execution 4 times,
+             * during 850 milliseconds and updates the current progress. This
+             * is where the code that is going to be executed on a background
+             * thread must be placed.
+             */
+            //Get the current thread's token
+            synchronized (this) {
+                DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+                int intents = 1;
+               /* runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                    }
+                });*/
+                while (intents <= 3 && asynctask_running) {
+                    //This value is going to be passed to the onProgressUpdate() method.
+                    publishProgress(1);
+                    progressDialog.setProgress(10);
+                    Log.e("intents", " " + intents);
+                    Log.e("asynctask_running ", " " + asynctask_running);
+                    Cursor cursor = db.select("select (select count(id) from manifest),(select count(id) from config),(select count(id) from people),(select count(id) from ports)");
+                    if (cursor.getCount() > 0) {
+                        cursor.moveToFirst();
+                        int manifest = cursor.getInt(0);
+                        Log.d("manifest", " " + manifest);
+                        if (manifest > 0) {
+                            publishProgress(2);
+                            progressDialog.setProgress(25);
+                        }
+                        int config = cursor.getInt(1);
+                        Log.d("config", " " + config);
+                        if (manifest > 0 && config > 0) {
+                            publishProgress(3);
+                            progressDialog.setProgress(50);
+                        }
+                        int people = cursor.getInt(2);
+                        Log.d("people", " " + people);
+                        if (manifest > 0 && config > 0 && people > 0) {
+                            publishProgress(4);
+                            progressDialog.setProgress(70);
+
+                        }
+                        int ports = cursor.getInt(3);
+                        if (manifest > 0 && config > 0 && people > 0 && ports > 0) {
+                            progressDialog.setProgress(99);
+                           // isDone = true;
+                            intents = 3;
+                            Log.d("all", " all ");
+                        } else {
+                            deleteCache(getApplicationContext());
+                            publishProgress(6);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    loadManifest();
+                                }
+                            });
+                        }
+                    }
+                    intents++;
+                    if (cursor != null)
+                        cursor.close();
+                }
+
+            }
+            return null;
+        }
+
+        //Update the progress
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            //set the current progress of the progress dialog
+            switch (values[0]) {
+                case 1:
+                    progressDialog.setMessage("Realizando peticion al servidor...");
+                    break;
+                case 2:
+                    progressDialog.setMessage("Cargando Manifiesto");
+                    break;
+                case 3:
+                    progressDialog.setMessage("Cargando Configuracion");
+                    break;
+                case 4:
+                    progressDialog.setMessage("Cargando Personas a la base de datos");
+                    break;
+                case 5:
+                    progressDialog.setMessage("Completado");
+                    break;
+                case 6:
+                    progressDialog.setMessage("Enviando peticion al servidor");
+                    break;
+
+            }
+        }
+
+        //after executing the code in the thread
+        @Override
+        protected void onPostExecute(Void result) {
+            //close the progress dialog
+            progressDialog.dismiss();
+            //initialize the View
+            //setContentView(R.layout.content_configuration);
+        }
+    }
+
 
 }
