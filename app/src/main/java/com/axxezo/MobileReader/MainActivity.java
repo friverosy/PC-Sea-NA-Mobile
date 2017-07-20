@@ -1009,6 +1009,7 @@ public class MainActivity extends AppCompatActivity
     public String POST(Record record, String url, OkHttpClient client) {
         String result = "";
         String json = "";
+        boolean isManualSell=false;
         JSONObject jsonObject = new JSONObject();
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         final MediaType JSON
@@ -1025,6 +1026,7 @@ public class MainActivity extends AppCompatActivity
                 jsonObject.accumulate("origin", record.getOrigin());
                 jsonObject.accumulate("destination", record.getDestination());
                 jsonObject.accumulate("ticketId", record.getTicket());
+                isManualSell=true;
             } else if (record.getPermitted() == -1) {//denied registers
                 url = url + "/registers/deniedRegister";
                 jsonObject.accumulate("deniedReason", record.getReason());
@@ -1046,12 +1048,23 @@ public class MainActivity extends AppCompatActivity
 
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
             // 10. convert inputstream to string
+            //aqui tmp obtiene post
+
             Log.d("----POST response---", tmp);
             if (tmp != null) {
                 if (response.isSuccessful()) {
                     // if has sync=0 its becouse its an offline record to be will synchronized.
                     if (record.getSync() == 0) {
                         db.update_record(record.getId());
+                    }
+                    if(isManualSell){
+                        JSONObject jsonManualSell=new JSONObject(tmp);
+                        String ObjectId=jsonManualSell.getString("registerId").trim();
+                        String personId=jsonManualSell.getString("personId").trim();
+                        if(!ObjectId.isEmpty()&&!personId.isEmpty())
+                        db.insert("update people set id_register='"+ObjectId+"',id_mongo='"+ObjectId+"' where document='"+record.getPerson_document()+"'");
+
+
                     }
                 }
             } else {
