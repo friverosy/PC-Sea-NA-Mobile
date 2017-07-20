@@ -210,10 +210,10 @@ public class MainActivity extends AppCompatActivity
         timer_asyncUpdatePeopleState = 15000;                   //15 sec=15.000
         timer_asyncDeletePeopleManifest = 420000;               //7 min =420000
         //asign url api axxezo
-        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
         //AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        ///AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -918,6 +918,8 @@ public class MainActivity extends AppCompatActivity
                         record.setReason(-1);//for no reason
                 }
             record.setPermitted(-1);
+            record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
+            record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));
         }
         db.add_record(record);
         if (person != null)
@@ -1026,7 +1028,7 @@ public class MainActivity extends AppCompatActivity
             } else if (record.getPermitted() == -1) {//denied registers
                 url = url + "/registers/deniedRegister";
                 jsonObject.accumulate("deniedReason", record.getReason());
-                jsonObject.accumulate("origin", record.getPort_registry()); //falta
+                jsonObject.accumulate("origin", record.getPort_registry());
             }
 
             json = jsonObject.toString();

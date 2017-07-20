@@ -47,6 +47,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     }
 
 
+
     @Override
     public UserViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.people_row, parent, false);
@@ -58,7 +59,7 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
     public void onBindViewHolder(final UserViewHolder holder, int position) {
         DatabaseHelper db = DatabaseHelper.getInstance(holder.itemView.getContext());
         Cursor origin_destination = db.select("select (select name from ports where id_mongo='" + mDataSet.get(position).getOrigin() + "'),(select name from ports where id_mongo='" + mDataSet.get(position).getDestination() + "')");
-        int manual_sell = Integer.parseInt(db.selectFirst("select is_manual_sell from manifest where id_people='"+mDataSet.get(position).getDocument()+"'"));
+        int manual_sell = Integer.parseInt(db.selectFirst("select is_manual_sell from manifest where id_people='"+mDataSet.get(holder.getAdapterPosition()).getDocument()+"'"));
         holder.people_Name.setText(mDataSet.get(position).getName().trim());
         holder.people_DNI.setText(mDataSet.get(position).getDocument());
 //        holder.people_destination.setText(mDataSet.get(position).getDestination());
@@ -67,8 +68,11 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
         if (origin_destination != null)
             origin_destination.close();
         if(manual_sell==1){
-            holder.is_manual_sell.setBackground(holder.is_manual_sell.getContext().getResources().getDrawable(R.drawable.icon_manual_sell));
+            //int id = holder.is_manual_sell.getContext().getResources().getIdentifier(R.drawable.icon_manual_sell);
+            holder.is_manual_sell.setImageResource(R.drawable.icon_manual_sell);
+            Log.e("error","manual sell");
         }
+        Log.d("position",position+"");
         switch (mDataSet.get(position).getIsInside()) {
             case 0:
                 holder.icon_entry.setText("");
