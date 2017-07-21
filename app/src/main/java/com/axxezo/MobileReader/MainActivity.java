@@ -213,7 +213,7 @@ public class MainActivity extends AppCompatActivity
         AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
         // AxxezoAPI = "http://192.168.1.102:9001/api";
         //AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
-        ///AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -807,6 +807,7 @@ public class MainActivity extends AppCompatActivity
         if (comboLanded.getChildCount() == 0) { //1.-validations
             TextViewStatus.setText("PORFAVOR CONFIGURE EL MANIFIESTO PRIMERO");
             new LoadSound(4).execute();
+            record.setReason(5);
         } else {
             TextViewRut.setText(rut);
             if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
@@ -816,36 +817,48 @@ public class MainActivity extends AppCompatActivity
                         if (mySwitch.isChecked()) {
                             if ((validation.getString(0)).trim().equals(selectedSpinnerLanded.trim()))
                                 valid = true;
-                            else
+                            else {
                                 TextViewStatus.setText("PUERTO EMBARQUE ES " + validation.getString(0));
+                                record.setReason(1);
+                            }
                         } else {
                             validation = db.select("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'");
                             if (validation.getString(0).trim().equals(selectedSpinnerLanded.trim()))
                                 valid = true;
-                            else
+                            else {
                                 TextViewStatus.setText("PUERTO DESEMBARQUE ES " + validation.getString(0));
+                                record.setReason(2);
+                            }
                         }
-                    } else
+                    } else {
                         TextViewStatus.setText("PERSONA NO SE ENCUENTRA EN MANIFIESTO");
-                } else
+                        record.setReason(3);
+                    }
+                } else {
                     TextViewStatus.setText("VIAJE NO CORRESPONDE");
+                    record.setReason(4);
+                }
             } else if (type == 28 && id_itinerary == "" || type == 17) { //old dni and new dni validations
                 validation = db.select("select p.name,m.id_people from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
                 if (validation.getCount() != 0) {
                     if (mySwitch.isChecked()) {
                         if (!selectedSpinnerLanded.equals(validation.getString(0))) {
                             TextViewStatus.setText("PUERTO EMBARQUE ES " + validation.getString(0));
+                            record.setReason(1);
                         } else
                             valid = true;
                     } else {
                         validation = db.select("select p.name from ports as p left join manifest as m on p.id_mongo=m.destination where m.id_people='" + rut + "'");
                         if (!selectedSpinnerLanded.equals(validation.getString(0))) {
                             TextViewStatus.setText("PUERTO DESEMBARQUE ES " + validation.getString(0));
+                            record.setReason(2);
                         } else
                             valid = true;
                     }
-                } else
+                } else {
                     TextViewStatus.setText("PERSONA NO SE ENCUENTRA EN MANIFIESTO");
+                    record.setReason(3);
+                }
             }
             if (validation != null)
                 validation.close();
@@ -896,27 +909,6 @@ public class MainActivity extends AppCompatActivity
 
             if (is_input) record.setInput(1);
             else record.setInput(2);
-
-            if (!TextViewStatus.getText().toString().isEmpty())
-                switch (TextViewStatus.getText().toString()) {
-                    case "PUERTO EMBARQUE NO PERTENECE":
-                        record.setReason(1);
-                        break;
-                    case "PUERTO DESEMBARQUE NO PERTENECE":
-                        record.setReason(2);
-                        break;
-                    case "PERSONA NO SE ENCUENTRA EN MANIFIESTO":
-                        record.setReason(3);
-                        break;
-                    case "VIAJE NO CORRESPONDE":
-                        record.setReason(4);
-                        break;
-                    case "PORFAVOR CONFIGURE EL MANIFIESTO PRIMERO":
-                        record.setReason(5);
-                        break;
-                    default:
-                        record.setReason(-1);//for no reason
-                }
             record.setPermitted(-1);
             record.setDatetime(getCurrentDateTime("yyyy-MM-dd HH:mm:ss"));
             record.setPort_registry(db.selectFirst("select id_mongo from ports where name = '" + comboLanded.getSelectedItem().toString() + "'"));

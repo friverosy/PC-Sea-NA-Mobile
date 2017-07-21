@@ -69,8 +69,8 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             origin_destination.close();
         if(manual_sell==1){
             //int id = holder.is_manual_sell.getContext().getResources().getIdentifier(R.drawable.icon_manual_sell);
-            holder.is_manual_sell.setImageResource(R.drawable.icon_manual_sell);
-            Log.e("error","manual sell");
+            //holder.is_manual_sell.setImageResource(R.drawable.icon_manual_sell);
+            //Log.e("error","manual sell");
         }
         Log.d("position",position+"");
         switch (mDataSet.get(position).getIsInside()) {
