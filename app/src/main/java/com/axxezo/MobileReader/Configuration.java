@@ -117,9 +117,6 @@ public class Configuration extends AppCompatActivity {
                 refresh.putExtra("spinner","reload");
                 setResult(RESULT_OK,refresh);
                 finish();
-
-
-
             }
         });
         //clear cache of sistem before fill routes spinner
