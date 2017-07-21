@@ -95,12 +95,12 @@ public class Configuration extends AppCompatActivity {
 
         token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
         token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
         //AxxezoAPI = "http://192.168.1.102:9000/api";
 
         //test tzu 18/05/2017
         //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
         //button
         loadButton.setIndeterminateProgressMode(true);
