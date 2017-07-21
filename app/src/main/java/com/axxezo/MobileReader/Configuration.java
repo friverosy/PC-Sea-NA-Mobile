@@ -234,7 +234,7 @@ public class Configuration extends AppCompatActivity {
         try {
 
             db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute,updateLabel()).execute().get(), "manifest");
-            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getDeltasCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='"+selectionSpinnerRoute+"'))");//jhy
+            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='"+selectionSpinnerRoute+"'))");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
@@ -454,14 +454,14 @@ public class Configuration extends AppCompatActivity {
         DateFormat date = new SimpleDateFormat(format);
         return date.format(currentLocalTime);
     }
-    public String getDeltasCurrentDateTime(String format) {
+   /* public String getDeltasCurrentDateTime(String format) {
         //cambiar horas a UTC
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
         Date currentLocalTime = cal.getTime();
         DateFormat date = new SimpleDateFormat(format);
         date.setTimeZone(TimeZone.getTimeZone("UTC"));
         return date.format(currentLocalTime);
-    }
+    }*/
     public static void deleteCache(Context context) {
         try {
             File dir = context.getCacheDir();

@@ -214,6 +214,7 @@ public class MainActivity extends AppCompatActivity
         // AxxezoAPI = "http://192.168.1.102:9001/api";
         //AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
         AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        Log.d("deltasUTC",getDeltasCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss"));
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -552,9 +553,9 @@ public class MainActivity extends AppCompatActivity
 
     public String getDeltasCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
+        //cal.add(Calendar.HOUR,-1);
         Date currentLocalTime = cal.getTime();
         SimpleDateFormat date = new SimpleDateFormat(format);
-        date.setTimeZone(TimeZone.getTimeZone("UTC"));
         return date.format(currentLocalTime);
     }
 
