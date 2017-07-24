@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.axxezo.MobileReader">
 
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -38,8 +39,10 @@
             android:label="@string/title_find"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name="com.axxezo.MobileReader.manual_registration"
-            android:label="Registro Manual"></activity>
+            android:name=".manual_registration"
+            android:label="Registro Manual" />
+        <activity android:name=".log_show" />
+        <activity android:name=".CloseTrip"></activity>
     </application>
 
 </manifest>

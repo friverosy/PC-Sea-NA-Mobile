@@ -1,66 +1,80 @@
 package com.axxezo.MobileReader;
 
-import android.animation.ValueAnimator;
-import android.content.ContentValues;
+import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.os.Vibrator;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.provider.ContactsContract;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Config;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
-
 
 import com.dd.CircularProgressButton;
 
-import org.json.JSONArray;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Objects;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class Configuration extends AppCompatActivity {
 
-    DatabaseHelper db = new DatabaseHelper(this);
-    private Spinner combobox;
-    private Spinner combobox_ports;
-    private Spinner combobox_transports;
-    private Spinner combobox_hours;
-    private Integer selectionSpinnerRoute;
-    private Integer selectionSpinnerPorts;
-    private Integer selectionSpinnerTransports;
-    private Integer selectionSpinnerHour;
+    private Spinner combobox_route;
+    private String selectionSpinnerRoute;
     String hour;
     private Vibrator mVibrator;
-    private String URL = "http://ticket.bsale.cl/control_api";
-    private String token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
-    private String token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
+    private String AxxezoAPI;
+    private String token_navieraAustral;
+    private String token_transportesAustral;
     private CircularProgressButton loadButton;
+    //private String AxxezoAPI;
     private int manifest_load_ports;
-    Thread thread;
+    private String status;
+    private String id_api_route;
+    private boolean onclick = false;
+    private TextView route;
+    private TextView dataPicker;
+    private ProgressDialog progressDialog;
+    private boolean asynctask_running=false;
+    final Calendar myCalendar = Calendar.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,95 +82,130 @@ public class Configuration extends AppCompatActivity {
         setContentView(R.layout.activity_configuration);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        //wifiState(false);
 
-        combobox = (Spinner) findViewById(R.id.spinner);
-        // combobox_ports = (Spinner) findViewById(R.id.spinner_ports);
-        combobox_transports = (Spinner) findViewById(R.id.spinner_ship);
-        combobox_transports.setClickable(false);
-        combobox_hours = (Spinner) findViewById(R.id.spinner_hours);
-        combobox_hours.setClickable(false);
-        combobox.setClickable(false);
+        combobox_route = (Spinner) findViewById(R.id.spinner);
+        combobox_route.setClickable(false);
         loadButton = (CircularProgressButton) findViewById(R.id.button_loadManifest);
         manifest_load_ports = -1;
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        route = (TextView) findViewById(R.id.textView);
+        dataPicker = (TextView) findViewById(R.id.datetime_picker);
+        status = "";
 
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-       /* fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });*/
-        //inserts in db
-        try {
-            db.insertRoutesDB(new getAPIroutes().execute().get().toString());
-            db.close();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-        loadComboboxRoutes();
+        token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
+        token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
+        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://192.168.1.102:9000/api";
+        //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
         //button
-        loadButton.setIndeterminateProgressMode(false);
+        loadButton.setIndeterminateProgressMode(true);
         loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //simulateSuccessProgress(loadButton);
-                if ((combobox_transports != null && combobox_transports.getSelectedItem() != null && !combobox_transports.getSelectedItem().equals("")) && (combobox_hours != null &&
-                        combobox_hours.getSelectedItem() != null && !combobox_hours.getSelectedItem().equals("")) &&
-                        (combobox != null && combobox.getSelectedItem() != null) && !combobox.getSelectedItem().equals("")) {
-                    loadButton.setProgress(10);
-                    mVibrator.vibrate(100);
-                    db.insertSettingsValues(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, hour);
-                    loadManifest();
-                    loadButton.setProgress(100);
-                    loadButton.setClickable(false);
-                } else {
-                    Toast.makeText(getApplication(), "Faltan campos por completar, verifique", Toast.LENGTH_SHORT).show();
-                    loadButton.setProgress(-1);
+                onclick = true;
+                mVibrator.vibrate(100);
+                loadManifest();
+                loadButton.setClickable(false);
+                if (status.equals("200"))
+                    Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT).show();
+
+                Intent refresh = getIntent();
+                refresh.putExtra("spinner","reload");
+                setResult(RESULT_OK,refresh);
+                finish();
+            }
+        });
+        //clear cache of sistem before fill routes spinner
+        deleteCache(this);
+
+        try {
+            DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+            db.insertJSON(new getAPIInformation(updateLabel()).execute().get(), "routes");
+        } catch (JSONException | InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        loadComboboxRoutes();
+        final DatePickerDialog.OnDateSetListener date = new DatePickerDialog.OnDateSetListener() {
+
+            @Override
+            public void onDateSet(DatePicker view, int year, int monthOfYear,
+                                  int dayOfMonth) {
+                // TODO Auto-generated method stub
+                myCalendar.set(Calendar.YEAR, year);
+                myCalendar.set(Calendar.MONTH, monthOfYear);
+                myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                updateLabel();
+                try {
+                    DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+                    db.insertJSON(new getAPIInformation(updateLabel()).execute().get(), "routes");
+                    int countRoutes = Integer.parseInt(db.selectFirst("select count(id) from routes"));
+                    if (countRoutes == 0) {
+                        Toast.makeText(getApplicationContext(), "No existen rutas para el dia seleccionado o no se han cargado. Reintente", Toast.LENGTH_LONG).show();
+                    }
+                } catch (JSONException | InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
                 }
+                loadComboboxRoutes();
+            }
+
+        };
+
+        dataPicker.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                new DatePickerDialog(Configuration.this, date, myCalendar
+                        .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
+                        myCalendar.get(Calendar.DAY_OF_MONTH)).show();
             }
         });
     }
+    private String updateLabel() {
+        String myFormat = "dd/MM/yyyy";
+        String dateTimeDBformat="yyyy-MM-dd";
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
+        SimpleDateFormat DBformat = new SimpleDateFormat(dateTimeDBformat, Locale.getDefault());
 
+        dataPicker.setText(sdf.format(myCalendar.getTime()));
+        return DBformat.format(myCalendar.getTime());
+    }
+    /**
+     * fill combobox, obtaining information content in table "routes"
+     */
     public void loadComboboxRoutes() {
-        //create adapter from combobox
-        combobox.setClickable(true);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getListFromDB("routes"));
+        final DatabaseHelper db = DatabaseHelper.getInstance(this);
+        //create adapter from combobox_route
+        combobox_route.setClickable(true);
+        final ArrayList<String> routes = db.selectAsList("select name from routes", 0);
+        if (routes != null)
+            routes.add(0, "<ELIJA UNA RUTA>");
+        ArrayAdapter<String> adapter = null;
+        if (routes != null) {
+            adapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_spinner_item, routes);
+        }
+        //combobox_route.setTag();
         //set adapter to spinner
-        combobox.setAdapter(adapter);
+        combobox_route.setAdapter(adapter);
         //set listener from spinner
-        combobox.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        combobox_route.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 loadButton.setClickable(true);
-                loadButton.setProgress(0);
-                if (combobox.getSelectedItemPosition() != 0) {
-                    String nameElement = combobox.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ROUTES where name=" + "'" + nameElement + "'"));
-                    if (idElementSelected != 0) {
-                        selectionSpinnerRoute = idElementSelected;
-                        Log.i("id Log Routes", "----" + selectionSpinnerRoute);
-                        // / db.insertID(idElementSelected,"ROUTES");
-                        try {
-                            db.insertPortsDB(new getAPIPorts(selectionSpinnerRoute).execute().get().toString());
-                            loadComboboxPorts();
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-
+                if (combobox_route.getSelectedItemPosition() != 0) {
+                    String nameElement = combobox_route.getSelectedItem().toString();
+                    Cursor idElementSelected = db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
+                    if (idElementSelected.getCount() > 0) {
+                        selectionSpinnerRoute = idElementSelected.getString(1);
+                        id_api_route = idElementSelected.getString(0);
                     }
+                    route.setText("Viaje " + selectionSpinnerRoute + " Seleccionado");
+                    idElementSelected.close();
                 }
             }
 
@@ -166,181 +215,93 @@ public class Configuration extends AppCompatActivity {
         });
     }
 
-    public void loadComboboxPorts() {
-        //int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ports where name=" + "'" + nameElement + "'"));
-        ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id_api from ports limit 1", "|");
-        String[] manifest_is_inside = null;
-        if (select_from_manifest.size() > 0) {
-            manifest_is_inside = select_from_manifest.get(0).split("\\|");
-            selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
-            try {
-                db.insertShipsDB(new getAPITransports(selectionSpinnerRoute, selectionSpinnerPorts, getCurrentDate(0)).execute().get().toString());
-                loadComboboxShips();
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-
-
-        } else
-            Toast.makeText(this, "No se encuentra una conexion a internet disponible, verifique", Toast.LENGTH_LONG).show();
-    }
-
-
-    public void loadComboboxShips() {
-        //create adapter from comboboX
-        combobox_transports.setClickable(true);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getListFromDB("ships"));
-        //set adapter to spinner
-        combobox_transports.setAdapter(adapter);
-        //set listener from spinner
-        combobox_transports.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                loadButton.setProgress(0);
-                if (combobox_transports.getSelectedItemPosition() != 0) {
-                    String nameElement = combobox_transports.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from ships where name=" + "'" + nameElement + "'"));
-                    if (idElementSelected != 0) {
-                        selectionSpinnerTransports = idElementSelected;
-                        Log.i("id Log Ships", "----" + selectionSpinnerTransports);
-                        try {
-                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
-                            loadComboboxHours();
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }
-
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-            }
-        });
-    }
-
-    public void loadComboboxHours() {
-        //create adapter from combobox
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, db.getListFromDB("hours"));
-        //set adapter to spinner
-        combobox_hours.setAdapter(adapter);
-        combobox_hours.setClickable(true);
-        //set listener from spinner
-        combobox_hours.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                loadButton.setProgress(0);
-                if (combobox_hours.getSelectedItemPosition() != 0) {
-                    String nameElement = combobox_hours.getSelectedItem().toString();
-                    int idElementSelected = Integer.parseInt(db.selectFirstFromDB("SELECT id from Hours  where name=" + "'" + nameElement + "'"));
-                    if (idElementSelected != 0) {
-                        selectionSpinnerHour = idElementSelected;
-                        Log.i("id Log Hours", "----" + selectionSpinnerHour);
-                        try {
-                            hour = nameElement;
-                            db.insertHoursDB(new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, getCurrentDate(0)).execute().get().toString());
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }
-
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-            }
-        });
-    }
-
+    /**
+     * obtain manifest of endpoint, need the user select a route in combobox, insert the data in db local, fill two tables: manifest and  people
+     */
     public void loadManifest() {
+        DatabaseHelper db = DatabaseHelper.getInstance(this);
+        asynctask_running=false;
         //first delete the manifest table
-        db.insertInDB("delete from manifest");
-        db.insertInDB("delete from sqlite_sequence where name='MANIFEST'");
+        db.insert("delete from manifest");
+        db.insert("delete from sqlite_sequence where name='MANIFEST'");
+        db.insert("delete from config");
+        db.insert("delete from sqlite_sequence where name='CONFIG'");
+        db.insert("delete from people");
+        db.insert("delete from sqlite_sequence where name='PEOPLE'");
+        db.insert("delete from ports");
+        db.insert("delete from sqlite_sequence where name='PORTS'");
 
-        //charge the manifest per each port in people table
         try {
-            ArrayList<String> select_from_manifest = db.selectFromDB("SELECT id_api from ports where is_in_manifest='FALSE'", "");
-            ArrayList<String> select_hour_config = db.selectFromDB("SELECT hour from config", "");
-            String[] manifest_is_inside = null;
-            String[] hour_setting = select_hour_config.get(0).split(":");
-            String hours = "";
-            if (select_from_manifest.size() > 0) {
-                int i = 0;
-                while (!select_from_manifest.isEmpty()) {
-                    String currentDatetime=getCurrentDate(0);
-                    manifest_is_inside = select_from_manifest.get(0).split("\\|");
-                    selectionSpinnerPorts = Integer.parseInt(manifest_is_inside[0]);
-                    hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
-                    //load manifest of the next day if the hour is
-                    if (i > 0 && Integer.parseInt(hour_setting[0]) > 20) {
-                        currentDatetime=getCurrentDate(1);
-                        hour = new getAPIHours(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime).execute().get().toString();
-                    }
-                    //obtain the json hour information
-                    JSONObject objectJson;
-                    JSONArray jsonManifest;
-                    if (!hour.isEmpty()) {
-                        objectJson = new JSONObject(hour);
-                        jsonManifest = objectJson.getJSONArray("list_hours");
-                        try {
-                            for (int j = 0; j < jsonManifest.length(); j++) {
-                                hours = (jsonManifest.getJSONObject(0).getString("horas"));
-                            }
-                        } catch (JSONException e) {
-                            Log.e("error loadManifest hour", e.getMessage().toString());
-                        }
-                    }
-                    db.insertManifestDB(new getAPIManifest(selectionSpinnerRoute, selectionSpinnerPorts, selectionSpinnerTransports, currentDatetime, hours).execute().get().toString());
-                    //finally, delete from arraylist, the port
-                    select_from_manifest.remove(selectionSpinnerPorts.toString());
-                    Log.d("select_from_manifest", select_from_manifest.size() + "");
-                    db.insertInDB("update ports set is_in_manifest='TRUE' where id_api='" + selectionSpinnerPorts + "'");
-                    i++;
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+
+            db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute,updateLabel()).execute().get(), "manifest");
+            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='"+selectionSpinnerRoute+"'))");//jhy
+            // cambiar insert pot update
+            //db.updateConfig(selectionSpinnerRoute);
+            //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
+            db.insertJSON(new getAPIInformation(AxxezoAPI, id_api_route).execute().get(), "ports"); //insert ports of route selected
+            asynctask_running=true;
+        } catch (JSONException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 
         //load size of manifest
-
-        ArrayList<String> select_counts = db.selectFromDB("select count(*) from manifest", "|");
-        if (select_counts.size() > 0) {
-            String[] binnacle_param_id = select_counts.get(0).split("\\|");
-            Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(binnacle_param_id[0]) + " personas a la base de datos", Toast.LENGTH_LONG).show();
+        String select_counts = db.selectFirst("select count(id) from manifest");
+        if (!select_counts.isEmpty()) {
+            Toast.makeText(Configuration.this, "se han cargado " + Integer.parseInt(select_counts) + " personas en el manifiesto", Toast.LENGTH_LONG).show();
         }
     }
 
-    public class getAPIroutes extends AsyncTask<String, Void, String> {
-        private String getInformation = "";
+    public class getAPIInformation extends AsyncTask<String, Void, String> {
+        private String URL;
+        private String getInformation;
+        private String token;
+        private int flag = -1;
+        private String route;
+        private String datetime;
+
+        private getAPIInformation(String datetime) {//routes
+            getInformation = "";
+            flag = 0;
+            this.datetime=datetime;
+        }
+
+        getAPIInformation(String URL, String token, String id_mongo_route,String datetime) {//manifest
+            this.URL = URL;
+            this.token = token;
+            this.route = id_mongo_route;
+            getInformation = "";
+            flag = 1;
+            this.datetime=datetime;
+        }
+
+        getAPIInformation(String URL, String id_api_bsale) {//ports
+            this.URL = URL;
+            this.route = id_api_bsale;
+            getInformation = "";
+            flag = 2;
+        }
+
 
         @Override
         protected String doInBackground(String... strings) {
+            final OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(2, TimeUnit.SECONDS)
+                    .writeTimeout(0, TimeUnit.SECONDS)
+                    .readTimeout(0, TimeUnit.SECONDS)
+                    .build();
             try {
-                getInformation = getRoutes(URL, token_navieraAustral);
+                switch (flag) {
+                    case 0:
+                        getInformation = getRoutes(datetime,client);
+                        break;
+                    case 1:
+                        getInformation = getManifest(URL, token, route,client);
+                        break;
+                    case 2:
+                        getInformation = getPorts(URL, route,client);
+                        break;
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -353,350 +314,313 @@ public class Configuration extends AppCompatActivity {
         }
 
         protected void onPostExecute(String result) {
-        }
-
-    }
-
-    public class getAPIPorts extends AsyncTask<String, Void, String> {
-        private String getInformation = "";
-        private int route;
-
-        getAPIPorts(int id_route) {
-            route = id_route;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getPorts(URL, token_navieraAustral, route);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    public class getAPITransports extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        String Date;
-
-        getAPITransports(int id_route, int id_port, String date) {
-            route = id_route;
-            port = id_port;
-            Date = date;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getTransports(URL, token_navieraAustral, route, port, Date);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        protected void onPostExecute(String result) {
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    public class getAPIHours extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        private int transports;
-        String Date;
-
-        getAPIHours(int route_id, int port_id, int transports_id, String date) {
-            route = route_id;
-            port = port_id;
-            transports = transports_id;
-            Date = date;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getHours(URL, token_navieraAustral, route, port, Date, transports);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
+            if (onclick)
+                loadButton.setProgress(100);
+            else
+                loadButton.setProgress(0);
         }
     }
 
-    public class getAPIManifest extends AsyncTask<String, Void, String> {
-        public String getInformation = "";
-        private int route;
-        private int port;
-        private int transports;
-        String Date;
-        String Hour;
-
-        getAPIManifest(int id_route, int id_port, int id_transpot, String date, String hour) {
-            route = id_route;
-            port = id_port;
-            transports = id_transpot;
-            Date = date;
-            Hour = hour;
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                getInformation = getManifest(URL, token_navieraAustral, route, port, Date, transports, Hour);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return getInformation;
-        }
-
-        @Override
-        public String toString() {
-            return getInformation + "";
-        }
-
-    }
-
-    /*
-           Give the avalaible routes in the System
-           obtain the routes from api http://ticket.bsale.cl/control_api/routes
-    */
-    public String getRoutes(String Url, String Token) throws IOException {
-        URL url = new URL(Url + "/routes");
-        Log.d("get routes", url.toString());
-        String content = null;
-        HttpURLConnection conn = null;
+    /**
+     * Give the avalaible routes in the System obtain the routes from endpoint http://ticket.bsale.cl/control_api/itinerarios?date="insert date here"
+     *
+     * @return content in string, but it really is json array
+     * @throws IOException
+     */
+    public String getRoutes(String format, OkHttpClient client) throws IOException {
+        URL url = new URL(AxxezoAPI + "/itineraries?date=" + format);
+        Log.d("routes url", url.toString());
+        String content = "";
+        log_app log = new log_app();
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        Response response = null;
         try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
+            response = client.newCall(request).execute();
+            if (response != null) {
+                content = response.body().string();
+                Log.e("content", content);
             } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
+                content = response.code() + "";
 
-        } catch (IOException ioe) {
-            Log.e("class config, line 443", ioe.getMessage().toString());
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content == null || content.length() <= 2) { //[]
-            content = "204"; // No content
+        } catch (IOException e) {
+            final String error = e.getMessage();
+            log.writeLog(getApplicationContext(), "Configuration:line 333", "ERROR", e.getMessage());
             runOnUiThread(new Runnable() {
 
                 @Override
                 public void run() {
-                    Toast.makeText(getApplicationContext(), "Existe un problema con la conexion de internet, verifique e intente nuevamente", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor " + error, Toast.LENGTH_LONG).show();
                 }
             });
         }
-        Log.d("Routes Server response", content);
+        if (response != null)
+            response.close();
         return content;
     }
 
-    public String getPorts(String Url, String Token, int ID_route) throws IOException {
-        URL url = new URL(Url + "/ports?route=" + ID_route);
-        Log.d("get ports", url.toString());
+    public String getManifest(String Url, String Token, String id_mongo_route, OkHttpClient client) throws IOException {
+        //"http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary="
+        URL url = new URL(Url + "/manifests?itinerary=" + id_mongo_route);
         String content = "";
-        HttpURLConnection conn = null;
+        log_app log = new log_app();
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        Response response = null;
         try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
+            response = client.newCall(request).execute();
+            if (response != null) {
+                content = response.body().string();
             } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
+                content = response.code() + "";
+        } catch (IOException e) {
+            final String error = e.getMessage();
+            log.writeLog(getApplicationContext(), "Configuration:line 366", "ERROR", e.getMessage());
+            runOnUiThread(new Runnable() {
 
-        } catch (IOException ioe) {
-
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor " + error, Toast.LENGTH_LONG).show();
+                }
+            });
         }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d("Ports Server response", content);
+        if (response != null)
+            response.close();
         return content;
     }
 
-    public String getTransports(String Url, String Token, int ID_route, int ID_port, String date) throws IOException {
-        //String date must be in format yyyy-MM-dd
-        URL url = new URL(Url + "/transports?route=" + ID_route + "&date=" + date + "&port=" + ID_port);
-        Log.d("get ships", url.toString());
+    public String getPorts(String Url, String id_mongo_route, OkHttpClient client) throws IOException {
+        URL url = new URL(Url + "/itineraries/" + id_mongo_route + "/seaports");
         String content = "";
-        HttpURLConnection conn = null;
+        log_app log = new log_app();
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        Response response = null;
         try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(4000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
+            response = client.newCall(request).execute();
+            if (response != null) {
+                content = response.body().string();
             } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
+                content = response.code() + "";
+            Log.e("ports content", content);
+        } catch (IOException e) {
+            final String error = e.getMessage();
+            log.writeLog(getApplicationContext(), "Configuration:line 333", "ERROR", e.getMessage());
+            runOnUiThread(new Runnable() {
 
-        } catch (IOException ioe) {
-
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "Error de conexion al servidor " + error, Toast.LENGTH_LONG).show();
+                }
+            });
         }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d("trans Server response", content);
+        if (response != null)
+            response.close();
         return content;
     }
 
-    public String getHours(String Url, String Token, int ID_route, int ID_port, String date, int ID_transport) throws IOException {
-        //String date must be in format yyyy-MM-dd
-        URL url = new URL(Url + "/hours?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport);
-        Log.d("get hours", url.toString());
-        String content = "";
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(4000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
-            } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-            me.printStackTrace();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d(" Hour Server response", content);
-        return content;
-    }
-
-    public String getManifest(String Url, String Token, int ID_route, int ID_port, String date, int ID_transport, String hour) throws IOException {
-        //String date must be in format yyyy-MM-dd
-        //String hour must be in format HH-dd
-        URL url = new URL(Url + "/manifests?route=" + ID_route + "&date=" + date + "&port=" + ID_port + "&transport=" + ID_transport + "&hour=" + hour);
-        Log.d("get manifest", url.toString());
-        String content = "";
-        HttpURLConnection conn = null;
-        try {
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("TOKEN", Token);
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.connect();
-
-            int connStatus = conn.getResponseCode();
-            InputStream getData = conn.getInputStream();
-            if (connStatus != 200) {
-                content = String.valueOf(getData);
-            } else
-                content = convertInputStreamToString(getData);
-        } catch (MalformedURLException me) {
-
-        } catch (IOException ioe) {
-
-        }
-        if (conn != null) {
-            conn.disconnect();
-        }
-        if (content.length() <= 2) { //[]
-            content = "204"; // No content
-        }
-        Log.d("Manifes Server response", content);
-        return content;
-    }
-
-
-    private static String convertInputStreamToString(InputStream inputStream) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        String line;
+    /**
+     * reset endpoint states, in old version was neccesary because we didn`t have a id_itinerary
+     *
+     * @return int that contains http status of this operation (when status 200 is OK)
+     */
+    public String GETReset() {
+        String url = AxxezoAPI + "states/removeAll";
         String result = "";
-        while ((line = bufferedReader.readLine()) != null)
-            result += line;
+        InputStream inputStream;
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet(url);
+        HttpResponse httpResponse;
+        try {
+            httpResponse = httpclient.execute(httpGet);
+            result = httpResponse.getStatusLine().toString();
 
-        inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return result;
-
     }
 
-    public String getCurrentDate(int days) {
-        Calendar cal = Calendar.getInstance();
-        Date currentLocalTime;
-        DateFormat date=new SimpleDateFormat("yyyy-MM-dd");
-        String returntime="";
-        if (days == 0) {
-            currentLocalTime = cal.getTime();
-            returntime = date.format(currentLocalTime);
-        }
-        else if(days>0){
-            cal.add(Calendar.DAY_OF_MONTH, days); //Adds a day
-            returntime = date.format(cal.getTime());
-        }
 
-        return returntime;
-    }
-
-    public String getCurrentTime() {
+    public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();
-        DateFormat date = new SimpleDateFormat("HH:mm");
-        String localTime = date.format(currentLocalTime);
-        return localTime;
+        DateFormat date = new SimpleDateFormat(format);
+        return date.format(currentLocalTime);
     }
-    public String getToken_navieraAustral(){
-        return token_navieraAustral;
+   /* public String getDeltasCurrentDateTime(String format) {
+        //cambiar horas a UTC
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        Date currentLocalTime = cal.getTime();
+        DateFormat date = new SimpleDateFormat(format);
+        date.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return date.format(currentLocalTime);
+    }*/
+    public static void deleteCache(Context context) {
+        try {
+            File dir = context.getCacheDir();
+            deleteDir(dir);
+        } catch (Exception e) {
+        }
     }
-    public String getURl(){ return URL;}
+
+    public static boolean deleteDir(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++) {
+                boolean success = deleteDir(new File(dir, children[i]));
+                if (!success) {
+                    return false;
+                }
+            }
+            return dir.delete();
+        } else if (dir != null && dir.isFile()) {
+            return dir.delete();
+        } else {
+            return false;
+        }
+    }
+
+    //To use the AsyncTask, it must be subclassed
+    private class LoadViewTask extends AsyncTask<Void, Integer, Void> {
+        //Before running code in separate thread
+        @Override
+        protected void onPreExecute() {
+            //Create a new progress dialog
+            progressDialog = new ProgressDialog(Configuration.this);
+            //Set the progress dialog to display a horizontal progress bar
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            //Set the dialog title to 'Loading...'
+            progressDialog.setTitle("Cargando...");
+            //Set the dialog message to 'Loading application View, please wait...'
+            progressDialog.setMessage("Enviando peticion al servidor...");
+            //This dialog can't be canceled by pressing the back key
+            progressDialog.setCancelable(false);
+            //This dialog isn't indeterminate
+            progressDialog.setIndeterminate(false);
+            //The maximum number of items is 100
+            progressDialog.setMax(100);
+            //Set the current progress to zero
+            progressDialog.setProgress(0);
+            //Display the progress dialog
+            progressDialog.show();
+            loadManifest();
+        }
+
+        //The code to be executed in a background thread.
+        @Override
+        protected Void doInBackground(Void... params) {
+            /* This is just a code that delays the thread execution 4 times,
+             * during 850 milliseconds and updates the current progress. This
+             * is where the code that is going to be executed on a background
+             * thread must be placed.
+             */
+            //Get the current thread's token
+            synchronized (this) {
+                DatabaseHelper db = DatabaseHelper.getInstance(getApplicationContext());
+                int intents = 1;
+               /* runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                    }
+                });*/
+                while (intents <= 3 && asynctask_running) {
+                    //This value is going to be passed to the onProgressUpdate() method.
+                    publishProgress(1);
+                    progressDialog.setProgress(10);
+                    Log.e("intents", " " + intents);
+                    Log.e("asynctask_running ", " " + asynctask_running);
+                    Cursor cursor = db.select("select (select count(id) from manifest),(select count(id) from config),(select count(id) from people),(select count(id) from ports)");
+                    if (cursor.getCount() > 0) {
+                        cursor.moveToFirst();
+                        int manifest = cursor.getInt(0);
+                        Log.d("manifest", " " + manifest);
+                        if (manifest > 0) {
+                            publishProgress(2);
+                            progressDialog.setProgress(25);
+                        }
+                        int config = cursor.getInt(1);
+                        Log.d("config", " " + config);
+                        if (manifest > 0 && config > 0) {
+                            publishProgress(3);
+                            progressDialog.setProgress(50);
+                        }
+                        int people = cursor.getInt(2);
+                        Log.d("people", " " + people);
+                        if (manifest > 0 && config > 0 && people > 0) {
+                            publishProgress(4);
+                            progressDialog.setProgress(70);
+
+                        }
+                        int ports = cursor.getInt(3);
+                        if (manifest > 0 && config > 0 && people > 0 && ports > 0) {
+                            progressDialog.setProgress(99);
+                           // isDone = true;
+                            intents = 3;
+                            Log.d("all", " all ");
+                        } else {
+                            deleteCache(getApplicationContext());
+                            publishProgress(6);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    loadManifest();
+                                }
+                            });
+                        }
+                    }
+                    intents++;
+                    if (cursor != null)
+                        cursor.close();
+                }
+
+            }
+            return null;
+        }
+
+        //Update the progress
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            //set the current progress of the progress dialog
+            switch (values[0]) {
+                case 1:
+                    progressDialog.setMessage("Realizando peticion al servidor...");
+                    break;
+                case 2:
+                    progressDialog.setMessage("Cargando Manifiesto");
+                    break;
+                case 3:
+                    progressDialog.setMessage("Cargando Configuracion");
+                    break;
+                case 4:
+                    progressDialog.setMessage("Cargando Personas a la base de datos");
+                    break;
+                case 5:
+                    progressDialog.setMessage("Completado");
+                    break;
+                case 6:
+                    progressDialog.setMessage("Enviando peticion al servidor");
+                    break;
+
+            }
+        }
+
+        //after executing the code in the thread
+        @Override
+        protected void onPostExecute(Void result) {
+            //close the progress dialog
+            progressDialog.dismiss();
+            //initialize the View
+            //setContentView(R.layout.content_configuration);
+        }
+    }
+
 
 }

@@ -10,6 +10,15 @@ public class Cards {
     private String nationality;
     private String destination;
     private int isInside;
+    private boolean manual_sell;
+
+    public boolean isManual_sell() {
+        return manual_sell;
+    }
+
+    public void setManual_sell(boolean manual_sell) {
+        this.manual_sell = manual_sell;
+    }
 
     public String getOrigin() {
         return origin;

@@ -14,6 +14,9 @@ public class navieraManifest{
     private String origin;
     private String destination;
     private int isInside;
+    private int isManualSell;
+    private int reservationStatus;
+    //private int port;
 
     /*
     isInside;
@@ -22,11 +25,21 @@ public class navieraManifest{
     2 to  landed(desembarcado)
      */
 
-    public navieraManifest(String people_id, String origin, String destination, int isInside) {
+    public navieraManifest(String people_id, String origin, String destination, int isInside, int isManualSell, int reservationStatus) {
         this.people_id = people_id;
         this.origin = origin;
         this.destination = destination;
         this.isInside = isInside;
+        this.isManualSell = isManualSell;
+        this.reservationStatus = reservationStatus;
+    }
+
+    public navieraManifest(String people_id, String origin, String destination, int isInside, int isManualSell) {
+        this.people_id = people_id;
+        this.origin = origin;
+        this.destination = destination;
+        this.isInside = isInside;
+        this.isManualSell = isManualSell;
     }
 
     public String getPeople_id() {
@@ -59,6 +72,22 @@ public class navieraManifest{
 
     public void setIsInside(int isInside) {
         this.isInside = isInside;
+    }
+
+    public int getIsManualSell() {
+        return isManualSell;
+    }
+
+    public void setIsManualSell(int isManualSell) {
+        this.isManualSell = isManualSell;
+    }
+
+    public int getReservationStatus() {
+        return reservationStatus;
+    }
+
+    public void setReservationStatus(int reservationStatus) {
+        this.reservationStatus = reservationStatus;
     }
 
     @Override

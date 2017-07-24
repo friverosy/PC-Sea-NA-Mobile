@@ -33,7 +33,7 @@
         android:layout_marginTop="20dp"
         android:ems="10"
         android:fontFamily="serif"
-        android:hint="Escanee o Ingrese aqui su busqueda"
+        android:hint="Escanee cédula ó ingrese RUT"
         android:inputType="textPersonName"
         android:textAlignment="center"
         android:textAllCaps="false"
@@ -103,17 +103,6 @@
             android:textAlignment="textEnd" />
 
         <TextView
-            android:id="@+id/textView_title_hour"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignEnd="@id/textView_title_name"
-            android:layout_alignParentStart="true"
-            android:layout_below="@id/textView_title_destination"
-            android:layout_marginTop="20dp"
-            android:text="Hora:"
-            android:textAlignment="textEnd" />
-
-        <TextView
             android:id="@+id/textView_show_DNI"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -147,14 +136,6 @@
             android:layout_marginLeft="20dp"
             android:layout_toEndOf="@+id/textView_title_name" />
 
-        <TextView
-            android:id="@+id/textView_show_hour"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/textView_show_destination"
-            android:layout_marginLeft="20dp"
-            android:layout_marginTop="20dp"
-            android:layout_toEndOf="@id/textView_title_hour" />
 
     </RelativeLayout>
 

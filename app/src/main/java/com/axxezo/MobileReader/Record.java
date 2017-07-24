@@ -1,5 +1,7 @@
 package com.axxezo.MobileReader;
 
+import java.util.Date;
+
 /**
  * Created by Cristtopher Quintana on 12-08-16.
  */
@@ -11,36 +13,54 @@ public class Record {
     String person_name;
     String origin;
     String destination;
-    String port_id;
-    String ship_id;
-    String sailing_hour;
-    String ticket;
-    int manifest_total;
-    int manifest_landed;
-    int manifest_embarked;
-    int manifest_pending;
+    String port_registry;
+    int reason;
+    String mongo_id_person;
+    String mongo_id_manifest;
+    String mongo_id_register;
+    int ticket;
     int input;
     int sync;
     int permitted;
+
 
     //Constructors
     public Record(){
 
     }
 
-    public Record(Integer id, String person_document, String person_name, String origin,String destination, String port_id, String ship_id, String sailing_hour, Integer input, Integer sync, Integer permitted){
-
+    public Record(int id, String datetime, String person_document, String person_name, String origin, String destination, String port_registry, int reason, String mongo_id_person, String mongo_id_manifest, String mongo_id_register, int ticket, int input, int sync, int permitted) {
         this.id = id;
+        this.datetime = datetime;
         this.person_document = person_document;
         this.person_name = person_name;
-        this.origin=origin;
-        this.destination=destination;
-        this.port_id = port_id;
-        this.ship_id = ship_id;
-        this.sailing_hour = sailing_hour;
+        this.origin = origin;
+        this.destination = destination;
+        this.port_registry = port_registry;
+        this.reason = reason;
+        this.mongo_id_person = mongo_id_person;
+        this.mongo_id_manifest = mongo_id_manifest;
+        this.mongo_id_register = mongo_id_register;
+        this.ticket = ticket;
         this.input = input;
         this.sync = sync;
         this.permitted = permitted;
+    }
+
+    public String getMongo_id_register() {
+        return mongo_id_register;
+    }
+
+    public void setMongo_id_register(String mongo_id_register) {
+        this.mongo_id_register = mongo_id_register;
+    }
+
+    public String getMongo_id_manifest() {
+        return mongo_id_manifest;
+    }
+
+    public void setMongo_id_manifest(String mongo_id_manifest) {
+        this.mongo_id_manifest = mongo_id_manifest;
     }
 
     public int getId() {
@@ -63,8 +83,17 @@ public class Record {
         return person_document;
     }
 
+
     public void setPerson_document(String person_document) {
         this.person_document = person_document;
+    }
+
+    public String getMongo_id_person() {
+        return mongo_id_person;
+    }
+
+    public void setMongo_id_person(String mongo_id_person) {
+        this.mongo_id_person = mongo_id_person;
     }
 
     public String getPerson_name() {
@@ -75,28 +104,12 @@ public class Record {
         this.person_name = person_name;
     }
 
-    public String getPort_id() {
-        return port_id;
+    public String getPort_registry() {
+        return port_registry;
     }
 
-    public void setPort_id(String port_id) {
-        this.port_id = port_id;
-    }
-
-    public String getShip_id() {
-        return ship_id;
-    }
-
-    public void setShip_id(String ship_id) {
-        this.ship_id = ship_id;
-    }
-
-    public String getSailing_hour() {
-        return sailing_hour;
-    }
-
-    public void setSailing_hour(String sailing_hour) {
-        this.sailing_hour = sailing_hour;
+    public void setPort_registry(String port_registry) {
+        this.port_registry = port_registry;
     }
 
     public int getInput() {
@@ -138,43 +151,20 @@ public class Record {
     public void setDestination(String destination) {
         this.destination = destination;
     }
-    public int getManifest_pending() {
-        return manifest_pending;
-    }
 
-    public void setManifest_pending(int manifest_pending) {
-        this.manifest_pending = manifest_pending;
-    }
-
-    public int getManifest_total() {
-        return manifest_total;
-    }
-
-    public void setManifest_total(int manifest_total) {
-        this.manifest_total = manifest_total;
-    }
-
-    public int getManifest_landed() {
-        return manifest_landed;
-    }
-
-    public void setManifest_landed(int manifest_landed) {
-        this.manifest_landed = manifest_landed;
-    }
-
-    public int getManifest_embarked() {
-        return manifest_embarked;
-    }
-
-    public void setManifest_embarked(int manifest_embarked) {
-        this.manifest_embarked = manifest_embarked;
-    }
-
-    public String getTicket() {
+    public int getTicket() {
         return ticket;
     }
 
-    public void setTicket(String ticket) {
+    public void setTicket(int ticket) {
         this.ticket = ticket;
+    }
+
+    public int getReason() {
+        return reason;
+    }
+
+    public void setReason(int reason) {
+        this.reason = reason;
     }
 }

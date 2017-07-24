@@ -19,6 +19,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/AppTheme.PopupOverlay" />
+        <!--android:background="?attr/colorPrimary"-->
 
     </android.support.design.widget.AppBarLayout>
 
@@ -36,6 +37,21 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@android:drawable/ic_dialog_info" />
+        app:srcCompat="@android:drawable/ic_input_add" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="0dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="0dp"
+        app:srcCompat="@android:drawable/ic_dialog_info"
+        app:layout_anchor="@+id/frameLayoutContent"
+        app:layout_anchorGravity="bottom|left"
+        android:layout_gravity="top|right" />
+
+    <!--app:layout_anchor="@id/fab"-->
 
 </android.support.design.widget.CoordinatorLayout>

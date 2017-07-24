@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.device.ScanManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -11,7 +12,6 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -29,7 +29,7 @@ import java.util.ArrayList;
 
 public class find_people_in_manifest extends AppCompatActivity {
 
-    private final static String SCAN_ACTION = "urovo.rcv.message";//扫描结束action
+    private final static String SCAN_ACTION = "urovo.rcv.message";//action
     private Vibrator mVibrator;
     private ScanManager mScanManager;
     private SoundPool soundpool = null;
@@ -40,13 +40,13 @@ public class find_people_in_manifest extends AppCompatActivity {
     private TextView show_name;
     private TextView show_origin;
     private TextView show_destination;
-    private TextView show_hour;
     private ImageView image_authorized;
     private Button button_find_in_manifest;
     MediaPlayer mp3Dennied;
     MediaPlayer mp3Permitted;
     MediaPlayer mp3Error;
     private DatabaseHelper db;
+    log_app log = new log_app();
 
 
     @Override
@@ -61,25 +61,17 @@ public class find_people_in_manifest extends AppCompatActivity {
         show_name = (TextView) findViewById(R.id.textView_show_name);
         show_origin = (TextView) findViewById(R.id.textView_show_origin);
         show_destination = (TextView) findViewById(R.id.textView_show_destination);
-        show_hour = (TextView) findViewById(R.id.textView_show_hour);
         image_authorized = (ImageView) findViewById(R.id.imageView_is_in_manifest);
 
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         mp3Dennied = MediaPlayer.create(this, R.raw.bad);
         mp3Permitted = MediaPlayer.create(this, R.raw.good);
         mp3Error = MediaPlayer.create(this, R.raw.error);
-        db = new DatabaseHelper(this);
+        db = DatabaseHelper.getInstance(this);
         button_find_in_manifest = (Button) findViewById(R.id.button_manual_search);
         button_find_in_manifest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //code down keyboard when press this button
-                InputMethodManager inputManager = (InputMethodManager)
-                        getSystemService(Context.INPUT_METHOD_SERVICE);
-
-                inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
-                        InputMethodManager.HIDE_NOT_ALWAYS);
-
                 mVibrator.vibrate(100);
                 findInManifest(find_people.getText().toString().toUpperCase().trim());
             }
@@ -126,7 +118,7 @@ public class find_people_in_manifest extends AppCompatActivity {
             Log.d("---", rawCode);
 
             int flag = 0; // 0 for end without k, 1 with k
-            Person person = new Person();
+            People person = new People();
 
             if (barcodeType == 28) { // QR code
                 if (barcodeStr.contains("client_code")) {
@@ -144,7 +136,7 @@ public class find_people_in_manifest extends AppCompatActivity {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                } else {
+                } else if(rawCode.startsWith("https://")) {
                     // Its a DNI Card.
                     barcodeStr = barcodeStr.substring(
                             barcodeStr.indexOf("RUN=") + 4,
@@ -156,17 +148,26 @@ public class find_people_in_manifest extends AppCompatActivity {
                 }
 
             } else if (barcodeType == 17) { // PDF417
-                barcodeStr = barcodeStr.substring(0, 9);
-                barcodeStr = barcodeStr.replace(" ", "");
-                if (barcodeStr.endsWith("K")) {
-                    flag = 1;
-                }
-
-                // Define length of character.
-                if (Integer.parseInt(barcodeStr) > 400000000 && flag == 0) {
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 2);
-                } else if (flag == 0) {
-                    barcodeStr = barcodeStr.substring(0, barcodeStr.length() - 1);
+                // 1.- validate if the rut is > 10 millions
+                String rutValidator = barcodeStr.substring(0, 8);
+                rutValidator = rutValidator.replace(" ", "");
+                rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                char dv = barcodeStr.substring(8, 9).charAt(0);
+                boolean isValid = rutValidator(Integer.parseInt(rutValidator), dv);
+                if (isValid)
+                    barcodeStr = rutValidator;
+                else { //try validate rut size below 10.000.000
+                    rutValidator = barcodeStr.substring(0, 7);
+                    rutValidator = rutValidator.replace(" ", "");
+                    rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
+                    dv = barcodeStr.substring(7, 8).charAt(0);
+                    isValid = rutValidator(Integer.parseInt(rutValidator), dv);
+                    if (isValid)
+                        barcodeStr = rutValidator;
+                    else {
+                        log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
+                        barcodeStr = "";
+                    }
                 }
 
                 // Get name from DNI.
@@ -179,15 +180,21 @@ public class find_people_in_manifest extends AppCompatActivity {
                     ex.printStackTrace();
                     find_people.setText("");
                 }
-                barcodeStr = barcodeStr.replace("k", "");
-                barcodeStr = barcodeStr.replace("K", "");
-                find_people.setText(barcodeStr);
                 findInManifest(barcodeStr);
             }
 
             Log.i("Cooked Barcode", barcodeStr);
         }
     };
+
+    public boolean rutValidator(int rut, char dv) {
+        dv = dv == 'k' ? dv = 'K' : dv;
+        int m = 0, s = 1;
+        for (; rut != 0; rut /= 10) {
+            s = (s + rut % 10 * (9 - m++ % 6)) % 11;
+        }
+        return dv == (char) (s != 0 ? s + 47 : 75);
+    }
 
     public void reset(String content) {
         try {
@@ -199,7 +206,6 @@ public class find_people_in_manifest extends AppCompatActivity {
             show_name.setText(content);
             show_origin.setText(content);
             show_destination.setText(content);
-            show_hour.setText(content);
             //find_people.setText("");
             image_authorized.setImageResource(0);
 
@@ -239,22 +245,20 @@ public class find_people_in_manifest extends AppCompatActivity {
         // TODO Auto-generated method stub
         super.onResume();
         initScan();
-        // UpdateDb();
+        // sendRecordstoAPI();
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
     }
 
     public void findInManifest(String document) {
-        ArrayList<String> select_from_manifest = db.selectFromDB("select ma.id_people,ma.origin,ma.destination, p.name,(select hour from config limit 1) from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'", "|");
-        if (select_from_manifest.size() > 0) {
+        Cursor get_selected_dni = db.select("select ma.id_people,(select name from ports where id_mongo=ma.origin),(select name from ports where id_mongo=ma.destination), p.name  from manifest as ma left join people as p on ma.id_people=p.document where ma.id_people='" + document + "'");
+        if (get_selected_dni!=null&&get_selected_dni.getCount() > 0) {
             mp3Permitted.start();
-            String[] manifest_is_inside = select_from_manifest.get(0).split("\\|");
             show_dni.setText(document);
-            show_name.setText(manifest_is_inside[3]);
-            show_origin.setText(manifest_is_inside[1]);
-            show_destination.setText(manifest_is_inside[2]);
-            show_hour.setText(manifest_is_inside[4]);
+            show_origin.setText(get_selected_dni.getString(1));
+            show_destination.setText(get_selected_dni.getString(2));
+            show_name.setText(get_selected_dni.getString(3));
             image_authorized.setImageResource(R.drawable.icon_tick_true_manifest);
         } else {
             mp3Dennied.start();
@@ -262,6 +266,8 @@ public class find_people_in_manifest extends AppCompatActivity {
             reset("< No Encontrado >");
             image_authorized.setImageResource(R.drawable.icon_tick_false_manifest);
         }
+        if(get_selected_dni!=null)
+            get_selected_dni.close();
     }
 
 

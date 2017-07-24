@@ -21,5 +21,10 @@
     <string name="title_find">Buscar en Manifiesto</string>
     <string name="manifiest">Manifiesto</string>
     <string name="find">Buscar</string>
-    <string name="manual_registration">Registro Manual</string>
+    <string name="manual_registration">Venta a Bordo</string>
+    <string-array name="states_array">
+        <item>Sin Registro</item>
+        <item>Embarcado</item>
+        <item>Desembarcado</item>
+    </string-array>
 </resources>
