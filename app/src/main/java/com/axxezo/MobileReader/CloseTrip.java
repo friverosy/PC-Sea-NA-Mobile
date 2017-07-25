@@ -168,7 +168,7 @@ public class CloseTrip extends AppCompatActivity {
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
         try {
-            String url = "http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/itineraries/" + db.selectFirst("select r.id_mongo from routes as r left join config as c on c.route_id=r.id where c.route_id=(select route_id from config)");
+            String url = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api/itineraries/" + db.selectFirst("select r.id_mongo from routes as r left join config as c on c.route_id=r.id where c.route_id=(select route_id from config)");
             jsonObject.accumulate("active", false);
             json = jsonObject.toString();
             Log.d("json to PUT",json);

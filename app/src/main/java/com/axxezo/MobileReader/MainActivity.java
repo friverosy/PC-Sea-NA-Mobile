@@ -198,8 +198,8 @@ public class MainActivity extends AppCompatActivity
         timer_asyncUpdatePeopleState = 15000;                   //15 sec=15.000
         timer_asyncDeletePeopleManifest = 420000;               //7 min =420000
         //asign url api axxezo
-        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
-        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
+        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
