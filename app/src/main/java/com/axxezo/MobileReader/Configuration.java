@@ -95,10 +95,8 @@ public class Configuration extends AppCompatActivity {
 
         token_navieraAustral = "860a2e8f6b125e4c7b9bc83709a0ac1ddac9d40f";
         token_transportesAustral = "49f89ee1b7c45dcca61a598efecf0b891c2b7ac5";
-        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
-        //AxxezoAPI = "http://192.168.1.102:9000/api";
-        //AxxezoAPI ="http://bm03.bluemonster.cl:9001/api";
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
         //button
         loadButton.setIndeterminateProgressMode(true);
@@ -174,6 +172,7 @@ public class Configuration extends AppCompatActivity {
         dataPicker.setText(sdf.format(myCalendar.getTime()));
         return DBformat.format(myCalendar.getTime());
     }
+
     /**
      * fill combobox, obtaining information content in table "routes"
      */
@@ -216,7 +215,8 @@ public class Configuration extends AppCompatActivity {
     }
 
     /**
-     * obtain manifest of endpoint, need the user select a route in combobox, insert the data in db local, fill two tables: manifest and  people
+     * Obtain manifest of endpoint, need the user select a route in combobox,
+     * insert the data in db local, fill two tables: manifest and  people
      */
     public void loadManifest() {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
@@ -322,7 +322,8 @@ public class Configuration extends AppCompatActivity {
     }
 
     /**
-     * Give the avalaible routes in the System obtain the routes from endpoint http://ticket.bsale.cl/control_api/itinerarios?date="insert date here"
+     * Give the avalaible routes in the System obtain the routes from
+     * endpoint http://ticket.bsale.cl/control_api/itinerarios?date="insert date here"
      *
      * @return content in string, but it really is json array
      * @throws IOException
@@ -362,7 +363,6 @@ public class Configuration extends AppCompatActivity {
     }
 
     public String getManifest(String Url, String Token, String id_mongo_route, OkHttpClient client) throws IOException {
-        //"http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary="
         URL url = new URL(Url + "/manifests?itinerary=" + id_mongo_route);
         String content = "";
         log_app log = new log_app();
@@ -462,6 +462,7 @@ public class Configuration extends AppCompatActivity {
         date.setTimeZone(TimeZone.getTimeZone("UTC"));
         return date.format(currentLocalTime);
     }*/
+
     public static void deleteCache(Context context) {
         try {
             File dir = context.getCacheDir();
@@ -535,25 +536,20 @@ public class Configuration extends AppCompatActivity {
                     //This value is going to be passed to the onProgressUpdate() method.
                     publishProgress(1);
                     progressDialog.setProgress(10);
-                    Log.e("intents", " " + intents);
-                    Log.e("asynctask_running ", " " + asynctask_running);
                     Cursor cursor = db.select("select (select count(id) from manifest),(select count(id) from config),(select count(id) from people),(select count(id) from ports)");
                     if (cursor.getCount() > 0) {
                         cursor.moveToFirst();
                         int manifest = cursor.getInt(0);
-                        Log.d("manifest", " " + manifest);
                         if (manifest > 0) {
                             publishProgress(2);
                             progressDialog.setProgress(25);
                         }
                         int config = cursor.getInt(1);
-                        Log.d("config", " " + config);
                         if (manifest > 0 && config > 0) {
                             publishProgress(3);
                             progressDialog.setProgress(50);
                         }
                         int people = cursor.getInt(2);
-                        Log.d("people", " " + people);
                         if (manifest > 0 && config > 0 && people > 0) {
                             publishProgress(4);
                             progressDialog.setProgress(70);
@@ -564,7 +560,6 @@ public class Configuration extends AppCompatActivity {
                             progressDialog.setProgress(99);
                            // isDone = true;
                             intents = 3;
-                            Log.d("all", " all ");
                         } else {
                             deleteCache(getApplicationContext());
                             publishProgress(6);
@@ -580,7 +575,6 @@ public class Configuration extends AppCompatActivity {
                     if (cursor != null)
                         cursor.close();
                 }
-
             }
             return null;
         }

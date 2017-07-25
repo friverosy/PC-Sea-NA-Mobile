@@ -218,8 +218,6 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         spinner_origin_selected = combo_origin.getSelectedItem().toString();
         spinner_destination_selected = combo_destination.getSelectedItem().toString();
-        Log.e("origin",spinner_origin_selected);
-        Log.e("destination",spinner_destination_selected);
         DatabaseHelper db = DatabaseHelper.getInstance(getBaseContext());
         String origin = spinner_origin_selected.equals("< TODOS >")?"< TODOS >":db.selectFirst("select id_mongo from ports where name='"+spinner_origin_selected+"'");
         String destination =spinner_destination_selected.equals("< TODOS >")?"< TODOS >":db.selectFirst("select id_mongo from ports where name='" + spinner_destination_selected + "'");

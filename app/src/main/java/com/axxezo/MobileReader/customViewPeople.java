@@ -156,8 +156,6 @@ public class customViewPeople extends RecyclerView.Adapter<customViewPeople.User
             textViewExpand = (ExpandableTextView) itemView.findViewById(R.id.textView_expand);
             is_manual_sell=(ImageView) itemView.findViewById(R.id.is_manual_sell);
             //spinner_state = (Spinner) itemView.findViewById(R.id.spinner_state);
-
-
         }
     }
 

@@ -185,7 +185,6 @@ public class CloseTrip extends AppCompatActivity {
             Response response = client.newCall(request).execute();
 
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
-            Log.d("----PUT Close---Resp--", tmp);
             // 10. convert inputstream to string
 
             if (tmp != null && response.isSuccessful()) {

@@ -66,10 +66,8 @@ import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.StrictMode;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
-import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -93,13 +91,6 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -108,9 +99,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -119,7 +108,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -210,12 +198,8 @@ public class MainActivity extends AppCompatActivity
         timer_asyncUpdatePeopleState = 15000;                   //15 sec=15.000
         timer_asyncDeletePeopleManifest = 420000;               //7 min =420000
         //asign url api axxezo
-        //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
-        // AxxezoAPI = "http://192.168.1.102:9001/api";
-        //AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
-        AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
-        Log.d("deltasUTC",getDeltasCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss"));
-
+        AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
+        //AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
@@ -235,6 +219,7 @@ public class MainActivity extends AppCompatActivity
                 }
             });
         }
+
         //second fab, to show information about travel
         FloatingActionButton fab2 = (FloatingActionButton) findViewById(R.id.fab2);
         if (fab2 != null)
@@ -247,7 +232,7 @@ public class MainActivity extends AppCompatActivity
                             "\nItinerario: " + db.selectFirst("select route_id from config") +
                             "\nPasajeros Puerto: " + selectedSpinnerLanded +
                             "\nPasajeros Embarcados:" + db.selectFirst("select count(id) from manifest where is_inside=1 and origin=(select id_mongo from ports where name='" + selectedSpinnerLanded + "')") +
-                            "\nPasajeros Pendientes:" + db.selectFirst("select count(id) from manifest where is_inside=0 and origin =(select id_mongo from ports where name='" + selectedSpinnerLanded + "')") +
+                            "\nPasajeros Pendientes:" + db.selectFirst("select count(id) from manifest where is_inside=0 and origin=(select id_mongo from ports where name='" + selectedSpinnerLanded + "')") +
                             "\nUltima Actualizacion Manifiesto: " + TextViewTimePeople;
                     Snackbar snack = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
                             .setAction("Action", null);
@@ -285,7 +270,9 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+
         fillSpinner();
+
         //call in oncreate asyntask
         sendRecordstoAPI();
         asyncUpdateManifestinTime();
@@ -308,9 +295,8 @@ public class MainActivity extends AppCompatActivity
             }
 
         }*/
-
-
     }
+
 
     public void fillSpinner() {
         //enable WAL mode in DB
@@ -551,6 +537,11 @@ public class MainActivity extends AppCompatActivity
         return date.format(currentLocalTime);
     }
 
+    /**
+     * @param format string
+     *               as yyyy-MM-dd'T'HH:mm:ss
+     * @return current local time
+     */
     public String getDeltasCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         //cal.add(Calendar.HOUR,-1);
@@ -633,6 +624,11 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    /**
+     * Each timer_asyncUpdateManifest time
+     * create a new instance of updatePeopleManifest Asynctask
+     * This method use executor for handle it
+     */
     private void asyncUpdateManifestinTime() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -681,6 +677,13 @@ public class MainActivity extends AppCompatActivity
            timer.schedule(task, 0, timer_asyncDeletePeopleManifest);  // 5 min=300000 // 6 min =360000
        }
    */
+
+    /**
+     * /**
+     * Each timer_asyncUpdatePeopleState time
+     * create a new instance of AsyncUpdateStateManifest Asynctask
+     * This method use executor for handle it
+     */
     private void asyncUpdateManifestState() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
@@ -749,6 +752,10 @@ public class MainActivity extends AppCompatActivity
         return total_temp;
     }
 
+    /**
+     * Init scan object
+     * Clean textviews
+     */
     public void reset() {
         try {
             initScan();
@@ -763,7 +770,10 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void sendRecordstoAPI() { //send records to api
+    /**
+     * Each timer_sendRecordsAPI time ask if must post offline records to API
+     */
+    public void sendRecordstoAPI() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
         final DatabaseHelper db = DatabaseHelper.getInstance(this);
@@ -811,7 +821,7 @@ public class MainActivity extends AppCompatActivity
             record.setReason(5);
         } else {
             TextViewRut.setText(rut);
-            if (type == 28 && !id_itinerary.isEmpty()) {//pure QR code
+            if (type == 28 && !id_itinerary.isEmpty()) { //pure QR code
                 if (id_itinerary.trim().equals(db.selectFirst("select route_id from config where route_id='" + id_itinerary + "'").trim())) {
                     validation = db.select("select p.name,m.origin from ports as p left join manifest as m on p.id_mongo=m.origin where m.id_people='" + rut + "'");
                     if (validation.getCount() != 0) {
@@ -864,6 +874,7 @@ public class MainActivity extends AppCompatActivity
             if (validation != null)
                 validation.close();
         }
+
         //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
         if (valid) {
             person = db.validatePerson(rut);
@@ -999,6 +1010,17 @@ public class MainActivity extends AppCompatActivity
         return result;
     }
 
+    /**
+     * Post data to API
+     *
+     * @param record object contains data
+     * @param url string contain base url of the endpoint
+     * @param client http
+     * @return reponse of post
+     *
+     * If post is siccessfull and its a manuall sell (new person)
+     * obtain from response person object id
+     */
     public String POST(Record record, String url, OkHttpClient client) {
         String result = "";
         String json = "";
@@ -1012,16 +1034,14 @@ public class MainActivity extends AppCompatActivity
             jsonObject.accumulate("itinerary", db.selectFirst("select id_mongo from routes where id=(select route_id from config order by id desc limit 1)"));
             jsonObject.accumulate("date", record.getDatetime());
             if (record.getTicket() != 0) {
-                url = url + "/registers/manualSell/";//manual registers
-                Log.e("URL", url);
-                // jsonObject.accumulate("ticket", record.getTicket());
+                url += "/registers/manualSell/";//manual registers
                 jsonObject.accumulate("name", record.getPerson_name());
                 jsonObject.accumulate("origin", record.getOrigin());
                 jsonObject.accumulate("destination", record.getDestination());
                 jsonObject.accumulate("ticketId", record.getTicket());
                 isManualSell=true;
             } else if (record.getPermitted() == -1) {//denied registers
-                url = url + "/registers/deniedRegister";
+                url += "/registers/deniedRegister";
                 jsonObject.accumulate("deniedReason", record.getReason());
                 jsonObject.accumulate("origin", record.getPort_registry());
             }
@@ -1041,9 +1061,7 @@ public class MainActivity extends AppCompatActivity
 
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
             // 10. convert inputstream to string
-            //aqui tmp obtiene post
 
-            Log.d("----POST response---", tmp);
             if (tmp != null) {
                 if (response.isSuccessful()) {
                     // if has sync=0 its becouse its an offline record to be will synchronized.
@@ -1055,9 +1073,7 @@ public class MainActivity extends AppCompatActivity
                         String ObjectId=jsonManualSell.getString("registerId").trim();
                         String personId=jsonManualSell.getString("personId").trim();
                         if(!ObjectId.isEmpty()&&!personId.isEmpty())
-                        db.insert("update people set id_register='"+ObjectId+"',id_mongo='"+ObjectId+"' where document='"+record.getPerson_document()+"'");
-
-
+                            db.insert("update people set id_register='"+ObjectId+"',id_mongo='"+ObjectId+"' where document='"+record.getPerson_document()+"'");
                     }
                 }
             } else {
@@ -1241,7 +1257,6 @@ public class MainActivity extends AppCompatActivity
      * @param position= 1(manifestcount),2(pendingCount),3(embarkedCount),4(landedCount)
      * @return count=return count of selected position
      */
-
     public int getCountEDP(int position) {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         int manifestCount = -1;
@@ -1299,7 +1314,6 @@ public class MainActivity extends AppCompatActivity
                         getInformation = Asyntask_insertNewPeopleManifest(URL, route);
                         break;
                 }
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -1310,15 +1324,11 @@ public class MainActivity extends AppCompatActivity
         public String toString() {
             return getInformation + "";
         }
-
-        protected void onPostExecute(String result) {
-            Log.d("getAPIInformation Res", result);
-        }
-
     }
 
     /**
-     * get list from api, then, take each documentId and find this in manifest table, if found it, compare state that is entering with state in db
+     * Get list from api, then, take each documentId and find this in manifest table
+     * if found it, compare state that is entering with state in db
      */
     public void getUpdateStates(OkHttpClient client) {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
@@ -1446,6 +1456,7 @@ public class MainActivity extends AppCompatActivity
             outState.putInt("combolanded", selectedIntSpinnerLanded);
         Log.e("state spinner", "" + selectedIntSpinnerLanded);
     }*/
+
     private void killAyntask(boolean state) {
         Asynctask_sendRecord.cancel(state); //asyntask that send data to api axxezo
         AsyncTask_updatePeopleManifest.cancel(state);//asyntask to update in realtime new people inserts in manifest
