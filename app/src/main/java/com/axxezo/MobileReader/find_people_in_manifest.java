@@ -46,7 +46,6 @@ public class find_people_in_manifest extends AppCompatActivity {
     MediaPlayer mp3Permitted;
     MediaPlayer mp3Error;
     private DatabaseHelper db;
-    log_app log = new log_app();
 
 
     @Override
@@ -108,6 +107,7 @@ public class find_people_in_manifest extends AppCompatActivity {
 
             mVibrator.vibrate(100);
             reset("");
+            Slack slack=new Slack();
 
             byte[] barcode = intent.getByteArrayExtra("barocode");
             int barocodelen = intent.getIntExtra("length", 0);
@@ -165,7 +165,7 @@ public class find_people_in_manifest extends AppCompatActivity {
                     if (isValid)
                         barcodeStr = rutValidator;
                     else {
-                        log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
+                        slack.sendMessage("ERROR","Dni invalido "+barcodeStr+ "\nfind_people_in_manifest Line: " + new Throwable().getStackTrace()[0].getLineNumber());
                         barcodeStr = "";
                     }
                 }

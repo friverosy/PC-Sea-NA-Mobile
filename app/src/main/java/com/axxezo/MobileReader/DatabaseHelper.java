@@ -233,7 +233,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insertJSON(String json, String table) throws JSONException {
         SQLiteDatabase db = getWritableDatabase();
-        log_app log = new log_app();
+        Slack slack=new Slack();
         JSONObject objectJson;
         JSONArray jsonArray;
         //json="[{\"personId\":\"592c5265ba5f6d63dd7da5cd\",\"documentId\":\"10843179-2\",\"name\":\"LUIS HIJERRA\",\"origin\":\"58de6d99f853f2066f688f9d\",\"destination\":\"58de6d96f853f2066f688f88\",\"refId\":1914,\"manifestId\":\"592c5265ba5f6d63dd7da5cc\",\"registerId\":\"592c5265ba5f6d63dd7da5ce\",\"isOnboard\":false,\"reservationStatus\":-1}]";
@@ -263,8 +263,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
-                        e.printStackTrace();
-                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                        slack.sendMessage("cannot insert routes",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
                     } finally {
                         db.endTransaction();
                     }
@@ -312,15 +311,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 if (cursor != null)
                                     cursor.close();
                             } catch (Exception e) {
-                                e.printStackTrace();
-                                log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                                slack.sendMessage("ERROR",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
                             }
                         }
                         // finnaly insert fill config table
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
                         e.printStackTrace();
-                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                        slack.sendMessage("cannot insert manifest",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
                     } finally {
                         db.endTransaction();
                     }
@@ -344,16 +342,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                         null, //nullColumnHack
                                         values); // key/value -> keys = column names/ values = column values
                             } catch (Exception e) {
-                                e.printStackTrace();
-                                log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-                                Log.e("ports", e.getMessage());
+                                slack.sendMessage("ERROR",e.getMessage() + "\nLine: " + new Throwable().getStackTrace()[0].getLineNumber());
                             }
                             values.clear();
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
-                        e.printStackTrace();
-                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+                        slack.sendMessage("cannot insert ports ",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
                     } finally {
                         db.endTransaction();
                     }
@@ -366,7 +361,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public String selectFirst(String Query) {
         String firstElement = "";
-        log_app log = new log_app();
+        Slack slack=new Slack();
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = null;
         try {
@@ -379,8 +374,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 firstElement = cursor.getString(0);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot execute query",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
@@ -401,7 +395,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Cursor validatePerson(String rut) {
         //return the person data if this person is in manifest table
         SQLiteDatabase db = this.getWritableDatabase();
-        log_app log = new log_app();
+        Slack slack =new Slack();
         Cursor cursor = null;
         String row = "";
         try {
@@ -409,16 +403,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     "m.boletus,p.id_mongo," + PERSON_REGISTER_ID + " from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot validate person",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         }
         return cursor;
     }
 
     public void add_record(Record record) {
+        Slack slack=new Slack();
         // 1. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
-        log_app log = new log_app();
 
         // 2. create ContentValues to add key "column"/value
         ContentValues values = new ContentValues();
@@ -445,8 +438,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.insert(TABLE_RECORDS, null, values);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot insert records in db",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         }
         // 4. close
         finally {
@@ -456,7 +448,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public List<Record> get_desynchronized_records() {
-        log_app log = new log_app();
+        Slack slack=new Slack();
         Cursor cursor = null;
         List<Record> records = new ArrayList<>();
         // 1. get reference to readable DB
@@ -500,7 +492,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } catch (android.database.SQLException e) {
             e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot obtain desync registers",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             if (cursor != null)
                 cursor.close();
@@ -510,7 +502,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void update_record(int id) {
-        log_app log = new log_app();
+        Slack slack=new Slack();
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         int i = 0;
@@ -524,8 +516,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     null);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot update record",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             // 4. close
             db.endTransaction();
@@ -536,14 +527,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void updatePeopleManifest(String rut, String origin, String destination, int input) {
         SQLiteDatabase db = this.getWritableDatabase();
-        log_app log = new log_app();
+        Slack slack=new Slack();
         try {
             db.beginTransactionNonExclusive();
             db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut + "' and origin='" + origin + "' and destination='" + destination + "'");
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot update people",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
@@ -551,7 +541,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public Cursor select(String select) {
         SQLiteDatabase db = this.getWritableDatabase();
-        log_app log = new log_app();
+        Slack slack= new Slack();
         Cursor cursor = null;
         try {
             cursor = db.rawQuery(select, null);
@@ -559,22 +549,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.moveToFirst();
             //cursor.moveToFirst();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot execute query",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         }
         return cursor;
     }
 
     public void insert(String insert) {
         SQLiteDatabase db = this.getWritableDatabase();
-        log_app log = new log_app();
+        Slack slack=new Slack();
         try {
             db.beginTransactionNonExclusive();
             db.execSQL(insert);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("ERROR",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
@@ -584,7 +572,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public ArrayList<String> selectAsList(String qry, int position) {
         SQLiteDatabase db = this.getWritableDatabase();
         ArrayList<String> list = new ArrayList<String>();
-        log_app log = new log_app();
+        Slack slack=new Slack();
         Cursor cursor = null;
         try {
             cursor = db.rawQuery(qry, null);
@@ -592,8 +580,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 list.add(cursor.getString(position));
             }
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot convert to ArrayList",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         }
         if (cursor != null) {
             cursor.close();
@@ -614,14 +601,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void updateConfig(String route) {
         SQLiteDatabase db = this.getWritableDatabase();
-        log_app log = new log_app();
+        Slack slack=new Slack();
         try {
             db.beginTransactionNonExclusive();
             db.execSQL("update config set route_id=" + route + " where id=1");
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            e.printStackTrace();
-            log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
+            slack.sendMessage("cannot update route_id",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
