@@ -1,5 +1,6 @@
 package com.axxezo.MobileReader;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
@@ -24,6 +25,12 @@ import okhttp3.Response;
  */
 
 public class Slack {
+    private Context context;
+
+    public Slack(Context context){
+        this.context=context;
+    }
+
 
     public void sendMessage(String title, String message) {
         new sendTask(title, message).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -51,13 +58,15 @@ public class Slack {
         String json = "";
         JSONObject jsonObject = new JSONObject();
         JSONArray jsonArray = new JSONArray();
+        DatabaseHelper db=DatabaseHelper.getInstance(context);
+        String route=db.selectFirst("select route_name from config");
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
         try {
 
             jsonObject.put("title", "Stacktrace PDA " + Build.SERIAL);
             jsonObject.put("color", "#FA5858");
-            jsonObject.put("author_name", "Nave");
+            jsonObject.put("author_name",route);
             jsonObject.put("pretext", title);
             jsonObject.put("text", message);
             jsonObject.put("footer","Naviera Austral");

@@ -163,6 +163,7 @@ public class MainActivity extends AppCompatActivity
     private String updateTimePeople;
     private String TextViewTimePeople;
     public ArrayAdapter<String> adapter;
+    private String route;
 
     /********
      * Timers Asyntask
@@ -213,7 +214,8 @@ public class MainActivity extends AppCompatActivity
         // AxxezoAPI = "http://192.168.1.102:9001/api";
         //AxxezoAPI = "http://bm03.bluemonster.cl:9001/api";
         AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
-        Log.d("deltasUTC", getDeltasCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss"));
+        DatabaseHelper db=DatabaseHelper.getInstance(this);
+        route=db.selectFirst("select route_name from config")!=null?db.selectFirst("select route_name from config"):"";
 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -436,7 +438,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Slack slack = new Slack();
+            Slack slack = new Slack(getApplicationContext());
             // TODO Auto-generated method stub
             try {
                 new LoadSound(4).execute();
@@ -632,7 +634,7 @@ public class MainActivity extends AppCompatActivity
 
     private void asyncUpdateManifestinTime() {
         final Handler handler = new Handler();
-        final Slack slack = new Slack();
+        final Slack slack = new Slack(getApplicationContext());
         Timer timer = new Timer();
 
         TimerTask task = new TimerTask() {
@@ -680,7 +682,7 @@ public class MainActivity extends AppCompatActivity
    */
     private void asyncUpdateManifestState() {
         final Handler handler = new Handler();
-        final Slack slack = new Slack();
+        final Slack slack = new Slack(getApplicationContext());
         Timer timer = new Timer();
         TimerTask task = new TimerTask() {
             @Override
@@ -708,7 +710,7 @@ public class MainActivity extends AppCompatActivity
     private int Asyntask_insertNewPeopleManifest() {
         //update manifest
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        Slack slack=new Slack();
+        Slack slack=new Slack(getApplicationContext());
         int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
         int total_temp = 0;
         try {
@@ -763,7 +765,7 @@ public class MainActivity extends AppCompatActivity
         final Handler handler = new Handler();
         Timer timer = new Timer();
         final DatabaseHelper db = DatabaseHelper.getInstance(this);
-        final Slack slack= new Slack();
+        final Slack slack= new Slack(getApplicationContext());
 
         TimerTask task = new TimerTask() {
             @Override
@@ -943,7 +945,6 @@ public class MainActivity extends AppCompatActivity
         String json = "";
         JSONObject jsonObject = new JSONObject();
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        Slack slack=new Slack();
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
         try {
@@ -988,7 +989,7 @@ public class MainActivity extends AppCompatActivity
             if (result.startsWith("http://"))
                 result = "204"; //no content
         } catch (JSONException | IOException e) {
-            slack.sendMessage("ERROR", e.getMessage() + "\nMainActivity Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            e.printStackTrace();
         }
 
         // 11. return result
@@ -1001,7 +1002,6 @@ public class MainActivity extends AppCompatActivity
         boolean isManualSell = false;
         JSONObject jsonObject = new JSONObject();
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        Slack slack=new Slack();
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
         try {
@@ -1066,7 +1066,8 @@ public class MainActivity extends AppCompatActivity
             if (result.startsWith("http://"))
                 result = "204"; //no content
         } catch (JSONException | IOException e) {
-            slack.sendMessage("cannot POST", e.getMessage() + "\nMainActivity Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            e.printStackTrace();
+
         }
         // 11. return result
         return result;
@@ -1319,7 +1320,7 @@ public class MainActivity extends AppCompatActivity
      */
     public void getUpdateStates(OkHttpClient client) {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        Slack slack=new Slack();
+        Slack slack=new Slack(this);
         Cursor itinerary = db.select("select route_id from config");
         if (itinerary.getCount() > 0) {
             String url = AxxezoAPI + "/registers/status?itinerary=" + itinerary.getInt(0);

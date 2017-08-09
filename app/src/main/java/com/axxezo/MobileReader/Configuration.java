@@ -331,7 +331,6 @@ public class Configuration extends AppCompatActivity {
         URL url = new URL(AxxezoAPI + "/itineraries?date=" + format);
         Log.d("routes url", url.toString());
         String content = "";
-        Slack slack=new Slack();
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -364,7 +363,6 @@ public class Configuration extends AppCompatActivity {
         //"http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/manifests?itinerary="
         URL url = new URL(Url + "/manifests?itinerary=" + id_mongo_route);
         String content = "";
-        Slack slack=new Slack();
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -394,7 +392,6 @@ public class Configuration extends AppCompatActivity {
     public String getPorts(String Url, String id_mongo_route, OkHttpClient client) throws IOException {
         URL url = new URL(Url + "/itineraries/" + id_mongo_route + "/seaports");
         String content = "";
-        Slack slack=new Slack();
         Request request = new Request.Builder()
                 .url(url)
                 .get()

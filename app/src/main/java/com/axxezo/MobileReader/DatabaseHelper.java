@@ -233,7 +233,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insertJSON(String json, String table) throws JSONException {
         SQLiteDatabase db = getWritableDatabase();
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         JSONObject objectJson;
         JSONArray jsonArray;
         //json="[{\"personId\":\"592c5265ba5f6d63dd7da5cd\",\"documentId\":\"10843179-2\",\"name\":\"LUIS HIJERRA\",\"origin\":\"58de6d99f853f2066f688f9d\",\"destination\":\"58de6d96f853f2066f688f88\",\"refId\":1914,\"manifestId\":\"592c5265ba5f6d63dd7da5cc\",\"registerId\":\"592c5265ba5f6d63dd7da5ce\",\"isOnboard\":false,\"reservationStatus\":-1}]";
@@ -361,7 +361,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public String selectFirst(String Query) {
         String firstElement = "";
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = null;
         try {
@@ -395,7 +395,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Cursor validatePerson(String rut) {
         //return the person data if this person is in manifest table
         SQLiteDatabase db = this.getWritableDatabase();
-        Slack slack =new Slack();
+        Slack slack =new Slack(context);
         Cursor cursor = null;
         String row = "";
         try {
@@ -409,7 +409,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void add_record(Record record) {
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         // 1. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -448,7 +448,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public List<Record> get_desynchronized_records() {
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         Cursor cursor = null;
         List<Record> records = new ArrayList<>();
         // 1. get reference to readable DB
@@ -502,7 +502,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void update_record(int id) {
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         int i = 0;
@@ -527,7 +527,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void updatePeopleManifest(String rut, String origin, String destination, int input) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         try {
             db.beginTransactionNonExclusive();
             db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut + "' and origin='" + origin + "' and destination='" + destination + "'");
@@ -541,7 +541,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public Cursor select(String select) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Slack slack= new Slack();
+        Slack slack= new Slack(context);
         Cursor cursor = null;
         try {
             cursor = db.rawQuery(select, null);
@@ -556,7 +556,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insert(String insert) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         try {
             db.beginTransactionNonExclusive();
             db.execSQL(insert);
@@ -572,7 +572,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public ArrayList<String> selectAsList(String qry, int position) {
         SQLiteDatabase db = this.getWritableDatabase();
         ArrayList<String> list = new ArrayList<String>();
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         Cursor cursor = null;
         try {
             cursor = db.rawQuery(qry, null);
@@ -601,7 +601,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void updateConfig(String route) {
         SQLiteDatabase db = this.getWritableDatabase();
-        Slack slack=new Slack();
+        Slack slack=new Slack(context);
         try {
             db.beginTransactionNonExclusive();
             db.execSQL("update config set route_id=" + route + " where id=1");

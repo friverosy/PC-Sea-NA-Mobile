@@ -107,7 +107,7 @@ public class find_people_in_manifest extends AppCompatActivity {
 
             mVibrator.vibrate(100);
             reset("");
-            Slack slack=new Slack();
+            Slack slack=new Slack(getApplicationContext());
 
             byte[] barcode = intent.getByteArrayExtra("barocode");
             int barocodelen = intent.getIntExtra("length", 0);
