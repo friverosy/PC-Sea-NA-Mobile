@@ -332,7 +332,6 @@ public class Configuration extends AppCompatActivity {
         URL url = new URL(AxxezoAPI + "/itineraries?date=" + format);
         Log.d("routes url", url.toString());
         String content = "";
-        log_app log = new log_app();
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -348,7 +347,6 @@ public class Configuration extends AppCompatActivity {
 
         } catch (IOException e) {
             final String error = e.getMessage();
-            log.writeLog(getApplicationContext(), "Configuration:line 333", "ERROR", e.getMessage());
             runOnUiThread(new Runnable() {
 
                 @Override
@@ -365,7 +363,6 @@ public class Configuration extends AppCompatActivity {
     public String getManifest(String Url, String Token, String id_mongo_route, OkHttpClient client) throws IOException {
         URL url = new URL(Url + "/manifests?itinerary=" + id_mongo_route);
         String content = "";
-        log_app log = new log_app();
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -379,7 +376,6 @@ public class Configuration extends AppCompatActivity {
                 content = response.code() + "";
         } catch (IOException e) {
             final String error = e.getMessage();
-            log.writeLog(getApplicationContext(), "Configuration:line 366", "ERROR", e.getMessage());
             runOnUiThread(new Runnable() {
 
                 @Override
@@ -396,7 +392,6 @@ public class Configuration extends AppCompatActivity {
     public String getPorts(String Url, String id_mongo_route, OkHttpClient client) throws IOException {
         URL url = new URL(Url + "/itineraries/" + id_mongo_route + "/seaports");
         String content = "";
-        log_app log = new log_app();
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -411,7 +406,6 @@ public class Configuration extends AppCompatActivity {
             Log.e("ports content", content);
         } catch (IOException e) {
             final String error = e.getMessage();
-            log.writeLog(getApplicationContext(), "Configuration:line 333", "ERROR", e.getMessage());
             runOnUiThread(new Runnable() {
 
                 @Override
