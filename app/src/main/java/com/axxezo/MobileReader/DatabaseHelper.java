@@ -118,7 +118,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE, PERSON_REGISTER_ID};
     private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON, RECORD_MONGO_ID_MANIFEST, RECORD_MONGO_ID_REGISTER};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
-    private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME};
+    private static final String[] ROUTES_COLUMNS = {ROUTE_ID, ROUTE_NAME,ROUTE_MONGO_ID};
     private static final String[] PORTS_COLUMNS = {PORT_ID, PORT_NAME};
     private static final String[] TRANSPORTS_COLUMNS = {SHIP_ID, SHIP_NAME};
     private static final String[] HOURS_COLUMNS = {HOUR_ID, HOUR_NAME};
@@ -612,43 +612,49 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.endTransaction();
         }
     }
-    /*
-    case "manifest_delete":
-                if (!json.isEmpty() && json.length() > 3) {
-                    jsonArray = new JSONArray(json);
-                    try {
-                        db.beginTransactionNonExclusive();
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            try {
-                                if (jsonArray.getJSONObject(i).getInt("reservationStatus") == -1) {
-                                    navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0, jsonArray.getJSONObject(i).getInt("reservationStatus"));
-                                    String doc;
-                                    doc = jsonArray.getJSONObject(i).getString("documentId").toUpperCase();
-                                    if (doc.contains("-"))
-                                        doc = doc.substring(0, doc.length() - 2);
-                                    Cursor cursor = null;
-                                    cursor = db.rawQuery("select count(id) from manifest WHERE id_people='" + doc + "'", null);
-                                    if (cursor.getCount() > 0) { //when person is in manifest delete it
-                                       db.execSQL("delete from manifest where id_people='"+doc+"'");
-                                    }
-                                    if (cursor != null)
-                                        cursor.close();
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-                            }
-                            db.setTransactionSuccessful();
-                        }
-                    } catch (android.database.SQLException e) {
-                        e.printStackTrace();
-                        log.writeLog(context, "DBHelper", "ERROR", e.getMessage());
-                    } finally {
-                        db.endTransaction();
-                    }
-                } else
-                    Log.i("error", "Json empty!");
-                break;
+    public ArrayList<Routes> getRoutes(){
+        ArrayList<Routes> routesList=new ArrayList<Routes>();
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor=null;
+        Slack slack=new Slack(context);
+        try {
+            //1.- add empty route by default
+            routesList.add(new Routes(0, "<ELIJA UNA RUTA>"));
 
-     */
+            // 2. build query
+            cursor =
+                    db.query(TABLE_ROUTES, // a. table
+                            ROUTES_COLUMNS, // b. column names
+                            null, // c. selections
+                            null, // d. selections args
+                            null, // e. group by
+                            null, // f. having
+                            null, // g. order by
+                            null); // h. limit
+
+            // 3. get all
+            cursor.moveToFirst();
+
+            while (!cursor.isAfterLast()) {
+                Routes routes = new Routes();
+                routes.setID(cursor.getInt(cursor.getColumnIndex(ROUTE_ID)));
+                routes.setName(cursor.getString(cursor.getColumnIndex(ROUTE_NAME)));
+                routes.setId_mongo(cursor.getString(cursor.getColumnIndex(ROUTE_MONGO_ID)));
+                routesList.add(routes);
+                cursor.moveToNext();
+            }
+        } catch (android.database.SQLException e) {
+            e.printStackTrace();
+            slack.sendMessage("cannot obtain desync registers",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+        } finally {
+            if (cursor != null)
+                cursor.close();
+        }
+        // 5. return
+        return routesList;
+
+
+
+
+    }
 }
