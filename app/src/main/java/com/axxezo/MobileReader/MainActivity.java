@@ -76,7 +76,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -105,7 +104,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -165,9 +163,9 @@ public class MainActivity extends AppCompatActivity
      * Asyntask declarations.....
      */
     private RegisterTask Asynctask_sendRecord; //asyntask that send data to api axxezo
-    private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest;//asyntask to update in realtime new people inserts in manifest
-    private AsyncUpdateStateManifest AsynTask_UpdateStateManifest;// asyntask to update states of people insert in manifest table;
-    // private AsyncUpdateStateManifest AsynTask_UpdateDeletePerson;// asyntask to update states of people insert in manifest table;
+    private asyncTask_updatePeopleManifest AsyncTask_updatePeopleManifest; //Asyntask to update in realtime new people inserts in manifest
+    private AsyncUpdateStateManifest AsynTask_UpdateStateManifest; // Asyntask to update states of people insert in manifest table;
+    // private AsyncUpdateStateManifest AsynTask_UpdateDeletePerson; // Asyntask to update states of people insert in manifest table;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -191,13 +189,13 @@ public class MainActivity extends AppCompatActivity
         selectedSpinnerLanded = "";
         TextViewTimePeople = "";
 
-
-        //asign timers to Asyntask
+        // Asign timers to Asyntask
         timer_sendRecordsAPI = 30000;                           //30 sec=30.000
         timer_asyncUpdateManifest = 120000;                     //2 min =120.000
         timer_asyncUpdatePeopleState = 15000;                   //15 sec=15.000
         timer_asyncDeletePeopleManifest = 420000;               //7 min =420000
-        //asign url api axxezo
+
+        // Asign url api axxezo
         //AxxezoAPI = "http://axxezo-test.brazilsouth.cloudapp.azure.com:5002/api";
         AxxezoAPI = "http://axxezocloud.brazilsouth.cloudapp.azure.com:5002/api";
         DatabaseHelper db=DatabaseHelper.getInstance(this);
@@ -222,7 +220,7 @@ public class MainActivity extends AppCompatActivity
             });
         }
 
-        //second fab, to show information about travel
+        // Second fab, to show information about travel
         FloatingActionButton fab2 = (FloatingActionButton) findViewById(R.id.fab2);
         if (fab2 != null)
             fab2.setOnClickListener(new View.OnClickListener() {
@@ -259,8 +257,7 @@ public class MainActivity extends AppCompatActivity
             navigationView.setNavigationItemSelectedListener(this);
         }
 
-        // set by default
-        //is_input = true;
+        // Set by default
         mySwitch.setChecked(true);
         mySwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -275,36 +272,19 @@ public class MainActivity extends AppCompatActivity
 
         fillSpinner();
 
-        //call in oncreate asyntask
+        // Call in onCreate asyntask
         sendRecordstoAPI();
         asyncUpdateManifestinTime();
-        asyncUpdateManifestState(); //pending change values from string to integer
+        asyncUpdateManifestState(); // Pending change values from string to integer
         getWindow().getDecorView().findViewById(R.id.content_main).invalidate();
-       /* DatabaseHelper db=DatabaseHelper.getInstance(this);
-        db.insert("update config set date_last_update='" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "' where id=1");
-        updateTimePeople = db.selectFirst("select date_last_update from config");
-        if (!updateTimePeople.isEmpty() && updateTimePeople != null && !updateTimePeople.equals("null")) {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-            Date newDate = null;
-            try {
-                newDate = format.parse(updateTimePeople);
-                format = new SimpleDateFormat("HH:mm");
-                String date = format.format(newDate);
-                if (!date.isEmpty() || !date.equals("null") || date != null)
-                    TextViewTimePeople = date;
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-
-        }*/
     }
 
 
     public void fillSpinner() {
-        //enable WAL mode in DB
+        // Enable WAL mode in DB
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        //db.setWriteAheadLoggingEnabled(true);
-        //fill information in combobox
+
+        // Fill information in combobox
         Cursor getOriginandDestination = db.select("select name from ports order by name desc");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
         if (getOriginandDestination != null && getOriginandDestination.getCount() > 0) {
@@ -334,12 +314,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-       /* DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }*/
         finish();
     }
 
@@ -418,7 +392,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * receive the information of barcod read and proccess that, once that extract dni of qr or barcode, send this to validate
+     * Receive the information of barcod read and proccess that,
+     * once that extract dni of qr or barcode, send this to validate
      * in method PeopleValidator
      */
     private BroadcastReceiver mScanReceiver = new BroadcastReceiver() {
@@ -456,7 +431,6 @@ public class MainActivity extends AppCompatActivity
                             PeopleValidator(doc, json.getString("id_itinerary"), json.getString("port"), barcodeType);
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            //slack.sendMessage("Error in Json format", "invalid Json " + e.getMessage() + "MainActivity Line: " + new Throwable().getStackTrace()[0].getLineNumber());
                         }
                     }else if (rawCode.equals("close trip now")) {
                         if (comboLanded.getCount() > 0) {
@@ -482,7 +456,7 @@ public class MainActivity extends AppCompatActivity
 
                 }
                 if (barcodeType == 17) { // PDF417->old dni
-                    // 1.- validate if the rut is > 10 millions
+                    // Validate if the rut is > 10 millions
                     String rutValidator = barcodeStr.substring(0, 8);
                     rutValidator = rutValidator.replace(" ", "");
                     rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
@@ -490,7 +464,8 @@ public class MainActivity extends AppCompatActivity
                     boolean isvalid = ValidarRut(Integer.parseInt(rutValidator), dv);
                     if (isvalid)
                         barcodeStr = rutValidator;
-                    else { //try validate rut size below 10.000.000
+                    else {
+                        // Try validate rut size below 10.000.000
                         rutValidator = barcodeStr.substring(0, 7);
                         rutValidator = rutValidator.replace(" ", "");
                         rutValidator = rutValidator.endsWith("K") ? rutValidator.replace("K", "0") : rutValidator;
@@ -499,10 +474,8 @@ public class MainActivity extends AppCompatActivity
                         if (isvalid)
                             barcodeStr = rutValidator;
                         else {
-                            //log.writeLog(getApplicationContext(), "Main:line 412", "ERROR", "rut invalido " + barcodeStr);
                             barcodeStr = "";
                             TextViewStatus.setText("RUT INVALIDO");
-                            //slack.sendMessage("ERROR", "RUT invalido (" + rawCode + ")" + "\nLine: " + new Throwable().getStackTrace()[0].getLineNumber());
                         }
                     }
                     // Get name from DNI.
@@ -519,10 +492,8 @@ public class MainActivity extends AppCompatActivity
                 }
             } catch (NullPointerException e) {
                 e.printStackTrace();
-                //slack.sendMessage("ERROR", e.getMessage() + "\nLine: " + new Throwable().getStackTrace()[0].getLineNumber());
             } catch (Exception e) {
                 e.printStackTrace();
-                //slack.sendMessage("ERROR", e.getMessage() + "\nLine: " + new Throwable().getStackTrace()[0].getLineNumber());
             }
         }
     };
@@ -554,7 +525,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * method that validate old and new chilean national identity card
+     * Method that validate old and new chilean national identity card
      *
      * @param rut=number without check digit
      * @param dv=        only check digit
@@ -587,7 +558,6 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         // TODO Auto-generated method stub
         super.onPause();
-        //fillSpinner();
         if (mScanManager != null) {
             mScanManager.stopDecode();
             isScaning = false;
@@ -608,12 +578,11 @@ public class MainActivity extends AppCompatActivity
         IntentFilter filter = new IntentFilter();
         filter.addAction(SCAN_ACTION);
         registerReceiver(mScanReceiver, filter);
-        //load spinner selected in sharedPreference method
+        // Load spinner selected in sharedPreference method
 
         SharedPreferences sharedPref = getSharedPreferences("userPreference", MODE_PRIVATE);
         int spinnerValue = sharedPref.getInt("spinnerSelection", -1);
         if (spinnerValue != -1) {// set the value of the spinner
-            //  Log.e("estoy aqui", "estoy cargando sharedPreference");
             comboLanded.setSelection(spinnerValue);
         }
     }
@@ -707,12 +676,12 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * call method getUpdatePeopleManifest per each port save in DB, in each port, get new person and insert that
+     * Call method getUpdatePeopleManifest per each port save in DB, in each port, get new person and insert that
      *
      * @return integer with difference between old manifest and new manifest with people download
      */
     private int Asyntask_insertNewPeopleManifest() {
-        //update manifest
+        // Update manifest
         DatabaseHelper db = DatabaseHelper.getInstance(this);
         Slack slack=new Slack(getApplicationContext());
         int count_before = Integer.parseInt(db.selectFirst("select count(id) from manifest"));
@@ -747,7 +716,7 @@ public class MainActivity extends AppCompatActivity
         } catch (android.database.SQLException | JSONException | ExecutionException | InterruptedException e) {
             slack.sendMessage("cannot insert people in manifest", e.getMessage() + "\nMainActivity Line: " + new Throwable().getStackTrace()[0].getLineNumber());
         }
-        Log.e("asynctask", "insertnewpeoplemanifest");
+        // Log.e("asynctask", "insertnewpeoplemanifest");
         return total_temp;
     }
 
@@ -874,7 +843,7 @@ public class MainActivity extends AppCompatActivity
                 validation.close();
         }
 
-        //2.-fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
+        // Fill person information in cursor person, order in cursor rut,name,origin,destination,boletus
         if (valid) {
             person = db.validatePerson(rut);
             record.setPerson_document(rut);
@@ -894,7 +863,7 @@ public class MainActivity extends AppCompatActivity
             imageview.setImageResource(R.drawable.img_true);
             TextViewStatus.setText("");
 
-            //fill record
+            // Fill record
             record.setPermitted(1);
 
             if (is_input) {
@@ -904,8 +873,6 @@ public class MainActivity extends AppCompatActivity
                 record.setInput(2);
                 db.updatePeopleManifest(rut, person.getString(2), person.getString(3), 2);
             }
-
-            //record.setPort_registry(comboLanded.getSelectedItem().toString());
 
             record.setOrigin(person.getString(2));
             record.setDestination(person.getString(3));
@@ -934,7 +901,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * get all register in table records where sync=0 (not synchronized) and put this in a List<Records>
+     * Get all register in table records where sync=0 (not synchronized) and put this in a List<Records>
      * once done, send list to asyncronous sendRecords
      */
     public void OfflineRecordsSynchronizer() {
@@ -961,17 +928,13 @@ public class MainActivity extends AppCompatActivity
                 = MediaType.parse("application/json; charset=utf-8");
         try {
             url = url + "/registers/" + record.getMongo_id_register();
-            Log.d("put", url);
             jsonObject.accumulate("person", record.getMongo_id_person());
             jsonObject.accumulate("seaport", record.getPort_registry());
             //jsonObject.accumulate("manifest", record.getMongo_id_manifest()); //falta
             jsonObject.accumulate("state", record.getInput() + "");
             jsonObject.accumulate("date", record.getDatetime()); //falta formatear 2017-01-01 00:00:00
 
-            Log.e("debug", url.toString());
-
             json = jsonObject.toString();
-            Log.d(url, json);
 
             RequestBody body = RequestBody.create(JSON, json);
 
@@ -985,11 +948,10 @@ public class MainActivity extends AppCompatActivity
             Response response = client.newCall(request).execute();
 
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
-            // 10. convert inputstream to string
-            Log.d("---Response---", tmp);
+            // Convert inputstream to string
             if (tmp != null) {
                 if (response.isSuccessful()) {
-                    // if has sync=0 its becouse its an offline record to be will synchronized.
+                    // If has sync=0 its becouse its an offline record to be will synchronized.
                     if (record.getSync() == 0) {
                         db.update_record(record.getId());
                     }
@@ -997,7 +959,7 @@ public class MainActivity extends AppCompatActivity
             } else {
                 result = String.valueOf(response.code());
             }
-            //result its the json to sent
+            // Result its the json to sent
             if (result.startsWith("http://"))
                 result = "204"; //no content
         } catch (JSONException | IOException e) {
@@ -1045,7 +1007,7 @@ public class MainActivity extends AppCompatActivity
             }
 
             json = jsonObject.toString();
-            Log.e(url, json);
+            // Log.e(url, json);
             RequestBody body = RequestBody.create(JSON, json);
 
             Request request = new Request.Builder()
@@ -1054,15 +1016,15 @@ public class MainActivity extends AppCompatActivity
                     .post(body)
                     .build();
 
-            //POST using okhttp
+            // POST using okhttp
             Response response = client.newCall(request).execute();
 
             String tmp = response.body().string(); //Response{protocol=http/1.1, code=401, message=Unauthorized, url=http://axxezo-test.brazilsouth.cloudapp.azure.com:9001/api/registers}
-            // 10. convert inputstream to string
+            // Convert inputstream to string
 
             if (tmp != null) {
                 if (response.isSuccessful()) {
-                    // if has sync=0 its becouse its an offline record to be will synchronized.
+                    // If has sync=0 its becouse its an offline record to be will synchronized.
                     if (record.getSync() == 0) {
                         db.update_record(record.getId());
                     }
@@ -1077,14 +1039,13 @@ public class MainActivity extends AppCompatActivity
             } else {
                 result = String.valueOf(response.code());
             }
-            //result its the json to sent
+            // Result its the json to sent
             if (result.startsWith("http://"))
                 result = "204"; //no content
         } catch (JSONException | IOException e) {
             e.printStackTrace();
 
         }
-        // 11. return result
         return result;
     }
 
@@ -1144,7 +1105,6 @@ public class MainActivity extends AppCompatActivity
                     .writeTimeout(0, TimeUnit.SECONDS)
                     .readTimeout(0, TimeUnit.SECONDS)
                     .build();
-
             getUpdateStates(client);
             return null;
         }
@@ -1169,7 +1129,7 @@ public class MainActivity extends AppCompatActivity
         String content = "";
         HttpURLConnection conn = null;
         try {
-            Log.e("URL async_new People", url.toString());
+            // Log.e("URL async_new People", url.toString());
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("TOKEN", token_navieraAustral);
             conn.setRequestMethod("GET");
@@ -1249,7 +1209,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
-     * return value count of DB, corresponding to embark,landed and pending
+     * Return value count of DB, corresponding to embark,landed and pending
      *
      * @param position= 1(manifestcount),2(pendingCount),3(embarkedCount),4(landedCount)
      * @return count=return count of selected position
@@ -1343,8 +1303,7 @@ public class MainActivity extends AppCompatActivity
 
             if (itinerary != null)
                 itinerary.close();
-            // Log.e("timeout get",client.readTimeoutMillis()+"");
-            //1.- obtaining json array with states from endpoint
+            // Obtaining json array with states from endpoint
             try {
                 response = client.newCall(request).execute();
                 if (response != null) {
@@ -1360,11 +1319,10 @@ public class MainActivity extends AppCompatActivity
                 if (response != null)
                     response.close();
             } catch (IOException e) {
-                //slack.sendMessage("ERROR",e.getMessage() + "\nLine: " + new Throwable().getStackTrace()[0].getLineNumber());
                 AsynTask_UpdateStateManifest.cancel(true);
             }
 
-            //2.- process JSONarray, ask each jsonobject if exist in manifest table and compare states
+            // Process JsonArray, ask each jsonobject if exist in manifest table and compare states
             if (jsonArray != null && jsonArray.length() > 0) {
                 JSONObject person_information;
                 String getInside;
@@ -1378,10 +1336,8 @@ public class MainActivity extends AppCompatActivity
                         if (dni_json.contains("-"))
                             dni_json = dni_json.substring(0, dni_json.indexOf("-"));
                         getInside = db.selectFirst("select is_inside from manifest where id_people='" + dni_json + "'");
-                        //Log.e(dni_json, person_information.getString("state"));
 
                         if (!getInside.isEmpty() && (!getInside.equals(person_information.getString("state"))) && !origin.isEmpty()) {
-                            //Log.d(dni_json + " " + getInside, person_information.getString("state"));
                             db.insert("update manifest set is_inside='" + person_information.getString("state") +
                                     "' where id_people='" + dni_json.trim().toUpperCase() + "' and origin='" + origin + "'");
                         }
@@ -1453,9 +1409,9 @@ public class MainActivity extends AppCompatActivity
     }*/
 
     private void killAyntask(boolean state) {
-        Asynctask_sendRecord.cancel(state); //asyntask that send data to api axxezo
-        AsyncTask_updatePeopleManifest.cancel(state);//asyntask to update in realtime new people inserts in manifest
-        AsynTask_UpdateStateManifest.cancel(state);// asyntask to update states of people insert in manifest table;
+        Asynctask_sendRecord.cancel(state); // Asyntask that send data to api axxezo
+        AsyncTask_updatePeopleManifest.cancel(state);// Asyntask to update in realtime new people inserts in manifest
+        AsynTask_UpdateStateManifest.cancel(state);// Asyntask to update states of people insert in manifest table;
     }
 
     @Override

@@ -18,6 +18,14 @@ public class Routes {
         this.id_mongo=id_mongo;
     }
 
+    public Routes(int ID, String name) {
+        this.ID = ID;
+        this.name = name;
+    }
+    public Routes(){
+
+    }
+
     public int getID() {
         return ID;
     }
@@ -50,7 +58,8 @@ public class Routes {
         this.sailing_date = sailing_date;
     }
 
-    public String toString(){
-        return "ID:"+ID+","+"Nombre:"+name;
+    @Override
+    public String toString() {
+        return  name;
     }
 }

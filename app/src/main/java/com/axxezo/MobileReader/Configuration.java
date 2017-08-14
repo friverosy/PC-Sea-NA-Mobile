@@ -7,16 +7,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.os.Vibrator;
-import android.provider.ContactsContract;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Config;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -33,21 +26,16 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Locale;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -73,7 +61,7 @@ public class Configuration extends AppCompatActivity {
     private TextView route;
     private TextView dataPicker;
     private ProgressDialog progressDialog;
-    private boolean asynctask_running=false;
+    private boolean asynctask_running = false;
     final Calendar myCalendar = Calendar.getInstance();
 
     @Override
@@ -112,8 +100,8 @@ public class Configuration extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "se ha reiniciado la sincronizacion exitosamente", Toast.LENGTH_SHORT).show();
 
                 Intent refresh = getIntent();
-                refresh.putExtra("spinner","reload");
-                setResult(RESULT_OK,refresh);
+                refresh.putExtra("spinner", "reload");
+                setResult(RESULT_OK, refresh);
                 finish();
             }
         });
@@ -163,9 +151,10 @@ public class Configuration extends AppCompatActivity {
             }
         });
     }
+
     private String updateLabel() {
         String myFormat = "dd/MM/yyyy";
-        String dateTimeDBformat="yyyy-MM-dd";
+        String dateTimeDBformat = "yyyy-MM-dd";
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
         SimpleDateFormat DBformat = new SimpleDateFormat(dateTimeDBformat, Locale.getDefault());
 
@@ -180,14 +169,14 @@ public class Configuration extends AppCompatActivity {
         final DatabaseHelper db = DatabaseHelper.getInstance(this);
         //create adapter from combobox_route
         combobox_route.setClickable(true);
-        final ArrayList<String> routes = db.selectAsList("select name from routes", 0);
-        if (routes != null)
-            routes.add(0, "<ELIJA UNA RUTA>");
-        ArrayAdapter<String> adapter = null;
+        ArrayList<Routes> routes = db.getRoutes();
+        ArrayAdapter<Routes> adapter = null;
         if (routes != null) {
-            adapter = new ArrayAdapter<String>(this,
+
+            adapter = new ArrayAdapter<Routes>(this,
                     android.R.layout.simple_spinner_item, routes);
         }
+        ArrayAdapter<Routes> myAdapter = new ArrayAdapter<Routes>(this, android.R.layout.simple_spinner_item, routes);
         //combobox_route.setTag();
         //set adapter to spinner
         combobox_route.setAdapter(adapter);
@@ -197,14 +186,11 @@ public class Configuration extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 loadButton.setClickable(true);
                 if (combobox_route.getSelectedItemPosition() != 0) {
-                    String nameElement = combobox_route.getSelectedItem().toString();
-                    Cursor idElementSelected = db.select("SELECT id_mongo,id from ROUTES where name=" + "'" + nameElement + "'");
-                    if (idElementSelected.getCount() > 0) {
-                        selectionSpinnerRoute = idElementSelected.getString(1);
-                        id_api_route = idElementSelected.getString(0);
-                    }
+                    Routes routeSelected = (Routes) combobox_route.getSelectedItem();
+                    selectionSpinnerRoute = String.valueOf(routeSelected.getID());
+                    id_api_route = routeSelected.getId_mongo();
                     route.setText("Viaje " + selectionSpinnerRoute + " Seleccionado");
-                    idElementSelected.close();
+                    // Log.d("route selected id",String.valueOf(routeSelected.getID()));
                 }
             }
 
@@ -220,7 +206,7 @@ public class Configuration extends AppCompatActivity {
      */
     public void loadManifest() {
         DatabaseHelper db = DatabaseHelper.getInstance(this);
-        asynctask_running=false;
+        asynctask_running = false;
         //first delete the manifest table
         db.insert("delete from manifest");
         db.insert("delete from sqlite_sequence where name='MANIFEST'");
@@ -233,13 +219,13 @@ public class Configuration extends AppCompatActivity {
 
         try {
 
-            db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute,updateLabel()).execute().get(), "manifest");
-            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='"+selectionSpinnerRoute+"'))");//jhy
+            db.insertJSON(new getAPIInformation(AxxezoAPI, token_navieraAustral, selectionSpinnerRoute, updateLabel()).execute().get(), "manifest");
+            db.insert("insert or replace into config (route_id,manifest_id,date_last_update,route_name) values ('" + selectionSpinnerRoute + "','" + id_api_route + "','" + getCurrentDateTime("yyyy-MM-dd'T'HH:mm:ss") + "',(select name from routes where id='" + selectionSpinnerRoute + "'))");//jhy
             // cambiar insert pot update
             //db.updateConfig(selectionSpinnerRoute);
             //db.insert("insert into config (route_id) values ("+selectionSpinnerRoute+")");
             db.insertJSON(new getAPIInformation(AxxezoAPI, id_api_route).execute().get(), "ports"); //insert ports of route selected
-            asynctask_running=true;
+            asynctask_running = true;
         } catch (JSONException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -262,16 +248,16 @@ public class Configuration extends AppCompatActivity {
         private getAPIInformation(String datetime) {//routes
             getInformation = "";
             flag = 0;
-            this.datetime=datetime;
+            this.datetime = datetime;
         }
 
-        getAPIInformation(String URL, String token, String id_mongo_route,String datetime) {//manifest
+        getAPIInformation(String URL, String token, String id_mongo_route, String datetime) {//manifest
             this.URL = URL;
             this.token = token;
             this.route = id_mongo_route;
             getInformation = "";
             flag = 1;
-            this.datetime=datetime;
+            this.datetime = datetime;
         }
 
         getAPIInformation(String URL, String id_api_bsale) {//ports
@@ -292,13 +278,13 @@ public class Configuration extends AppCompatActivity {
             try {
                 switch (flag) {
                     case 0:
-                        getInformation = getRoutes(datetime,client);
+                        getInformation = getRoutes(datetime, client);
                         break;
                     case 1:
-                        getInformation = getManifest(URL, token, route,client);
+                        getInformation = getManifest(URL, token, route, client);
                         break;
                     case 2:
-                        getInformation = getPorts(URL, route,client);
+                        getInformation = getPorts(URL, route, client);
                         break;
                 }
 
@@ -330,7 +316,6 @@ public class Configuration extends AppCompatActivity {
      */
     public String getRoutes(String format, OkHttpClient client) throws IOException {
         URL url = new URL(AxxezoAPI + "/itineraries?date=" + format);
-        Log.d("routes url", url.toString());
         String content = "";
         Request request = new Request.Builder()
                 .url(url)
@@ -341,7 +326,6 @@ public class Configuration extends AppCompatActivity {
             response = client.newCall(request).execute();
             if (response != null) {
                 content = response.body().string();
-                Log.e("content", content);
             } else
                 content = response.code() + "";
 
@@ -403,7 +387,6 @@ public class Configuration extends AppCompatActivity {
                 content = response.body().string();
             } else
                 content = response.code() + "";
-            Log.e("ports content", content);
         } catch (IOException e) {
             final String error = e.getMessage();
             runOnUiThread(new Runnable() {
@@ -552,7 +535,7 @@ public class Configuration extends AppCompatActivity {
                         int ports = cursor.getInt(3);
                         if (manifest > 0 && config > 0 && people > 0 && ports > 0) {
                             progressDialog.setProgress(99);
-                           // isDone = true;
+                            // isDone = true;
                             intents = 3;
                         } else {
                             deleteCache(getApplicationContext());
