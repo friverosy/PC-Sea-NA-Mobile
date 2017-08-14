@@ -4,9 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,7 +12,6 @@ import org.json.JSONObject;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -39,7 +36,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return sInstance;
     }
 
-    //Table names
+    // Table names
     private static final String TABLE_PEOPLE = "PEOPLE";
     private static final String TABLE_RECORDS = "RECORDS";
     private static final String TABLE_ROUTES = "ROUTES";
@@ -49,7 +46,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_CONFIG = "CONFIG";
     private static final String TABLE_MANIFEST = "MANIFEST";
 
-    //table manifest
+    // Manifest Table
     private static final String MANIFEST_ID = "id";
     private static final String MANIFEST_PEOPLE_ID = "id_people";
     private static final String MANIFEST_ORIGIN = "origin";
@@ -60,7 +57,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String MANIFEST_MANUAL_SELL = "is_manual_sell";
     private static final String MANIFEST_RESERVATION_STATUS = "reservation_status";
 
-    //people
+    // People Table
     private static final String PERSON_ID = "id";
     private static final String PERSON_MONGO_ID = "id_mongo";
     private static final String PERSON_DOCUMENT = "document";
@@ -69,24 +66,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String PERSON_AGE = "age";
     private static final String PERSON_REGISTER_ID = "id_register";
 
-    //routes
+    // Routes Table
     private static final String ROUTE_ID = "id";
     private static final String ROUTE_NAME = "name";
     private static final String ROUTE_SAILING_DATE = "sailing_date";
     private static final String ROUTE_MONGO_ID = "id_mongo";
 
-    //ports
+    // Ports Table
     private static final String PORT_ID = "id";
     private static final String PORT_ID_MONGO = "id_mongo";
     private static final String PORT_ID_API = "id_api";
     private static final String PORT_NAME = "name";
     private static final String PORT_IS_IN_MANIFEST = "is_in_manifest";
 
-    //transports
+    // Transports Table
     private static final String SHIP_ID = "id";
     private static final String SHIP_NAME = "name";
 
-    //records
+    // Records Table
     private static final String RECORD_ID = "id";
     private static final String RECORD_DATETIME = "datetime";
     private static final String RECORD_PERSON_DOC = "person_document";
@@ -102,11 +99,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String RECORD_MONGO_ID_MANIFEST = "mongo_id_manifest";
     private static final String RECORD_MONGO_ID_REGISTER = "mongo_id_register";
 
-    //hours
+    // Hours Table
     private static final String HOUR_ID = "id";
     private static final String HOUR_NAME = "name";
 
-    //Config
+    // Config Table
     private static final String CONFIG_ROUTE_ID = "route_id";
     private static final String CONFIG_ROUTE_NAME = "route_name";
     private static final String CONFIG_DATE = "date";
@@ -114,7 +111,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String CONFIG_DATE_LAST_UPDATE = "date_last_update";
 
 
-    //set table colums
+    // Set table colums
     private static final String[] PEOPLE_COLUMS = {PERSON_ID, PERSON_DOCUMENT, PERSON_NAME, PERSON_NATIONALITY, PERSON_AGE, PERSON_REGISTER_ID};
     private static final String[] RECORDS_COLUMNS = {RECORD_ID, RECORD_DATETIME, RECORD_PERSON_DOC, PERSON_MONGO_ID, RECORD_PERSON_NAME, RECORD_ORIGIN, RECORD_DESTINATION, RECORD_PORT_REGISTRY, RECORD_IS_INPUT, RECORD_SYNC, RECORD_IS_PERMITTED, RECORD_TICKET, RECORD_REASON, RECORD_MONGO_ID_MANIFEST, RECORD_MONGO_ID_REGISTER};
     private static final String[] MANIFEST_COLUMNS = {MANIFEST_ID, MANIFEST_PEOPLE_ID, MANIFEST_ORIGIN, MANIFEST_DESTINATION, MANIFEST_ISINSIDE};
@@ -124,9 +121,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String[] HOURS_COLUMNS = {HOUR_ID, HOUR_NAME};
     private static final String[] CONFIG_COLUMNS = {CONFIG_ROUTE_ID, CONFIG_ROUTE_NAME, CONFIG_DATE, CONFIG_MANIFEST_ID};
 
-    // Database Version
     private static final int DATABASE_VERSION = 1;
-    // Database Name
     private static final String DATABASE_NAME = "NavieraAustral";
 
     // SQL statement to create the differents tables
@@ -236,7 +231,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Slack slack=new Slack(context);
         JSONObject objectJson;
         JSONArray jsonArray;
-        //json="[{\"personId\":\"592c5265ba5f6d63dd7da5cd\",\"documentId\":\"10843179-2\",\"name\":\"LUIS HIJERRA\",\"origin\":\"58de6d99f853f2066f688f9d\",\"destination\":\"58de6d96f853f2066f688f88\",\"refId\":1914,\"manifestId\":\"592c5265ba5f6d63dd7da5cc\",\"registerId\":\"592c5265ba5f6d63dd7da5ce\",\"isOnboard\":false,\"reservationStatus\":-1}]";
         switch (table) {
             case "routes":
                 if (json.isEmpty() || json.equals("[]"))
@@ -250,8 +244,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         for (int i = 0; i < jsonArray.length(); i++) {
                             ContentValues values = new ContentValues();
                             if (jsonArray.getJSONObject(i).getBoolean("active")) {
-                                Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("refId"), jsonArray.getJSONObject(i).getString("name").toUpperCase(),
-                                        jsonArray.getJSONObject(i).getString("depart"), jsonArray.getJSONObject(i).getString("_id"));
+                                Routes routes = new Routes(jsonArray.getJSONObject(i).getInt("refId"),
+                                        jsonArray.getJSONObject(i).getString("name").toUpperCase(),
+                                        jsonArray.getJSONObject(i).getString("depart"),
+                                        jsonArray.getJSONObject(i).getString("_id"));
                                 values.put(ROUTE_ID, routes.getID());
                                 values.put(ROUTE_NAME, routes.getName().trim());
                                 values.put(ROUTE_SAILING_DATE, routes.getSailing_date());
@@ -263,13 +259,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
-                        slack.sendMessage("cannot insert routes",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+                        slack.sendMessage("cannot insert routes",e.getMessage() + "\nDatabaseHelper Line: " +
+                                new Throwable().getStackTrace()[0].getLineNumber());
                     } finally {
                         db.endTransaction();
                     }
 
-                } else
-                    Log.i("json content", json);
+                } /*else
+                    Log.i("json content", json);*/
                 break;
             case "manifest":
                 if (!json.isEmpty() && json.length() > 3) {
@@ -311,19 +308,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 if (cursor != null)
                                     cursor.close();
                             } catch (Exception e) {
-                                slack.sendMessage("ERROR",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+                                slack.sendMessage("ERROR",e.getMessage() + "\nDatabaseHelper Line: " +
+                                        new Throwable().getStackTrace()[0].getLineNumber());
                             }
                         }
                         // finnaly insert fill config table
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
                         e.printStackTrace();
-                        slack.sendMessage("cannot insert manifest",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+                        slack.sendMessage("cannot insert manifest",e.getMessage() + "\nDatabaseHelper Line: " +
+                                new Throwable().getStackTrace()[0].getLineNumber());
                     } finally {
                         db.endTransaction();
                     }
-                } else
-                    Log.i("error", "Json empty!");
+                } /*else
+                    Log.i("error", "Json empty!");*/
                 break;
             case "ports":
                 if (!json.isEmpty() && json.length() > 3) {
@@ -334,7 +333,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         ContentValues values = new ContentValues();
                         for (int i = 0; i < jsonArray.length(); i++) {
                             try {
-                                Ports port = new Ports(jsonArray.getJSONObject(i).getString("_id"), jsonArray.getJSONObject(i).getInt("locationId"), jsonArray.getJSONObject(i).getString("locationName"));
+                                Ports port = new Ports(jsonArray.getJSONObject(i).getString("_id"),
+                                        jsonArray.getJSONObject(i).getInt("locationId"),
+                                        jsonArray.getJSONObject(i).getString("locationName"));
                                 values.put(PORT_ID_MONGO, port.getId_mongo());
                                 values.put(PORT_ID_API, port.getId_api());
                                 values.put(PORT_NAME, port.getName().trim().toUpperCase());
@@ -342,20 +343,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                         null, //nullColumnHack
                                         values); // key/value -> keys = column names/ values = column values
                             } catch (Exception e) {
-                                slack.sendMessage("ERROR",e.getMessage() + "\nLine: " + new Throwable().getStackTrace()[0].getLineNumber());
+                                slack.sendMessage("ERROR",e.getMessage() + "\nLine: " +
+                                        new Throwable().getStackTrace()[0].getLineNumber());
                             }
                             values.clear();
                         }
                         db.setTransactionSuccessful();
                     } catch (android.database.SQLException e) {
-                        slack.sendMessage("cannot insert ports ",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+                        slack.sendMessage("cannot insert ports ",e.getMessage() + "\nDatabaseHelper Line: " +
+                                new Throwable().getStackTrace()[0].getLineNumber());
                     } finally {
                         db.endTransaction();
                     }
-                } else
-                    Log.i("error", "Json empty!");
+                } /*else
+                    Log.i("error", "Json empty!");*/
                 break;
-
         }
     }
 
@@ -374,7 +376,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 firstElement = cursor.getString(0);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot execute query",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot execute query",e.getMessage() + "\nDatabaseHelper Line: " +
+                    new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
@@ -391,7 +394,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return texto;
     }
 
-    //cris
     public Cursor validatePerson(String rut) {
         //return the person data if this person is in manifest table
         SQLiteDatabase db = this.getWritableDatabase();
@@ -400,22 +402,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String row = "";
         try {
             cursor = db.rawQuery("select m.id_people,p.name,m.origin,m.destination," +
-                    "m.boletus,p.id_mongo," + PERSON_REGISTER_ID + " from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
+                    "m.boletus,p.id_mongo," + PERSON_REGISTER_ID +
+                    " from manifest as m left join people as p on m.id_people=p.document where m.id_people='" + rut + "'", null);
             cursor.moveToFirst();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot validate person",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot validate person",e.getMessage() + "\nDatabaseHelper Line: " +
+                    new Throwable().getStackTrace()[0].getLineNumber());
         }
         return cursor;
     }
 
     public void add_record(Record record) {
         Slack slack=new Slack(context);
-        // 1. get reference to writable DB
         SQLiteDatabase db = this.getWritableDatabase();
 
-        // 2. create ContentValues to add key "column"/value
         ContentValues values = new ContentValues();
-
         //values.put(RECORD_ID, record.getId());
         values.put(RECORD_PERSON_DOC, record.getPerson_document());
         values.put(PERSON_MONGO_ID, record.getMongo_id_person());
@@ -432,15 +433,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(RECORD_MONGO_ID_MANIFEST, record.getMongo_id_manifest());
         values.put(RECORD_MONGO_ID_REGISTER, record.getMongo_id_register());
 
-        // 3. insert
         try {
             db.beginTransactionNonExclusive();
             db.insert(TABLE_RECORDS, null, values);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot insert records in db",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot insert records in db",e.getMessage() + "\nDatabaseHelper Line: " +
+                    new Throwable().getStackTrace()[0].getLineNumber());
         }
-        // 4. close
         finally {
             db.endTransaction();
             //updatePeopleManifest(record.getPerson_document(), record.getInput());
@@ -451,11 +451,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Slack slack=new Slack(context);
         Cursor cursor = null;
         List<Record> records = new ArrayList<>();
-        // 1. get reference to readable DB
         SQLiteDatabase db = this.getWritableDatabase();
         try {
-
-            // 2. build query
             cursor =
                     db.query(TABLE_RECORDS, // a. table
                             RECORDS_COLUMNS, // b. column names
@@ -466,9 +463,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             null, // g. order by
                             null); // h. limit
 
-            // 3. get all
             cursor.moveToFirst();
-
             while (!cursor.isAfterLast()) {
                 Record record = new Record();
                 record.setId(cursor.getInt(cursor.getColumnIndex(RECORD_ID)));
@@ -492,12 +487,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } catch (android.database.SQLException e) {
             e.printStackTrace();
-            slack.sendMessage("cannot obtain desync registers",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot obtain desync registers",e.getMessage() + "\nDatabaseHelper Line: " +
+                    new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             if (cursor != null)
                 cursor.close();
         }
-        // 5. return
         return records;
     }
 
@@ -509,20 +504,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             db.beginTransactionNonExclusive();
             values.put(RECORD_SYNC, 1);
-            // 3. updating row
+
             i = db.update(TABLE_RECORDS, //table
                     values, // column/value
                     RECORD_ID + "=" + id, // where
                     null);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot update record",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot update record",e.getMessage() + "\nDatabaseHelper Line: " +
+                    new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
-            // 4. close
             db.endTransaction();
         }
-        if (i > 0) Log.d("Local Record updated", String.valueOf(id));
-        else Log.e("Error updating record", String.valueOf(id));
     }
 
     public void updatePeopleManifest(String rut, String origin, String destination, int input) {
@@ -530,10 +523,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Slack slack=new Slack(context);
         try {
             db.beginTransactionNonExclusive();
-            db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut + "' and origin='" + origin + "' and destination='" + destination + "'");
+            db.execSQL("update manifest set is_inside=" + input + " where id_people='" + rut +
+                    "' and origin='" + origin + "' and destination='" + destination + "'");
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot update people",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot update people",e.getMessage() + "\nDatabaseHelper Line: "
+                    + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
@@ -549,7 +544,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cursor.moveToFirst();
             //cursor.moveToFirst();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot execute query",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot execute query",e.getMessage() + "\nDatabaseHelper Line: "
+                    + new Throwable().getStackTrace()[0].getLineNumber());
         }
         return cursor;
     }
@@ -562,7 +558,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL(insert);
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("ERROR",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("ERROR",e.getMessage() + "\nDatabaseHelper Line: "
+                    + new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
@@ -580,7 +577,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 list.add(cursor.getString(position));
             }
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot convert to ArrayList",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot convert to ArrayList",e.getMessage() + "\nDatabaseHelper Line: "
+                    + new Throwable().getStackTrace()[0].getLineNumber());
         }
         if (cursor != null) {
             cursor.close();
@@ -607,7 +605,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("update config set route_id=" + route + " where id=1");
             db.setTransactionSuccessful();
         } catch (android.database.SQLException e) {
-            slack.sendMessage("cannot update route_id",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot update route_id",e.getMessage() + "\nDatabaseHelper Line: " +
+                    new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             db.endTransaction();
         }
@@ -618,10 +617,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor=null;
         Slack slack=new Slack(context);
         try {
-            //1.- add empty route by default
             routesList.add(new Routes(0, "<ELIJA UNA RUTA>"));
-
-            // 2. build query
             cursor =
                     db.query(TABLE_ROUTES, // a. table
                             ROUTES_COLUMNS, // b. column names
@@ -632,9 +628,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             null, // g. order by
                             null); // h. limit
 
-            // 3. get all
             cursor.moveToFirst();
-
             while (!cursor.isAfterLast()) {
                 Routes routes = new Routes();
                 routes.setID(cursor.getInt(cursor.getColumnIndex(ROUTE_ID)));
@@ -645,16 +639,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } catch (android.database.SQLException e) {
             e.printStackTrace();
-            slack.sendMessage("cannot obtain desync registers",e.getMessage() + "\nDatabaseHelper Line: " + new Throwable().getStackTrace()[0].getLineNumber());
+            slack.sendMessage("cannot obtain desync registers",e.getMessage() + "\nDatabaseHelper Line: " +
+                    new Throwable().getStackTrace()[0].getLineNumber());
         } finally {
             if (cursor != null)
                 cursor.close();
         }
-        // 5. return
         return routesList;
-
-
-
-
     }
 }

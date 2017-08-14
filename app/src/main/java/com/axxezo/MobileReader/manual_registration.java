@@ -4,16 +4,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.DrawableContainer;
-import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -24,24 +20,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 public class manual_registration extends AppCompatActivity {
     private EditText ticket_no;
@@ -68,7 +51,7 @@ public class manual_registration extends AppCompatActivity {
         save_manual_registration = (Button) findViewById(R.id.button_manual_registration_commit);
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-        //fill information in combobox
+        // Fill information in combobox
         Cursor getOriginandDestination = db.select("select name from ports");
         ArrayList<String> listOriginDestination = new ArrayList<String>();
         if (getOriginandDestination != null)
@@ -79,14 +62,14 @@ public class manual_registration extends AppCompatActivity {
         if (listOriginDestination == null || listOriginDestination.isEmpty())
             listOriginDestination.add("");
 
-        //adapter spinner
+        // Adapter spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_spinner_item, listOriginDestination);
         //set adapter to spinner
         origin.setAdapter(adapter);
         destination.setAdapter(adapter);
 
-        //dni suggest
+        // dni suggest
         Drawable errorIcon = getResources().getDrawable(R.drawable.ic_menu_info_details);
         errorIcon.setBounds(new Rect(0, 0, 50, 50));
         dni.setError("RUT sin guion ni Digito Verificador",errorIcon);
@@ -112,8 +95,7 @@ public class manual_registration extends AppCompatActivity {
         });
 
 
-        //listeners of combobox
-
+        // Listeners of combobox
         origin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -138,7 +120,7 @@ public class manual_registration extends AppCompatActivity {
             }
         });
 
-        //finally listener of button
+        // Finally listener of button
         save_manual_registration.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -222,7 +204,6 @@ public class manual_registration extends AppCompatActivity {
 
     }
 
-    //dd-MM-yyyy hh:MM:ss
     public String getCurrentDateTime(String format) {
         Calendar cal = Calendar.getInstance();
         Date currentLocalTime = cal.getTime();

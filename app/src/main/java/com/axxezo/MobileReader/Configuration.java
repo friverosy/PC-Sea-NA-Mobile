@@ -7,16 +7,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.os.Vibrator;
-import android.provider.ContactsContract;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Config;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -33,21 +26,16 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Locale;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -202,7 +190,7 @@ public class Configuration extends AppCompatActivity {
                     selectionSpinnerRoute = String.valueOf(routeSelected.getID());
                     id_api_route = routeSelected.getId_mongo();
                     route.setText("Viaje " + selectionSpinnerRoute + " Seleccionado");
-                    Log.d("route selected id",String.valueOf(routeSelected.getID()));
+                    // Log.d("route selected id",String.valueOf(routeSelected.getID()));
                 }
             }
 
@@ -328,7 +316,6 @@ public class Configuration extends AppCompatActivity {
      */
     public String getRoutes(String format, OkHttpClient client) throws IOException {
         URL url = new URL(AxxezoAPI + "/itineraries?date=" + format);
-        Log.d("routes url", url.toString());
         String content = "";
         Request request = new Request.Builder()
                 .url(url)
@@ -339,7 +326,6 @@ public class Configuration extends AppCompatActivity {
             response = client.newCall(request).execute();
             if (response != null) {
                 content = response.body().string();
-                Log.e("content", content);
             } else
                 content = response.code() + "";
 
@@ -401,7 +387,6 @@ public class Configuration extends AppCompatActivity {
                 content = response.body().string();
             } else
                 content = response.code() + "";
-            Log.e("ports content", content);
         } catch (IOException e) {
             final String error = e.getMessage();
             runOnUiThread(new Runnable() {
