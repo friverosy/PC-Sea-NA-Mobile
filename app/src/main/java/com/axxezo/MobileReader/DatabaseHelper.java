@@ -56,6 +56,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String MANIFEST_BOLETUS = "boletus";
     private static final String MANIFEST_MANUAL_SELL = "is_manual_sell";
     private static final String MANIFEST_RESERVATION_STATUS = "reservation_status";
+    private static final String MANIFEST_MONGO_ID = "people_mongo_id";
 
     // People Table
     private static final String PERSON_ID = "id";
@@ -139,6 +140,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private String CREATE_MANIFEST_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MANIFEST + " ( " +
             MANIFEST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             MANIFEST_PEOPLE_ID + " TEXT NOT NULL, " +
+            MANIFEST_MONGO_ID + " TEXT DEFAULT 0, " +
             MANIFEST_ORIGIN + " TEXT, " +
             MANIFEST_DESTINATION + " TEXT," +
             MANIFEST_ISINSIDE + " INTEGER DEFAULT 0, " +
@@ -276,8 +278,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         for (int i = 0; i < jsonArray.length(); i++) {
                             try {
                                 People people = new People(jsonArray.getJSONObject(i).getString("documentId").trim(), jsonArray.getJSONObject(i).getString("name").toUpperCase(), " ", 0, jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("registerId"));
-                                navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0, jsonArray.getJSONObject(i).getInt("reservationStatus"));
-                                //navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0);
+                                navieraManifest manifest = new navieraManifest(jsonArray.getJSONObject(i).getString("documentId"),jsonArray.getJSONObject(i).getString("personId"), jsonArray.getJSONObject(i).getString("origin"), jsonArray.getJSONObject(i).getString("destination"), 0, jsonArray.getJSONObject(i).getBoolean("isOnboard") ? 1 : 0, jsonArray.getJSONObject(i).getInt("reservationStatus"));
                                 String doc;
                                 doc = people.getDocument().toUpperCase();
                                 if (people.getDocument().contains("-"))
@@ -288,8 +289,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                 if (cursor.getCount() > 0) { //when person is in manifest with origin and destination, only insert in case that one or another is different to origin/destination inserted
                                     cursor.moveToFirst();
                                     if (!cursor.getString(0).equals(manifest.getOrigin()) && !cursor.getString(1).equals(manifest.getDestination())) {
-                                        db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +","+MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
-                                                doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
+                                        db.execSQL("insert  into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_MONGO_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +","+MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
+                                                doc + "','" + manifest.getManifest_people_id() + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
                                         db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
                                                 doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
                                     } else if (manifest.getReservationStatus() == -1) {
@@ -300,8 +301,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                         db.execSQL("update people set mongo_id='"+people.getMongo_documentID()+"'");
                                     }*/
                                 } else if (cursor.getCount() == 0 && manifest.getReservationStatus() != -1) {
-                                    db.execSQL("insert into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +","+MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
-                                            doc + "','" + manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
+                                    db.execSQL("insert into manifest(" + MANIFEST_PEOPLE_ID + "," + MANIFEST_MONGO_ID + "," + MANIFEST_ORIGIN + "," + MANIFEST_DESTINATION + "," + MANIFEST_ISINSIDE + "," + MANIFEST_MANUAL_SELL +","+MANIFEST_RESERVATION_STATUS+ ") VALUES('" +
+                                            doc + "','" + manifest.getManifest_people_id()+ "','" +  manifest.getOrigin() + "','" + manifest.getDestination() + "','" + manifest.getIsInside() + "','" + manifest.getIsManualSell() + "','" + manifest.getReservationStatus() + "')");
                                     db.execSQL("insert or ignore into people(" + PERSON_DOCUMENT + "," + PERSON_MONGO_ID + "," + PERSON_NAME + "," + PERSON_NATIONALITY + "," + PERSON_AGE + "," + PERSON_REGISTER_ID + ") VALUES ('" +
                                             doc + "','" + people.getMongo_documentID() + "','" + name + "','" + people.getNationality().toUpperCase() + "'," + people.getAge() + ",'" + people.getMongo_registerID() + "')");
                                 }

@@ -133,16 +133,18 @@ public class lastRecordsList extends ListActivity implements AdapterView.OnItemS
     private void addPersonCards() {
         try {
             DatabaseHelper db = DatabaseHelper.getInstance(this);
-            Cursor c = db.select("select m.id_people,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.id_people=p.document order by name asc");
+            Cursor c = db.select("select m.id_people,m.is_manual_sell,p.name,p.nationality,m.origin,m.destination,m.is_inside from manifest as m left join people as p on m.people_mongo_id=p.id_mongo order by name asc");
             if (c != null) {
                 if (c.moveToFirst()) {
                     do {
                         String DNI = c.getString(c.getColumnIndex("id_people"));
                         String Name = c.getString(c.getColumnIndex("name"));
-                        // String nationality = c.getString(c.getColumnIndex("nationality"));
                         int isInput = c.getInt(c.getColumnIndex("is_inside"));
                         String origin = c.getString(c.getColumnIndex("origin"));
                         String destination = c.getString(c.getColumnIndex("destination"));
+                        int is_manual_sell=c.getInt(c.getColumnIndex("is_manual_sell"));
+                        if(is_manual_sell==1)
+                            Name=db.selectFirst("select name from people where document='"+DNI+"'");
                         users.add(new Cards(DNI, Name, isInput, origin, destination));
                     } while (c.moveToNext());
                 }
