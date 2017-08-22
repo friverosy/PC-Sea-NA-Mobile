@@ -13,10 +13,10 @@ public class navieraManifest{
     private String people_id;
     private String origin;
     private String destination;
+    private String manifest_people_id;
     private int isInside;
     private int isManualSell;
     private int reservationStatus;
-    //private int port;
 
     /*
     isInside;
@@ -25,13 +25,14 @@ public class navieraManifest{
     2 to  landed(desembarcado)
      */
 
-    public navieraManifest(String people_id, String origin, String destination, int isInside, int isManualSell, int reservationStatus) {
+    public navieraManifest(String people_id,String manifest_people_id, String origin, String destination, int isInside, int isManualSell, int reservationStatus) {
         this.people_id = people_id;
         this.origin = origin;
         this.destination = destination;
         this.isInside = isInside;
         this.isManualSell = isManualSell;
         this.reservationStatus = reservationStatus;
+        this.manifest_people_id=manifest_people_id;
     }
 
     public navieraManifest(String people_id, String origin, String destination, int isInside, int isManualSell) {
@@ -40,6 +41,14 @@ public class navieraManifest{
         this.destination = destination;
         this.isInside = isInside;
         this.isManualSell = isManualSell;
+    }
+
+    public String getManifest_people_id() {
+        return manifest_people_id;
+    }
+
+    public void setManifest_people_id(String manifest_people_id) {
+        this.manifest_people_id = manifest_people_id;
     }
 
     public String getPeople_id() {
