@@ -15,6 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="90dp"
+        android:scrollbars="vertical"
         android:background="@color/cpb_grey" />
 
     <RelativeLayout
@@ -85,8 +86,7 @@
         android:layout_marginRight="16dp"
         android:layout_marginTop="280dp"
         app:srcCompat="@android:drawable/ic_menu_search" />-->
-
-    <ListView
+   <ListView
         android:id="@android:id/list"
         android:layout_marginTop="100dp"
         android:layout_width="wrap_content"
